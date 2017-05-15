@@ -1,2 +1,2 @@
 # tgf
-A terragrunt frontend that allow execution of terragrunt/terraform through Docker
+A **T**erra**g**runt **f**rontend that allow execution of Terragrunt/Terraform through Docker
