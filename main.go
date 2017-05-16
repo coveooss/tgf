@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 func main() {
@@ -19,14 +18,15 @@ func main() {
 	if lastRefresh(config.Image) > config.Refresh || !checkImage(config.Image) {
 		refreshImage(config.Image)
 	}
+	callDocker(config.Image, config.LogLevel)
 }
 
-func callDocker(imageParts ...string) {
-	image := strings.Join(imageParts, ":")
+func callDocker(image string, logLevel string) {
 	curDir, _ := os.Getwd()
 
 	command := []string{"terragrunt"}
 	command = append(command, os.Args[1:]...)
+	command = append(command, []string{"--terragrunt-logging-level", logLevel}...)
 
 	args := []string{
 		"run", "-it",
@@ -44,15 +44,8 @@ func callDocker(imageParts ...string) {
 }
 
 func checkImage(image string) bool {
-	command := []string{"docker"}
-
-	args := []string{
-		"images", "-q",
-		image,
-	}
-
 	var out bytes.Buffer
-	dockerCmd := exec.Command("docker", append(args, command...)...)
+	dockerCmd := exec.Command("docker", []string{"images", "-q", image}...)
 	dockerCmd.Stdout = &out
 	dockerCmd.Run()
 	return out.String() != ""
