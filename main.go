@@ -1,62 +1,49 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
+	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
-	"os/exec"
+	"strings"
 )
 
 func main() {
+	// Handle eventual panic message
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
 		}
 	}()
 
+	var (
+		app        = NewApplication(kingpin.New(os.Args[0], "A docker frontend for terragrunt."))
+		entryPoint = app.Argument("entrypoint", "Override the entry point for docker whish is terragrunt by default", 'e').Default("terragrunt").String()
+		image      = app.Argument("image", "Use the specified image instead of the default one", 'i').String()
+		tag        = app.Argument("tag", "Use a different tag on docker image instead of the default one", 't').String()
+		refresh    = app.Switch("refresh", "Force a refresh of the docker image", 'r').Bool()
+	)
+	app.Author("Coveo")
+	kingpin.CommandLine = app.Application
+	kingpin.CommandLine.HelpFlag.Short('h')
+
+	managed, unmanaged := app.SplitManaged()
+	Must(app.Parse(managed))
+
 	config := getDefaultValues()
-	if lastRefresh(config.Image) > config.Refresh || !checkImage(config.Image) {
+
+	if *image != "" {
+		config.Image = *image
+	}
+
+	if *tag != "" {
+		split := strings.Split(config.Image, ":")
+		config.Image = strings.Join([]string{split[0], *tag}, ":")
+	}
+
+	if lastRefresh(config.Image) > config.Refresh || !checkImage(config.Image) || *refresh {
 		refreshImage(config.Image)
 	}
-	callDocker(config.Image, config.LogLevel)
-}
 
-func callDocker(image string, logLevel string) {
-	curDir, _ := os.Getwd()
-
-	command := []string{"terragrunt"}
-	command = append(command, os.Args[1:]...)
-	command = append(command, []string{"--terragrunt-logging-level", logLevel}...)
-
-	args := []string{
-		"run", "-it",
-		"-v", "/:/local",
-		"-w", "/local/" + curDir,
-		"-e", "HOME=/local" + os.Getenv("HOME"),
-		"--name", "tgf.run",
-		"--rm",
-		image,
-	}
-
-	dockerCmd := exec.Command("docker", append(args, command...)...)
-	dockerCmd.Stdin, dockerCmd.Stdout, dockerCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	dockerCmd.Run()
-}
-
-func checkImage(image string) bool {
-	var out bytes.Buffer
-	dockerCmd := exec.Command("docker", []string{"images", "-q", image}...)
-	dockerCmd.Stdout = &out
-	dockerCmd.Run()
-	return out.String() != ""
-}
-
-func refreshImage(image string) {
-	var out bytes.Buffer
-	dockerUpdateCmd := exec.Command("docker", "pull", image)
-	dockerUpdateCmd.Stdout, dockerUpdateCmd.Stderr = &out, &out
-	err := dockerUpdateCmd.Run()
-	fmt.Fprintln(os.Stderr, out.String())
-	PanicOnError(err)
-	touchImageRefresh(image)
+	callDocker(config.Image, config.LogLevel, *entryPoint, unmanaged...)
 }

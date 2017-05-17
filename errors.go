@@ -20,6 +20,7 @@ func Must(result ...interface{}) interface{} {
 	}
 }
 
+// PanicOnError issues a panic if the error is not nil
 func PanicOnError(err error) {
 	if err != nil {
 		panic(err)
