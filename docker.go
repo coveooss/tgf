@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -27,12 +28,15 @@ func callDocker(image, logLevel, entryPoint string, args ...string) {
 	}
 
 	currentUser := Must(user.Current()).(*user.User)
+	home := filepath.ToSlash(currentUser.HomeDir)
+	homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
+	cwd := filepath.ToSlash(Must(os.Getwd()).(string))
 	dockerArgs := []string{
 		"run", "-it",
-		"-v", "/:/local",
-		"-v", fmt.Sprintf("%v:%v", currentUser.HomeDir, currentUser.HomeDir),
-		"-e", fmt.Sprintf("HOME=%v", currentUser.HomeDir),
-		"-w", filepath.Join("/local", Must(os.Getwd()).(string)),
+		"-v", fmt.Sprintf("%v/:/local", filepath.VolumeName(cwd)),
+		"-v", fmt.Sprintf("%v:%v", home, homeWithoutVolume),
+		"-e", fmt.Sprintf("HOME=%v", homeWithoutVolume),
+		"-w", util.JoinPath("/local", strings.TrimPrefix(cwd, filepath.VolumeName(cwd))),
 		"--rm",
 	}
 	dockerArgs = append(dockerArgs, getEnviron()...)
@@ -67,9 +71,20 @@ func refreshImage(image string) {
 func getEnviron() (result []string) {
 	for _, env := range os.Environ() {
 		split := strings.Split(env, "=")
-		switch split[0] {
+		varName := strings.TrimSpace(split[0])
+		varUpper := strings.ToUpper(varName)
+		if varName == "" || strings.Contains(varUpper, "PATH") {
+			continue
+		}
+
+		if runtime.GOOS == "windows" {
+			if strings.Contains(strings.ToUpper(split[1]), `C:\`) || strings.Contains(varUpper, "WIN") {
+				continue
+			}
+		}
+
+		switch varName {
 		case
-			"PATH", "PYTHONPATH", "GOPATH",
 			"_", "PWD", "OLDPWD", "TMPDIR",
 			"PROMPT", "HOME", "SHELL", "SH", "ZSH",
 			"DISPLAY", "TERM":
