@@ -10,10 +10,10 @@ import (
 type ApplicationArguments struct {
 	*kingpin.Application
 	longs  map[string]bool
-	shorts map[byte]bool
+	shorts map[rune]bool
 }
 
-func (app ApplicationArguments) add(name, description string, isSwitch bool, shorts ...byte) *kingpin.FlagClause {
+func (app ApplicationArguments) add(name, description string, isSwitch bool, shorts ...rune) *kingpin.FlagClause {
 	flag := app.Application.Flag(name, description)
 	switch len(shorts) {
 	case 0:
@@ -31,13 +31,13 @@ func (app ApplicationArguments) add(name, description string, isSwitch bool, sho
 
 // Switch adds a switch argument to the application
 // A switch is a boolean flag that do not require additional value
-func (app ApplicationArguments) Switch(name, description string, shorts ...byte) *kingpin.FlagClause {
+func (app ApplicationArguments) Switch(name, description string, shorts ...rune) *kingpin.FlagClause {
 	return app.add(name, description, true, shorts...)
 }
 
 // Argument adds an argument to the application
 // The argument requires additional argument to be complete
-func (app ApplicationArguments) Argument(name, description string, shorts ...byte) *kingpin.FlagClause {
+func (app ApplicationArguments) Argument(name, description string, shorts ...rune) *kingpin.FlagClause {
 	return app.add(name, description, false, shorts...)
 }
 
@@ -59,7 +59,7 @@ Arg:
 			}
 		} else if strings.HasPrefix(arg, "-") {
 			for _, c := range arg[1:] {
-				if isSwitch, ok := app.shorts[byte(c)]; ok {
+				if isSwitch, ok := app.shorts[c]; ok {
 					if !isSwitch {
 						break
 					}
@@ -81,6 +81,6 @@ func NewApplication(app *kingpin.Application) ApplicationArguments {
 	return ApplicationArguments{
 		Application: app,
 		longs:       map[string]bool{"help": true},
-		shorts:      map[byte]bool{'h': true},
+		shorts:      map[rune]bool{'h': true},
 	}
 }
