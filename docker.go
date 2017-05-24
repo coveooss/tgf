@@ -31,10 +31,11 @@ func callDocker(image, logLevel, entryPoint string, args ...string) {
 	home := filepath.ToSlash(currentUser.HomeDir)
 	homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
 	cwd := filepath.ToSlash(Must(os.Getwd()).(string))
+	currentDrive := fmt.Sprintf("%s/", filepath.VolumeName(cwd))
 	dockerArgs := []string{
 		"run", "-it",
-		"-v", fmt.Sprintf("%v/:/local", filepath.VolumeName(cwd)),
-		"-v", fmt.Sprintf("%v:%v", home, homeWithoutVolume),
+		"-v", fmt.Sprintf("%v:/local", convertDrive(currentDrive)),
+		"-v", fmt.Sprintf("%v:%v", convertDrive(home), homeWithoutVolume),
 		"-e", fmt.Sprintf("HOME=%v", homeWithoutVolume),
 		"-w", util.JoinPath("/local", strings.TrimPrefix(cwd, filepath.VolumeName(cwd))),
 		"--rm",
@@ -47,6 +48,10 @@ func callDocker(image, logLevel, entryPoint string, args ...string) {
 	dockerCmd.Stdin, dockerCmd.Stdout, dockerCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	if err := dockerCmd.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "\n%s %s\n", dockerCmd.Path, strings.Join(dockerArgs, " "))
+
+		if runtime.GOOS == "windows" {
+			fmt.Fprintln(os.Stderr, windowsMessage)
+		}
 	}
 }
 
@@ -95,3 +100,44 @@ func getEnviron() (result []string) {
 	}
 	return
 }
+
+// This function set the path converter function
+// For old Windows version still using docker-machine and VirtualBox,
+// it transforms the C:\ to \C\.
+func getPathConversionFunction() func(string) string {
+	noConversion := func(path string) string { return path }
+	if runtime.GOOS != "windows" {
+		return noConversion
+	}
+
+	var out bytes.Buffer
+	dockerCmd := exec.Command("docker-machine", "env")
+	dockerCmd.Stdout, dockerCmd.Stderr = &out, &out
+	if dockerCmd.Run() != nil {
+		return noConversion
+	}
+
+	return func(path string) string {
+		return fmt.Sprintf("/%s%s", strings.ToUpper(path[:1]), path[2:])
+	}
+}
+
+var convertDrive = getPathConversionFunction()
+
+var windowsMessage = `
+You may have to share your drives with your Docker virtual machine to make them accessible.
+
+On Windows 10+ using Hyper-V to run Docker, simply right click on Docker icon in your tray and
+choose "Settings", then go to "Shared Drives" and enable the share for the drives you want to 
+be accessible to your dockers.
+
+On previous version using VirtualBox, start the VirtualBox application and add shared drives
+for all drives you want to make shareable with your dockers.
+
+IMPORTANT, to make your drives accessible to tgf, you have to give them uppercase name corresponding
+to the drive letter:
+	C:\ ==> /C
+	D:\ ==> /D
+	...
+	Z:\ ==> /Z
+`
