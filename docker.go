@@ -103,18 +103,10 @@ func getEnviron() (result []string) {
 
 // This function set the path converter function
 // For old Windows version still using docker-machine and VirtualBox,
-// it transforms the C:\ to \C\.
+// it transforms the C:\ to /C/.
 func getPathConversionFunction() func(string) string {
-	noConversion := func(path string) string { return path }
-	if runtime.GOOS != "windows" {
-		return noConversion
-	}
-
-	var out bytes.Buffer
-	dockerCmd := exec.Command("docker-machine", "env")
-	dockerCmd.Stdout, dockerCmd.Stderr = &out, &out
-	if dockerCmd.Run() != nil {
-		return noConversion
+	if runtime.GOOS != "windows" || os.Getenv("DOCKER_MACHINE_NAME") == "" {
+		return func(path string) string { return path }
 	}
 
 	return func(path string) string {
