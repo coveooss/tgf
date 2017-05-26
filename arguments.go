@@ -51,16 +51,28 @@ Arg:
 			if isSwitch, ok := app.longs[argSplit[0]]; ok {
 				managed = append(managed, arg)
 				if !isSwitch && len(argSplit) == 1 {
+					// This is not a switch (bool flag) and there is no argument with
+					// the flag, so the argumnent must be after and we add it to
+					// the managed args if there is.
 					i++
-					managed = append(managed, os.Args[i])
+					if i < len(os.Args) {
+						managed = append(managed, os.Args[i])
+					}
 				}
 			} else {
 				unmanaged = append(unmanaged, arg)
 			}
 		} else if strings.HasPrefix(arg, "-") {
-			for _, c := range arg[1:] {
-				if isSwitch, ok := app.shorts[c]; ok {
+			withArg := false
+			for pos, opt := range arg[1:] {
+				if isSwitch, ok := app.shorts[opt]; ok {
 					if !isSwitch {
+						// This is not a switch (bool flag), so we check if there are characters
+						// following the current flag in the same word. If it is not the case,
+						// then the argument must be after and we add it to the managed args
+						// if there is. If it is the case, then, the argument is included in
+						// the current flag and we consider the whole word as a managed argument.
+						withArg = pos == len(arg[1:])-1
 						break
 					}
 				} else {
@@ -69,6 +81,13 @@ Arg:
 				}
 			}
 			managed = append(managed, arg)
+			if withArg {
+				// The next argument must be an argument to the current flag
+				i++
+				if i < len(os.Args) {
+					managed = append(managed, os.Args[i])
+				}
+			}
 		} else {
 			unmanaged = append(unmanaged, arg)
 		}
