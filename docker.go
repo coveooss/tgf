@@ -45,12 +45,18 @@ func callDocker(image, logLevel, entryPoint string, args ...string) {
 	dockerArgs = append(dockerArgs, command...)
 
 	dockerCmd := exec.Command("docker", dockerArgs...)
-	dockerCmd.Stdin, dockerCmd.Stdout, dockerCmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	if err := dockerCmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "\n%s %s\n", dockerCmd.Path, strings.Join(dockerArgs, " "))
+	dockerCmd.Stdin, dockerCmd.Stdout = os.Stdin, os.Stdout
+	var stderr bytes.Buffer
+	dockerCmd.Stderr = &stderr
 
-		if runtime.GOOS == "windows" {
-			fmt.Fprintln(os.Stderr, windowsMessage)
+	if err := dockerCmd.Run(); err != nil {
+		if stderr.Len() > 0 {
+			fmt.Fprintf(os.Stderr, stderr.String())
+			fmt.Fprintf(os.Stderr, "\n%s %s\n", dockerCmd.Path, strings.Join(dockerArgs, " "))
+
+			if runtime.GOOS == "windows" {
+				fmt.Fprintln(os.Stderr, windowsMessage)
+			}
 		}
 	}
 }

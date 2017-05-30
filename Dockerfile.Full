@@ -44,3 +44,7 @@ RUN powershell -c Install-Package AWSPowerShell.NetCore -Force > /dev/null
 RUN curl -sL https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip -o terraform.zip && unzip terraform.zip && mv terraform /usr/local/bin && rm terraform.zip
 RUN curl -sL https://github.com/coveo/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_amd64 -o /usr/bin/terragrunt && chmod +x /usr/bin/terragrunt
 RUN curl -sL https://github.com/coveo/gotemplate/releases/download/v${GOTEMPLATE_VERSION}/gotemplate_linux -o /usr/bin/gotemplate && chmod +x /usr/bin/gotemplate
+
+# Install terraforming
+RUN apk add ruby ruby-rdoc ruby-irb
+RUN gem install terraforming

@@ -11,5 +11,5 @@ docker:
 
 all-dockers:
 	docker build -f Dockerfile -t coveo/tgf .
-	docker build -f Dockerfile.Shell -t coveo/tgf.shell .
+	docker build -f Dockerfile.Base -t coveo/tgf.base .
 	docker build -f Dockerfile.Full -t coveo/tgf.full .
