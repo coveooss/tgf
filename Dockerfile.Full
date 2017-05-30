@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 
-ARG TERRAFORM_VERSION=0.9.5
-ARG TERRAGRUNT_VERSION=0.12.18.02
+ARG TERRAFORM_VERSION=0.9.6
+ARG TERRAGRUNT_VERSION=0.12.18.03
 ARG GOTEMPLATE_VERSION=1.0
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -46,5 +46,5 @@ RUN curl -sL https://github.com/coveo/terragrunt/releases/download/v${TERRAGRUNT
 RUN curl -sL https://github.com/coveo/gotemplate/releases/download/v${GOTEMPLATE_VERSION}/gotemplate_linux -o /usr/bin/gotemplate && chmod +x /usr/bin/gotemplate
 
 # Install terraforming
-RUN apk add ruby ruby-rdoc ruby-irb
+RUN apt-get -y install ruby
 RUN gem install terraforming
