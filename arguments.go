@@ -46,6 +46,10 @@ func (app ApplicationArguments) SplitManaged() (managed []string, unmanaged []st
 Arg:
 	for i := 1; i < len(os.Args); i++ {
 		arg := os.Args[i]
+		if arg == "--" {
+			unmanaged = append(unmanaged, os.Args[i+1:]...)
+			break
+		}
 		if strings.HasPrefix(arg, "--") {
 			argSplit := strings.Split(os.Args[i][2:], "=")
 			if isSwitch, ok := app.longs[argSplit[0]]; ok {
@@ -99,7 +103,14 @@ Arg:
 func NewApplication(app *kingpin.Application) ApplicationArguments {
 	return ApplicationArguments{
 		Application: app,
-		longs:       map[string]bool{"help": true},
-		shorts:      map[rune]bool{'h': true},
+		longs: map[string]bool{
+			"help":                   true,
+			"help-man":               true,
+			"help-long":              true,
+			"completion-bash":        true,
+			"completion-script-bash": true,
+			"completion-script-zsh":  true,
+		},
+		shorts: map[rune]bool{'h': true},
 	}
 }

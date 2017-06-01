@@ -17,7 +17,7 @@ func main() {
 	}()
 
 	var (
-		app        = NewApplication(kingpin.New(os.Args[0], "A docker frontend for terragrunt."))
+		app        = NewApplication(kingpin.New(os.Args[0], "A docker frontend for terragrunt. Any parameter after -- will be directly sent to the command identified by entrypoint."))
 		entryPoint = app.Argument("entrypoint", "Override the entry point for docker whish is terragrunt by default", 'e').Default("terragrunt").String()
 		image      = app.Argument("image", "Use the specified image instead of the default one", 'i').String()
 		tag        = app.Argument("tag", "Use a different tag on docker image instead of the default one", 't').String()
