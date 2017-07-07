@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
+	"path/filepath"
 	"strings"
+
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 func main() {
@@ -41,9 +43,11 @@ func main() {
 		config.Image = strings.Join([]string{split[0], *tag}, ":")
 	}
 
-	if lastRefresh(config.Image) > config.Refresh || !checkImage(config.Image) || *refresh {
+	if !isVersionedImage(config.Image) && lastRefresh(config.Image) > config.Refresh || !checkImage(config.Image) || *refresh {
 		refreshImage(config.Image)
 	}
+
+	os.Setenv("TERRAGRUNT_CACHE", filepath.Join("/local", os.TempDir(), "tgf-cache"))
 
 	callDocker(config.Image, config.LogLevel, *entryPoint, unmanaged...)
 }

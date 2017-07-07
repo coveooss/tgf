@@ -1,11 +1,13 @@
 package main
 
 import (
-	"github.com/gruntwork-io/terragrunt/util"
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"time"
+
+	"github.com/gruntwork-io/terragrunt/util"
 )
 
 func getTouchFilename(image string) string {
@@ -42,3 +44,11 @@ func touchImageRefresh(image string) {
 func lastRefresh(image string) time.Duration {
 	return time.Since(getLastRefresh(image))
 }
+
+// By default, versionned images do not need to be refreshed since they should never
+// been overwritten with a different version without being tagged with a new version.
+func isVersionedImage(image string) bool {
+	return versionRegex.MatchString(image)
+}
+
+var versionRegex = regexp.MustCompile(`[vV]?\d+\.\d+`)

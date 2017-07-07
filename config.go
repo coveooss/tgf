@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/gruntwork-io/terragrunt/util"
 	"time"
+
+	aws "github.com/gruntwork-io/terragrunt/aws_helper"
 )
 
 type tgfConfig struct {
@@ -18,15 +19,14 @@ func getDefaultValues() tgfConfig {
 		LogLevel: "notice",
 	}
 
-	tags, _ := util.GetSecurityGroupTags("terragrunt-default")
-	if image, ok := tags["tgf_docker_image"]; ok {
+	if image, err := aws.GetSSMParameter("/default/tgf/docker-image", ""); err == nil {
 		config.Image = image
 	}
-	if refresh, ok := tags["tgf_docker_refresh"]; ok {
+	if refresh, err := aws.GetSSMParameter("/default/tgf/docker-refresh", ""); err == nil {
 		duration := Must(time.ParseDuration(refresh)).(time.Duration)
 		config.Refresh = duration
 	}
-	if logLevel, ok := tags["tgf_logging_level"]; ok {
+	if logLevel, err := aws.GetSSMParameter("/default/tgf/logging-level", ""); err == nil {
 		config.LogLevel = logLevel
 	}
 
