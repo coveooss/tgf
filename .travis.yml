@@ -2,9 +2,6 @@ language: go
 go:
 - 1.8.x
 
-os:
-  - osx
-
 sudo: false
 
 install:
