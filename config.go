@@ -21,6 +21,7 @@ const (
 	configFile      = ".tgf.config"
 	dockerImage     = "docker-image"
 	dockerRefresh   = "docker-refresh"
+	dockerDebug     = "docker-debug"
 	loggingLevel    = "logging-level"
 	entryPoint      = "entry-point"
 	tgfVersion      = "tgf-recommended-version"
@@ -32,6 +33,7 @@ type tgfConfig struct {
 	EntryPoint                string
 	Refresh                   time.Duration
 	RecommendedMinimalVersion string
+	Debug                     string
 }
 
 func (config *tgfConfig) complete() bool {
@@ -90,6 +92,10 @@ func (config *tgfConfig) SetValue(key, value string) {
 	case dockerRefresh:
 		if config.Refresh == 0 {
 			config.Refresh = Must(time.ParseDuration(value)).(time.Duration)
+		}
+	case dockerDebug:
+		if config.Debug == "" {
+			config.Debug = value
 		}
 	case loggingLevel:
 		if config.LogLevel == "" {

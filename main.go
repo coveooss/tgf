@@ -26,6 +26,7 @@ func main() {
 		app               = NewApplication(kingpin.New(os.Args[0], description))
 		defaultEntryPoint = app.Argument("entrypoint", "Override the entry point for docker (default = terragrunt)", 'e').String()
 		image             = app.Argument("image", "Use the specified image instead of the default one", 'i').String()
+		debug             = app.Argument("debug", "Print the docker command issued", 'd').Bool()
 		tag               = app.Argument("tag", "Use a different tag on docker image instead of the default one", 't').String()
 		refresh           = app.Switch("refresh", "Force a refresh of the docker image", 'r').Bool()
 		getVersion        = app.Switch("version", "Get the current version of tgf", 'v').Bool()
@@ -46,6 +47,10 @@ func main() {
 	config.SetValue(dockerImage, *image)
 	config.SetValue(entryPoint, *defaultEntryPoint)
 	config.SetDefaultValues(*refresh)
+
+	if *debug {
+		config.SetValue(dockerDebug, "yes")
+	}
 
 	if *tag != "" {
 		split := strings.Split(config.Image, ":")

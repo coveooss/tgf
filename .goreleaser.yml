@@ -14,11 +14,7 @@ builds:
 
 # Archive customization
 archive:
-  format: tar.gz
-
-  format_overrides:
-    - goos: windows
-      format: zip
+  format: zip
 
   replacements:
     amd64: 64-bit

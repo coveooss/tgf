@@ -50,6 +50,10 @@ func callDocker(config tgfConfig, args ...string) {
 	var stderr bytes.Buffer
 	dockerCmd.Stderr = &stderr
 
+	if config.Debug != "" && config.Debug != "0" {
+		fmt.Fprintf(os.Stderr, "%s\n\n", strings.Join(dockerCmd.Args, " "))
+	}
+
 	if err := dockerCmd.Run(); err != nil {
 		if stderr.Len() > 0 {
 			fmt.Fprintf(os.Stderr, stderr.String())

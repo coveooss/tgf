@@ -93,6 +93,7 @@ Key | Description | Default value
 --- | --- | ---
 | docker-image | Identify the docker image (with tag if necessary) to use | coveo/tgf
 | docker-refresh | Delay before checking if a newer version of the docker image is available | 1h (1 hour)
+| docker-debug | Tell tgf to display the detailed Docker command prior to execute it | 0
 | logging-level | Terragrunt logging level (only apply to Terragrunt entry point).<br>*Critical (0), Error (1), Warning (2), Notice (3), Info (4), Debug (5)* | Notice
 | entry-point | The program that will be automatically launched when the docker starts | terragrunt
 | tgf-recommended-version | The minimal tgf version recommended in your context | *no default*
@@ -111,6 +112,7 @@ Flags:
   -h, --help                   Show context-sensitive help (also try --help-long and --help-man).
   -e, --entrypoint=ENTRYPOINT  Override the entry point for docker whish is terragrunt by default
   -i, --image=IMAGE            Use the specified image instead of the default one
+  -d, --debug                  Print the docker command issued
   -t, --tag=TAG                Use a different tag on docker image instead of the default one
   -r, --refresh                Force a refresh of the docker image
   -v, --version                Get the current version of tgf
