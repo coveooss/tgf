@@ -7,6 +7,7 @@ builds:
       - linux
     goarch:
       - amd64
+      - 386
 
 # Archive customization
 archive:
