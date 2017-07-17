@@ -37,13 +37,13 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl https://github.com/coveo/tgf/releases/download/v1.12/tgf_darwin_x64 -o /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.12/tgf_darwin_x64 -o /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Linux`:
 
 ```bash
-curl https://github.com/coveo/tgf/releases/download/v1.12/tgf_linux_x64 -o /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.12/tgf_linux_x64 -o /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
