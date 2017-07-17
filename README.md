@@ -30,26 +30,26 @@ outdated version.
 
 ## Installation
 
-Choose the desired version according to your OS [here](https://github.com/coveo/tgf/releases)
+Choose the desired version according to your OS [here](https://github.com/coveo/tgf/releases), rename it tgf (or tgf.exe on Windows), make it executable and put it somewhere in your PATH.
 
 or install it through command line:
 
 On `OSX`:
 
 ```bash
-curl https://github.com/coveo/tgf/releases/download/v1.12/tgf_darwin -o /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl https://github.com/coveo/tgf/releases/download/v1.12/tgf_darwin_x64 -o /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Linux`:
 
 ```bash
-curl https://github.com/coveo/tgf/releases/download/v1.12/tgf_linux -o /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl https://github.com/coveo/tgf/releases/download/v1.12/tgf_linux_x64 -o /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.12/tgf.exe -OutFile tgf.exe
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.12/tgf_x64.exe -OutFile tgf.exe
 ```
 
 ## Configuration

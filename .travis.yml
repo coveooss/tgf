@@ -4,12 +4,28 @@ go:
 
 sudo: false
 
+install:
+- go get ./...
+
+script:
+- make test
+- GOARCH=amd64 GOOS=linux go build -o tgf_linux_x64 -ldflags "-X main.Version=$TRAVIS_TAG"
+- GOARCH=amd64 GOOS=darwin go build -o tgf_darwin_x64 -ldflags "-X main.Version=$TRAVIS_TAG"
+- GOARCH=amd64 GOOS=windows go build -o tgf_x64.exe -ldflags "-X main.Version=$TRAVIS_TAG"
+
 deploy:
   provider: releases
+  skip_cleanup: true
   api_key:
     secure: IZdtiBbhZ3gaqEvNa+SJblK7k8Vq2E4POxIRngdqJPQn2f9q9e61ctL2//IBJIRSgjMSKr2dSJx6ztbEvm0xmg8LI3muBLMDRQr+iYo0ZXmu97uqj27wTgNUd+GNA+BbOMdOKdvbEjZQ+IDw6r3nFVqTOw+NZy6fFIoJvksv6ZdX1ZpDQuK+61wu6LeneuIuUyqDB87xnqVe/gg8BTcQxeGIVouDo5frLbq+HevoZ0wLBHnNYK2wzvBxw7GkECtjeMqVyeLaKxfKSn419YDlYQ8+NfZpKccqUsGzOxYzi2jedCUWEtUwk1lFHAtApJhIfDkFEhpu/yjbT2/ZPayVn4y9syJEXeS3JcgZkRZi1g4HbjnM9V6k0rP62ej0KVoSCGEl22WuDhZMn6UMDajHXZcDJa9tlW2MLLjfdiI81ojcVpgJ2ycaHEnSZtQwpO/4GuXqwvcCiSKtPsqAhOn7EzEwnd8SuRpF//9ln1fU23NNmfs77gk31HubMNq79M/rlQjlMAwRYMgRNUfHOb5BIJqgMfcyU2zF2cQ9UsXSraa6rOMKd+U+T/+SGZVtNnP4nSQ560Z9WDbOVdbP/x9zTlXRq+BUB1ukZBAdDdKAvqumkDGojcXXitOy55UvZca0n1ZJrpUFk1gzOb3xgw/693mJI/bsvw/QFCXvLQN5JOo=
-  file: xxx
+  file:
+  - tgf_linux
+  - tgf_darwin
+  - tgf.exe
   on:
     tags: true
     condition: "$TRAVIS_TAG == v[0-9]*"
     repo: coveo/tgf
+
+notifications:
+  email: false
