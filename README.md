@@ -9,6 +9,7 @@ Table of content:
 * [Invocation arguments](#tgf-invocation)
 * [Images](#default-docker-images)
 * [Usage](#usage)
+* [Development](#development)
 
 ## Description
 
@@ -30,26 +31,26 @@ outdated version.
 
 ## Installation
 
-Choose the desired version according to your OS [here](https://github.com/coveo/tgf/releases), rename it tgf (or tgf.exe on Windows), make it executable and put it somewhere in your PATH.
+Choose the desired version according to your OS [here](https://github.com/coveo/tgf/releases), unzip it, make tgf executable `chmod +x tgf` and put it somewhere in your PATH.
 
 or install it through command line:
 
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.12/tgf_darwin_x64 -o /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.12.0/tgf_1.12.0_macOS_64-bit.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.12/tgf_linux_x64 -o /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.12.0/tgf_1.12.0_linux_64-bit.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.12/tgf_x64.exe -OutFile tgf.exe
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.12.0/tgf_1.12.0_windows_64-bit.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -106,7 +107,7 @@ Note: *The key names are not case sensitive*
 > tgf
 usage: tgf [<flags>]
 
-tgf v1.12, a docker frontend for terragrunt. Any parameter after -- will be directly sent to the command identified by entrypoint.
+tgf v1.12.0, a docker frontend for terragrunt. Any parameter after -- will be directly sent to the command identified by entrypoint.
 
 Flags:
   -h, --help                   Show context-sensitive help (also try --help-long and --help-man).
@@ -126,7 +127,7 @@ Example:
 
 ```bash
 > tgf --version
-v1.12
+v1.12.0
 ```
 
 Returns the current version of the tgf tool
@@ -231,3 +232,10 @@ Starts a `powershell` in the current working directory.
 
 Invokes `my_command` in your own docker image. As you can see, you can do whatever you need to with `tgf`. It is not restricted to only the pre-packaged
 Docker images, you can use it to run any program in any Docker images. Your imagination is your limit.
+
+## Development
+
+Build are automatically launched on tagging.
+
+Tags with format 0.00 automatically launch a Docker images build that are available through Docker Hub.
+Tags with format v0.00 automatically launch a new release on Github for the TGF executable.
