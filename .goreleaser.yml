@@ -12,8 +12,3 @@ builds:
 # Archive customization
 archive:
   format: tar.gz
-  replacements:
-    amd64: 64-bit
-    darwin: macOS
-    linux: Tux
-  
