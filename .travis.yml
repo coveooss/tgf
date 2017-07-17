@@ -1,0 +1,17 @@
+language: go
+go:
+- 1.8.x
+
+sudo: false
+
+install:
+- go get ./...
+
+script:
+- make test
+
+after_success:
+  - test ${TRAVIS_TAG:0:1} = v && curl -sL https://git.io/goreleaser | bash
+
+notifications:
+  email: false

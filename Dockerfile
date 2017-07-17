@@ -1,7 +1,7 @@
 FROM alpine:latest
 
 ARG TERRAFORM_VERSION=0.9.11
-ARG TERRAFORM_QUANTUM=0.3.2
+ARG TERRAFORM_QUANTUM=0.3.3
 ARG TERRAGRUNT_VERSION=0.12.24.03
 ARG GOTEMPLATE_VERSION=1.01
 ARG TFLINT_VERSION=0.3.6
@@ -9,7 +9,7 @@ ARG TFLINT_VERSION=0.3.6
 LABEL vendor="Coveo"
 LABEL maintainer "jgiroux@coveo.com"
 
-RUN apk update && apk add openssl ca-certificates
+RUN apk update && apk add openssl ca-certificates libc6-compat
 
 RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip -O terraform.zip && unzip terraform.zip && mv terraform /usr/local/bin && rm terraform.zip
 RUN wget https://github.com/coveo/terraform-provider-quantum/releases/download/v${TERRAFORM_QUANTUM}/terraform-provider-quantum_linux_x64 -O /usr/local/bin/terraform-provider-quantum && chmod +x /usr/local/bin/terraform-provider-quantum

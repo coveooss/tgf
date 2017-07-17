@@ -1,10 +1,17 @@
+SOURCES = $(wildcard **/*.go)
+
 install:
 	go install
 
-deploy:
-	GOOS=linux go build -o .pkg/tgf_linux
-	GOOS=darwin go build -o .pkg/tgf_darwin
-	GOOS=windows go build -o .pkg/tgf.exe
+.PHONY: test
+test:
+	go test ./...
+
+tgf: $(SOURCES)
+	go build ./...
+
+.PHONY: build
+build: terraform-provider-quantum
 
 docker:
 	docker build -f Dockerfile -t coveo/tgf .

@@ -1,0 +1,25 @@
+# Build customization
+builds:
+  - binary: tgf
+    goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - 386
+    ignore:
+      - goos: darwin
+        goarch: 386
+
+# Archive customization
+archive:
+  format: zip
+
+  replacements:
+    amd64: 64-bit
+    386: 32-bit
+    darwin: macOS
+
+  files:
+    - nothing.*

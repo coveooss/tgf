@@ -9,6 +9,9 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
+// Version is initialized at build time through -ldflags "-X main.Version=<version number>"
+var version = "master"
+
 func main() {
 	// Handle eventual panic message
 	defer func() {
@@ -19,11 +22,14 @@ func main() {
 	}()
 
 	var (
-		app        = NewApplication(kingpin.New(os.Args[0], "A docker frontend for terragrunt. Any parameter after -- will be directly sent to the command identified by entrypoint."))
-		entryPoint = app.Argument("entrypoint", "Override the entry point for docker whish is terragrunt by default", 'e').Default("terragrunt").String()
-		image      = app.Argument("image", "Use the specified image instead of the default one", 'i').String()
-		tag        = app.Argument("tag", "Use a different tag on docker image instead of the default one", 't').String()
-		refresh    = app.Switch("refresh", "Force a refresh of the docker image", 'r').Bool()
+		description       = fmt.Sprintf("tgf %s, a docker frontend for terragrunt. Any parameter after -- will be directly sent to the command identified by entrypoint.", version)
+		app               = NewApplication(kingpin.New(os.Args[0], description))
+		defaultEntryPoint = app.Argument("entrypoint", "Override the entry point for docker (default = terragrunt)", 'e').String()
+		image             = app.Argument("image", "Use the specified image instead of the default one", 'i').String()
+		debug             = app.Argument("debug", "Print the docker command issued", 'd').Bool()
+		tag               = app.Argument("tag", "Use a different tag on docker image instead of the default one", 't').String()
+		refresh           = app.Switch("refresh", "Force a refresh of the docker image", 'r').Bool()
+		getVersion        = app.Switch("version", "Get the current version of tgf", 'v').Bool()
 	)
 	app.Author("Coveo")
 	kingpin.CommandLine = app.Application
@@ -32,10 +38,18 @@ func main() {
 	managed, unmanaged := app.SplitManaged()
 	Must(app.Parse(managed))
 
-	config := getDefaultValues()
+	if *getVersion {
+		fmt.Println(version)
+		os.Exit(0)
+	}
 
-	if *image != "" {
-		config.Image = *image
+	config := tgfConfig{}
+	config.SetValue(dockerImage, *image)
+	config.SetValue(entryPoint, *defaultEntryPoint)
+	config.SetDefaultValues(*refresh)
+
+	if *debug {
+		config.SetValue(dockerDebug, "yes")
 	}
 
 	if *tag != "" {
@@ -49,5 +63,9 @@ func main() {
 
 	os.Setenv("TERRAGRUNT_CACHE", filepath.Join("/local", os.TempDir(), "tgf-cache"))
 
-	callDocker(config.Image, config.LogLevel, *entryPoint, unmanaged...)
+	if config.RecommendedMinimalVersion != "" && version < config.RecommendedMinimalVersion {
+		fmt.Printf("Your version of tgf is outdated, you have %s. The recommended minimal version is %s\n\n", version, config.RecommendedMinimalVersion)
+	}
+
+	callDocker(config, unmanaged...)
 }
