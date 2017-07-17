@@ -11,7 +11,7 @@ script:
 - make test
 
 after_success:
-  - [[ $TRAVIS_TAG == v[0-9]* ]] && curl -sL https://git.io/goreleaser | bash
+  - test ${TRAVIS_TAG:0:1} = v && curl -sL https://git.io/goreleaser | bash
 
 notifications:
   email: false
