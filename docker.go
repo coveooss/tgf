@@ -3,25 +3,26 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/gruntwork-io/terragrunt/util"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/gruntwork-io/terragrunt/util"
 )
 
-func callDocker(image, logLevel, entryPoint string, args ...string) {
-	command := append([]string{entryPoint}, args...)
+func callDocker(config tgfConfig, args ...string) {
+	command := append([]string{config.EntryPoint}, args...)
 
 	// Change the default log level for terragrunt
 	const logLevelArg = "--terragrunt-logging-level"
-	if !util.ListContainsElement(command, logLevelArg) && entryPoint == "terragrunt" {
+	if !util.ListContainsElement(command, logLevelArg) && config.EntryPoint == "terragrunt" {
 		// The log level option should not be supplied if there is no actual command
 		for _, arg := range args {
 			if !strings.HasPrefix(arg, "-") {
-				command = append(command, []string{logLevelArg, logLevel}...)
+				command = append(command, []string{logLevelArg, config.LogLevel}...)
 				break
 			}
 		}
@@ -41,7 +42,7 @@ func callDocker(image, logLevel, entryPoint string, args ...string) {
 		"--rm",
 	}
 	dockerArgs = append(dockerArgs, getEnviron()...)
-	dockerArgs = append(dockerArgs, image)
+	dockerArgs = append(dockerArgs, config.Image)
 	dockerArgs = append(dockerArgs, command...)
 
 	dockerCmd := exec.Command("docker", dockerArgs...)
