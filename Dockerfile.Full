@@ -7,6 +7,7 @@ ARG GOTEMPLATE_VERSION=1.01
 ARG TFLINT_VERSION=0.3.6
 
 ARG DEBIAN_FRONTEND=noninteractive
+ARG EXE_FOLDER=/usr/local/bin
 
 LABEL vendor="Coveo"
 LABEL maintainer "jgiroux@coveo.com"
@@ -46,11 +47,11 @@ RUN pip install awscli
 RUN powershell -c Install-Package AWSPowerShell.NetCore -Force > /dev/null
 
 # Installiing terraform and terragrunt
-RUN curl -sL https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip -o terraform.zip && unzip terraform.zip && mv terraform /usr/local/bin && rm terraform.zip
-RUN curl -sL https://github.com/coveo/terraform-provider-quantum/releases/download/v${TERRAFORM_QUANTUM}/terraform-provider-quantum_linux_x64 -o /usr/local/bin/terraform-provider-quantum && chmod +x /usr/local/bin/terraform-provider-quantum
-RUN curl -sL https://github.com/coveo/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_amd64 -o /usr/bin/terragrunt && chmod +x /usr/bin/terragrunt
-RUN curl -sL https://github.com/coveo/gotemplate/releases/download/v${GOTEMPLATE_VERSION}/gotemplate_linux -o /usr/bin/gotemplate && chmod +x /usr/bin/gotemplate
-RUN curl -sL https://github.com/wata727/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip  -o tflint.zip && unzip tflint.zip && mv tflint /usr/local/bin && rm tflint.zip
+RUN curl -sL https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip -o terraform.zip && unzip terraform.zip && mv terraform ${EXE_FOLDER} && rm terraform.zip
+RUN curl -sL https://github.com/coveo/terraform-provider-quantum/releases/download/v${TERRAFORM_QUANTUM}/terraform-provider-quantum_linux_x64 -o ${EXE_FOLDER}/terraform-provider-quantum && chmod +x ${EXE_FOLDER}/terraform-provider-quantum
+RUN curl -sL https://github.com/coveo/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_amd64 -o ${EXE_FOLDER}/terragrunt && chmod +x ${EXE_FOLDER}/terragrunt
+RUN curl -sL https://github.com/coveo/gotemplate/releases/download/v${GOTEMPLATE_VERSION}/gotemplate_linux -o ${EXE_FOLDER}/gotemplate && chmod +x ${EXE_FOLDER}/gotemplate
+RUN curl -sL https://github.com/wata727/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip  -o tflint.zip && unzip tflint.zip && mv tflint ${EXE_FOLDER} && rm tflint.zip
 
 # Install JQ
 RUN apt-get -y install jq
