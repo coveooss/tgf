@@ -17,8 +17,8 @@ archive:
   format: zip
 
   replacements:
-    amd64: 64-bit
-    386: 32-bit
+    amd64: 64-bits
+    386: 32-bits
     darwin: macOS
 
   files:
