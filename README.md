@@ -218,7 +218,7 @@ Invoke `AWS CLI` as entry point and list all s3 buckets
 > tgf -e fish
 ```
 
-Invoke `AWS CLI` as entry point and list all s3 buckets
+Start a shell `fish` in the current folder
 
 ```bash
 > tgf -t full -e powershell
