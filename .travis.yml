@@ -2,16 +2,34 @@ language: go
 go:
 - 1.8.x
 
-sudo: false
+sudo: required
+
+services:
+- docker
+
+before_install:
+- if [ ${TRAVIS_TAG::6} = image- ];
+  then
+    docker build -f Dockerfile -t coveo/tgf:${TRAVIS_TAG:6} . && docker tag coveo/tgf:${TRAVIS_TAG:6} coveo/tgf;
+    docker build -f Dockerfile.Full -t coveo/tgf.full:${TRAVIS_TAG:6} && docker tag coveo/tgf.full:${TRAVIS_TAG:6} coveo/tgf.full;
+    docker build -f Dockerfile.Base -t coveo/tgf.base:${TRAVIS_TAG:6} && docker tag coveo/tgf.base:${TRAVIS_TAG:6} coveo/tgf.base;
+  fi
 
 install:
-- go get ./...
+- test ${TRAVIS_TAG:0:1} = v && go get ./...
 
 script:
-- make test
+- test ${TRAVIS_TAG:0:1} = v && make test
 
 after_success:
-  - test ${TRAVIS_TAG:0:1} = v && curl -sL https://git.io/goreleaser | bash
+- test ${TRAVIS_TAG:0:1} = v && curl -sL https://git.io/goreleaser | bash
+- if [ ${TRAVIS_TAG::6} = image- ];
+  then
+    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
+    docker push coveo/tgf:${TRAVIS_TAG:6} && docker push coveo/tgf;
+    docker push coveo/tgf.full:${TRAVIS_TAG:6} && docker push coveo/tgf.full;
+    docker push coveo/tgf.base:${TRAVIS_TAG:6} && docker push coveo/tgf.base;
+  fi
 
 notifications:
   email: false
