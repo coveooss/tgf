@@ -11,18 +11,27 @@ before_install:
 - if [ ${TRAVIS_TAG::6} = image- ];
   then
     docker build -f Dockerfile -t coveo/tgf:${TRAVIS_TAG:6} . && docker tag coveo/tgf:${TRAVIS_TAG:6} coveo/tgf;
-    docker build -f Dockerfile.Full -t coveo/tgf.full:${TRAVIS_TAG:6} && docker tag coveo/tgf.full:${TRAVIS_TAG:6} coveo/tgf.full;
-    docker build -f Dockerfile.Base -t coveo/tgf.base:${TRAVIS_TAG:6} && docker tag coveo/tgf.base:${TRAVIS_TAG:6} coveo/tgf.base;
+    docker build -f Dockerfile.Full -t coveo/tgf.full:${TRAVIS_TAG:6} . && docker tag coveo/tgf.full:${TRAVIS_TAG:6} coveo/tgf.full;
+    docker build -f Dockerfile.Base -t coveo/tgf.base:${TRAVIS_TAG:6} . && docker tag coveo/tgf.base:${TRAVIS_TAG:6} coveo/tgf.base;
   fi
 
 install:
-- test ${TRAVIS_TAG:0:1} = v && go get ./...
+- if [ ${TRAVIS_TAG::1} = v ];
+  then
+    go get ./...;
+  fi
 
 script:
-- test ${TRAVIS_TAG:0:1} = v && make test
+- if [ ${TRAVIS_TAG::1} = v ];
+  then
+    make test;
+  fi
 
 after_success:
-- test ${TRAVIS_TAG:0:1} = v && curl -sL https://git.io/goreleaser | bash
+- if [ ${TRAVIS_TAG::1} = v ];
+  then
+    curl -sL https://git.io/goreleaser | bash;
+  fi
 - if [ ${TRAVIS_TAG::6} = image- ];
   then
     docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
