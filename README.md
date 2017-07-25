@@ -97,7 +97,8 @@ Key | Description | Default value
 | docker-debug | Tell tgf to display the detailed Docker command prior to execute it | 0
 | logging-level | Terragrunt logging level (only apply to Terragrunt entry point).<br>*Critical (0), Error (1), Warning (2), Notice (3), Info (4), Debug (5)* | Notice
 | entry-point | The program that will be automatically launched when the docker starts | terragrunt
-| tgf-recommended-version | The minimal tgf version recommended in your context | *no default*
+| tgf-recommended-version | The minimal tgf version recommended in your context  (should not be placed in `.tgf.config file`) | *no default*
+| recommended-image | The tgf image recommended in your context (should not be placed in `.tgf.config file`) | *no default*
 
 Note: *The key names are not case sensitive*
 
