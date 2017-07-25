@@ -13,7 +13,7 @@ Table of content:
 
 ## Description
 
-`TGF` allows is a small utility used to launch a Docker image and automatically map the current folder, your HOME folder and your current environment
+`TGF` is a small utility used to launch a Docker image and automatically map the current folder, your HOME folder and your current environment
 variables to the underlying container.
 
 By default, TGF is used as a frontend for [terragrunt](https://github.com/gruntwork-io/terragrunt), but it could also be used to run different endpoints.
