@@ -17,14 +17,15 @@ import (
 )
 
 const (
-	parameterFolder = "/default/tgf"
-	configFile      = ".tgf.config"
-	dockerImage     = "docker-image"
-	dockerRefresh   = "docker-refresh"
-	dockerDebug     = "docker-debug"
-	loggingLevel    = "logging-level"
-	entryPoint      = "entry-point"
-	tgfVersion      = "tgf-recommended-version"
+	parameterFolder  = "/default/tgf"
+	configFile       = ".tgf.config"
+	dockerImage      = "docker-image"
+	dockerRefresh    = "docker-refresh"
+	dockerDebug      = "docker-debug"
+	loggingLevel     = "logging-level"
+	entryPoint       = "entry-point"
+	tgfVersion       = "tgf-recommended-version"
+	recommendedImage = "recommended-image"
 )
 
 type tgfConfig struct {
@@ -33,6 +34,7 @@ type tgfConfig struct {
 	EntryPoint                string
 	Refresh                   time.Duration
 	RecommendedMinimalVersion string
+	RecommendedImage          string
 	Debug                     string
 }
 
@@ -66,7 +68,8 @@ func (config *tgfConfig) SetDefaultValues(refresh bool) {
 		case *errors.Error:
 			if err.Err == credentials.ErrNoValidProvidersFoundInChain {
 				// There is no AWS configuration, so we disable the check to accelerate further calls
-				fmt.Fprintln(os.Stderr, "No AWS Configuration, Parameter Store will be disabled (use -r to re-enable it)\n")
+				fmt.Fprintln(os.Stderr, "No AWS Configuration, Parameter Store will be disabled (use -r to re-enable it)")
+				fmt.Fprintln(os.Stderr)
 				touchImageRefresh(awsDisabled)
 			}
 		}
@@ -108,6 +111,10 @@ func (config *tgfConfig) SetValue(key, value string) {
 	case tgfVersion:
 		if config.RecommendedMinimalVersion == "" {
 			config.RecommendedMinimalVersion = value
+		}
+	case recommendedImage:
+		if config.RecommendedImage == "" {
+			config.RecommendedImage = value
 		}
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown parameter %s = %s\n", key, value)

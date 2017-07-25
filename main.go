@@ -64,7 +64,11 @@ func main() {
 	os.Setenv("TERRAGRUNT_CACHE", filepath.Join("/local", os.TempDir(), "tgf-cache"))
 
 	if config.RecommendedMinimalVersion != "" && version < config.RecommendedMinimalVersion {
-		fmt.Printf("Your version of tgf is outdated, you have %s. The recommended minimal version is %s\n\n", version, config.RecommendedMinimalVersion)
+		fmt.Fprintf(os.Stderr, "Your version of tgf is outdated, you have %s. The recommended minimal version is %s\n\n", version, config.RecommendedMinimalVersion)
+	}
+
+	if config.RecommendedImage != "" && config.Image != config.RecommendedImage && image == nil && tag == nil {
+		fmt.Fprintf(os.Stderr, "A new version of tgf image is available, you use %s. The recommended image is %s\n\n", config.Image, config.RecommendedImage)
 	}
 
 	callDocker(config, unmanaged...)
