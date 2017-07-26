@@ -38,19 +38,19 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.12.2/tgf_1.12.2_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.13.0/tgf_1.13.0_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.12.2/tgf_1.12.2_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.13.0/tgf_1.13.0_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.12.2/tgf_1.12.2_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.13.0/tgf_1.13.0_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -108,16 +108,19 @@ Note: *The key names are not case sensitive*
 > tgf
 usage: tgf [<flags>]
 
-tgf v1.12.2, a docker frontend for terragrunt. Any parameter after -- will be directly sent to the command identified by entrypoint.
+tgf v1.13.0, a docker frontend for terragrunt. Any parameter after -- will be directly sent to the command identified by entrypoint.
 
 Flags:
   -h, --help                   Show context-sensitive help (also try --help-long and --help-man).
-  -e, --entrypoint=ENTRYPOINT  Override the entry point for docker whish is terragrunt by default
-  -i, --image=IMAGE            Use the specified image instead of the default one
+  -e, --entrypoint=terragrunt  Override the entry point for docker
+  -i, --image=coveo/tgf        Use the specified image instead of the default one
+  -t, --tag=latest             Use a different tag on docker image instead of the default one
+  -p, --profile=""             Set the AWS profile configuration to use
   -d, --debug                  Print the docker command issued
-  -t, --tag=TAG                Use a different tag on docker image instead of the default one
   -r, --refresh                Force a refresh of the docker image
   -v, --version                Get the current version of tgf
+  -l, --logging=<level>        Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5)
+      --no-home                Disable the mapping of the home directory
 ```
 
 If any of the tgf arguments conflicts with an argument of the desired entry point, you must place that argument after -- to ensure that they are
@@ -128,14 +131,14 @@ Example:
 
 ```bash
 > tgf --version
-v1.12.2
+v1.13.0
 ```
 
 Returns the current version of the tgf tool
 
 ```bash
 > tgf -- --version
-terragrunt version v0.12.24.01(Coveo)
+terragrunt version v0.12.24.10(Coveo)
 ```
 
 Returns the version of the default entry point (i.e. `Terragrunt`), the --version located after the -- instructs tgf to pass this argument

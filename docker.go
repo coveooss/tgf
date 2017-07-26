@@ -13,7 +13,7 @@ import (
 	"github.com/gruntwork-io/terragrunt/util"
 )
 
-func callDocker(config tgfConfig, args ...string) {
+func callDocker(config tgfConfig, mapHome bool, args ...string) {
 	command := append([]string{config.EntryPoint}, args...)
 
 	// Change the default log level for terragrunt
@@ -36,10 +36,14 @@ func callDocker(config tgfConfig, args ...string) {
 	dockerArgs := []string{
 		"run", "-it",
 		"-v", fmt.Sprintf("%v:/local", convertDrive(currentDrive)),
-		"-v", fmt.Sprintf("%v:%v", convertDrive(home), homeWithoutVolume),
-		"-e", fmt.Sprintf("HOME=%v", homeWithoutVolume),
 		"-w", util.JoinPath("/local", strings.TrimPrefix(cwd, filepath.VolumeName(cwd))),
 		"--rm",
+	}
+	if mapHome {
+		dockerArgs = append(dockerArgs, []string{
+			"-v", fmt.Sprintf("%v:%v", convertDrive(home), homeWithoutVolume),
+			"-e", fmt.Sprintf("HOME=%v", homeWithoutVolume),
+		}...)
 	}
 	dockerArgs = append(dockerArgs, getEnviron()...)
 	dockerArgs = append(dockerArgs, config.Image)
