@@ -19,7 +19,7 @@ RUN wget https://github.com/coveo/terraform-provider-quantum/releases/download/v
     unzip quantum.zip && mv terraform-provider-quantum ${EXE_FOLDER} && chmod +x ${EXE_FOLDER}/terraform-provider-quantum && rm quantum.zip
 RUN wget https://github.com/coveo/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_${TERRAGRUNT_VERSION}_linux_64-bits.zip -O terragrunt.zip && \
     unzip terragrunt.zip && mv terragrunt ${EXE_FOLDER} && chmod +x ${EXE_FOLDER}/terragrunt && rm terragrunt.zip
-RUN wget https://github.com/coveo/gotemplate/releases/download/v${GOTEMPLATE_VERSION}/_${GOTEMPLATE_VERSION}_linux_64-bits.zip -O gotemplate.zip && \
+RUN wget https://github.com/coveo/gotemplate/releases/download/v${GOTEMPLATE_VERSION}/gotemplate_${GOTEMPLATE_VERSION}_linux_64-bits.zip -O gotemplate.zip && \
     unzip gotemplate.zip && mv gotemplate ${EXE_FOLDER} && chmod +x ${EXE_FOLDER}/gotemplate && rm gotemplate.zip
 RUN wget https://github.com/wata727/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip -O tflint.zip && \
     unzip tflint.zip && mv tflint ${EXE_FOLDER} && rm tflint.zip
