@@ -63,5 +63,5 @@ RUN curl -sL https://github.com/kvz/json2hcl/releases/download/v${JSON2HCL_VERSI
 RUN apt-get -y install jq
 
 # Install terraforming
-RUN apt-get -y install ruby \
+RUN apt-get -y install ruby && \
     gem install terraforming

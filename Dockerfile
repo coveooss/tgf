@@ -38,5 +38,5 @@ RUN apk add py2-pip python3 && \
 RUN apk add jq
 
 # Install terraforming
-RUN apk add ruby ruby-rdoc ruby-irb \
+RUN apk add ruby ruby-rdoc ruby-irb && \
     gem install terraforming
