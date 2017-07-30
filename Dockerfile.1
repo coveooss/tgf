@@ -1,0 +1,31 @@
+FROM coveo/tgf:base
+
+ARG EXE_FOLDER=/usr/local/bin
+ARG EXT=_linux_64-bits.zip
+
+LABEL vendor="Coveo"
+LABEL maintainer "jgiroux@coveo.com"
+
+# Install Shells
+RUN apk add bash zsh fish
+
+# Installing the AWS cli
+RUN apk add py2-pip python3 && pip install --upgrade pip && pip install awscli
+
+# Install JQ
+RUN apk add jq
+
+# Install terraforming
+RUN apk add ruby ruby-rdoc ruby-irb && gem install terraforming
+
+# Update version here (do not move at the beginning of the file since it would slow down the docker build)
+ARG TERRAFORM_QUANTUM=0.3.5
+ARG TFLINT_VERSION=0.3.6
+ARG JSON2HCL_VERSION=0.0.6
+
+RUN curl -sLo_ https://github.com/wata727/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip && \
+    unzip -p _ > ${EXE_FOLDER}/tflint && chmod +x ${EXE_FOLDER}/tflint
+RUN curl -sLo_ https://github.com/coveo/terraform-provider-quantum/releases/download/v${TERRAFORM_QUANTUM}/terraform-provider-quantum_${TERRAFORM_QUANTUM}${EXT} && \
+    unzip -p _ > ${EXE_FOLDER}/terraform-provider-quantum && chmod +x ${EXE_FOLDER}/terraform-provider-quantum
+RUN curl -sLo_ https://github.com/kvz/json2hcl/releases/download/v${JSON2HCL_VERSION}/json2hcl_v${JSON2HCL_VERSION}_linux_amd64 && \
+    mv _ ${EXE_FOLDER}/json2hcl && chmod +x ${EXE_FOLDER}/json2hcl

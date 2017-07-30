@@ -24,12 +24,7 @@ script:
   then
     make test;
   fi
-- if [ ${TRAVIS_TAG::6} = image- ];
-  then
-    docker build -f Dockerfile      -t coveo/tgf:${TRAVIS_TAG:6}      . && docker push coveo/tgf:${TRAVIS_TAG:6}      && docker tag coveo/tgf:${TRAVIS_TAG:6}      coveo/tgf      && docker push coveo/tgf;
-    docker build -f Dockerfile.Full -t coveo/tgf:${TRAVIS_TAG:6}.full . && docker push coveo/tgf:${TRAVIS_TAG:6}.full && docker tag coveo/tgf:${TRAVIS_TAG:6}.full coveo/tgf:full && docker push coveo/tgf:full;
-    docker build -f Dockerfile.Base -t coveo/tgf:${TRAVIS_TAG:6}.base . && docker push coveo/tgf:${TRAVIS_TAG:6}.base && docker tag coveo/tgf:${TRAVIS_TAG:6}.base coveo/tgf:base && docker push coveo/tgf:base;
-  fi
+- bash make_dockers.sh
 
 after_success:
 - if [ ${TRAVIS_TAG::1} = v ];

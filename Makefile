@@ -14,9 +14,4 @@ tgf: $(SOURCES)
 build: terraform-provider-quantum
 
 docker:
-	docker build -f Dockerfile -t coveo/tgf .
-
-all-dockers:
-	docker build -f Dockerfile -t coveo/tgf .
-	docker build -f Dockerfile.Base -t coveo/tgf.base .
-	docker build -f Dockerfile.Full -t coveo/tgf.full .
+	bash make_dockers.sh
