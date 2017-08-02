@@ -62,6 +62,9 @@ func (config *tgfConfig) SetDefaultValues(refresh bool) {
 
 	const awsDisabled = "AWSDisabled"
 	if !config.complete() && (getLastRefresh(awsDisabled).Equal(time.Time{}) || refresh) {
+		// If we need to read the parameter store, we must init the session first to ensure that
+		// the credentials are only initialized once (avoiding asking multiple type the MFA)
+		initSession("")
 		parameters, err := aws_helper.GetSSMParametersByPath(parameterFolder, "")
 
 		switch err := err.(type) {
