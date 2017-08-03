@@ -47,6 +47,10 @@ func main() {
 		os.Exit(0)
 	}
 
+	if *awsProfile != "" {
+		Must(aws_helper.InitAwsSession(*awsProfile))
+	}
+
 	config := tgfConfig{}
 	config.SetValue(dockerImage, *image)
 	config.SetValue(entryPoint, *defaultEntryPoint)
@@ -66,10 +70,6 @@ func main() {
 	}
 
 	os.Setenv("TERRAGRUNT_CACHE", filepath.Join("/local", os.TempDir(), "tgf-cache"))
-
-	if *awsProfile != "" {
-		Must(aws_helper.InitAwsSession(*awsProfile))
-	}
 
 	if *loggingLevel != "" {
 		config.LogLevel = *loggingLevel
