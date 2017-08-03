@@ -1,0 +1,145 @@
+hash: bdb7f1dc01058468d26789210886574913c8e40a85d4a59a133d7d8d12ad2c33
+updated: 2017-08-03T15:10:22.815395678-04:00
+imports:
+- name: github.com/alecthomas/template
+  version: a0175ee3bccc567396460bf5acd36800cb10c49c
+  subpackages:
+  - parse
+- name: github.com/alecthomas/units
+  version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
+- name: github.com/apparentlymart/go-cidr
+  version: 2bd8b58cf4275aeb086ade613de226773e29e853
+  subpackages:
+  - cidr
+- name: github.com/aws/aws-sdk-go
+  version: b33b08175d12b795daa7726c5577b39d06a2551c
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
+  - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
+  - aws/defaults
+  - aws/ec2metadata
+  - aws/endpoints
+  - aws/request
+  - aws/service/ssm
+  - aws/session
+  - aws/signer/v4
+  - internal/shareddefaults
+  - private/protocol
+  - private/protocol/json/jsonutil
+  - private/protocol/jsonrpc
+  - private/protocol/query
+  - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/restxml
+  - private/protocol/xml/xmlutil
+  - service/s3
+  - service/ssm
+  - service/sts
+- name: github.com/bgentry/go-netrc
+  version: 9fd32a8b3d3d3f9d43c341bfe098430e07609480
+  subpackages:
+  - netrc
+- name: github.com/blang/semver
+  version: 2ee87856327ba09384cabd113bc6b5d174e9ec0f
+- name: github.com/go-errors/errors
+  version: 8fa88b06e5974e97fbf9899a7f86a344bfd1f105
+- name: github.com/go-ini/ini
+  version: 3d73f4b845efdf9989fffd4b4e562727744a34ba
+- name: github.com/gruntwork-io/terragrunt
+  version: 7efbc9d4b50ddf5cb01ccd5b24849b73a1345705
+  repo: https://github.com/coveo/terragrunt.git
+  subpackages:
+  - aws_helper
+  - errors
+  - util
+- name: github.com/hashicorp/errwrap
+  version: 7554cd9344cec97297fa6649b055a8c98c2a1e55
+- name: github.com/hashicorp/go-cleanhttp
+  version: 3573b8b52aa7b37b9358d966a898feb387f62437
+- name: github.com/hashicorp/go-getter
+  version: 6aae8e4e2dee8131187c6a54b52664796e5a02b0
+  subpackages:
+  - helper/url
+- name: github.com/hashicorp/go-multierror
+  version: 83588e72410abfbe4df460eeb6f30841ae47d4c4
+- name: github.com/hashicorp/go-uuid
+  version: 64130c7a86d732268a38cb04cfbaf0cc987fda98
+- name: github.com/hashicorp/go-version
+  version: 03c5bf6be031b6dd45afec16b1cf94fc8938bc77
+- name: github.com/hashicorp/hcl
+  version: 392dba7d905ed5d04a5794ba89f558b27e2ba1ca
+  subpackages:
+  - hcl/ast
+  - hcl/parser
+  - hcl/scanner
+  - hcl/strconv
+  - hcl/token
+  - json/parser
+  - json/scanner
+  - json/token
+- name: github.com/hashicorp/hil
+  version: fa9f258a92500514cc8e9c67020487709df92432
+  subpackages:
+  - ast
+  - parser
+  - scanner
+- name: github.com/hashicorp/terraform
+  version: 2041053ee9444fa8175a298093b55a89586a1823
+  subpackages:
+  - config
+  - config/module
+  - dag
+  - helper/hilmapstructure
+  - plugin/discovery
+- name: github.com/jmespath/go-jmespath
+  version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
+- name: github.com/mitchellh/copystructure
+  version: d23ffcb85de31694d6ccaa23ccb4a03e55c1303f
+- name: github.com/mitchellh/go-homedir
+  version: b8bc1bf767474819792c23f32d8286a45736f1c6
+- name: github.com/mitchellh/go-testing-interface
+  version: 9a441910b16872f7b8283682619b3761a9aa2222
+- name: github.com/mitchellh/hashstructure
+  version: 2bca23e0e452137f789efbc8610126fd8b94f73b
+- name: github.com/mitchellh/mapstructure
+  version: d0303fe809921458f417bcf828397a65db30a7e4
+- name: github.com/mitchellh/reflectwalk
+  version: 63d60e9d0dbc60cf9164e6510889b0db6683d98c
+- name: github.com/op/go-logging
+  version: 970db520ece77730c7e4724c61121037378659d9
+- name: github.com/ulikunitz/xz
+  version: 0c6b41e72360850ca4f98dc341fd999726ea007f
+  subpackages:
+  - internal/hash
+  - internal/xlog
+  - lzma
+- name: golang.org/x/crypto
+  version: 418008d6189cfc4ba88f220353d087d3ddfd7a31
+  subpackages:
+  - bcrypt
+  - blowfish
+  - cast5
+  - openpgp
+  - openpgp/armor
+  - openpgp/elgamal
+  - openpgp/errors
+  - openpgp/packet
+  - openpgp/s2k
+- name: golang.org/x/net
+  version: f5079bd7f6f74e23c4d65efa0f4ce14cbd6a3c0f
+  subpackages:
+  - html
+  - html/atom
+- name: gopkg.in/alecthomas/kingpin.v2
+  version: 1087e65c9441605df944fb12c33f0fe7072d18ca
+- name: gopkg.in/yaml.v2
+  version: 25c4ec802a7d637f88d584ab26798e94ad14c13b
+testImports: []

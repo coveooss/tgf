@@ -12,8 +12,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"gopkg.in/yaml.v2"
 
-	"github.com/coveo/terragrunt/aws_helper"
 	"github.com/go-errors/errors"
+	"github.com/gruntwork-io/terragrunt/aws_helper"
 	"github.com/hashicorp/hcl"
 )
 

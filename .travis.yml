@@ -16,17 +16,13 @@ before_install:
 install:
 - if [ ${TRAVIS_TAG::1} = v ];
   then
-    go get ./...;
+    go get github.com/Masterminds/glide &&
+    go install github.com/Masterminds/glide &&
+    glide install;
   fi
 
 script:
-- if [ ${TRAVIS_TAG::1} = v ];
-  then
-    make test;
-  fi
 - bash make_dockers.sh
-
-after_success:
 - if [ ${TRAVIS_TAG::1} = v ];
   then
     curl -sL https://git.io/goreleaser | bash;

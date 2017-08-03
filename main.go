@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/coveo/terragrunt/aws_helper"
+	"github.com/gruntwork-io/terragrunt/aws_helper"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 

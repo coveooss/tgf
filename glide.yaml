@@ -1,0 +1,18 @@
+package: github.com/coveo/tgf
+owners:
+- name: Coveo
+  homepage: http://www.coveo.com
+import:
+- package: github.com/gruntwork-io/terragrunt
+  repo: https://github.com/coveo/terragrunt.git
+  version: v0.12.25.04
+- package: github.com/go-errors/errors
+- package: github.com/aws/aws-sdk-go
+  version: ^1.10.20
+  subpackages:
+  - aws
+  - aws/defaults
+  - aws/session
+  - aws/credentials
+  - aws/service/ssm
+- package: github.com/op/go-logging
