@@ -38,19 +38,19 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.13.0/tgf_1.13.0_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.13.1/tgf_1.13.1_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.13.0/tgf_1.13.0_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.13.1/tgf_1.13.1_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.13.0/tgf_1.13.0_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.13.1/tgf_1.13.1_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -108,7 +108,7 @@ Note: *The key names are not case sensitive*
 > tgf
 usage: tgf [<flags>]
 
-tgf v1.13.0, a docker frontend for terragrunt. Any parameter after -- will be directly sent to the command identified by entrypoint.
+tgf v1.13.1, a docker frontend for terragrunt. Any parameter after -- will be directly sent to the command identified by entrypoint.
 
 Flags:
   -h, --help                   Show context-sensitive help (also try --help-long and --help-man).
@@ -131,7 +131,7 @@ Example:
 
 ```bash
 > tgf --version
-v1.13.0
+v1.13.1
 ```
 
 Returns the current version of the tgf tool
