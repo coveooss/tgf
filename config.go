@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/service/ssm"
 	"gopkg.in/yaml.v2"
 
 	"github.com/coveo/terragrunt/aws_helper"
@@ -64,8 +65,7 @@ func (config *tgfConfig) SetDefaultValues(refresh bool) {
 	if !config.complete() && (getLastRefresh(awsDisabled).Equal(time.Time{}) || refresh) {
 		// If we need to read the parameter store, we must init the session first to ensure that
 		// the credentials are only initialized once (avoiding asking multiple type the MFA)
-		initSession("")
-		parameters, err := aws_helper.GetSSMParametersByPath(parameterFolder, "")
+		_, err := aws_helper.InitAwsSession("")
 
 		switch err := err.(type) {
 		case *errors.Error:
@@ -77,7 +77,7 @@ func (config *tgfConfig) SetDefaultValues(refresh bool) {
 			}
 		}
 
-		for _, parameter := range parameters {
+		for _, parameter := range Must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
 			config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
 		}
 	}

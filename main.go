@@ -68,7 +68,7 @@ func main() {
 	os.Setenv("TERRAGRUNT_CACHE", filepath.Join("/local", os.TempDir(), "tgf-cache"))
 
 	if *awsProfile != "" {
-		initSession(*awsProfile)
+		Must(aws_helper.InitAwsSession(*awsProfile))
 	}
 
 	if *loggingLevel != "" {
@@ -84,9 +84,4 @@ func main() {
 	}
 
 	callDocker(config, !*noHome, unmanaged...)
-}
-
-func initSession(profile string) {
-	aws_helper.InitAwsSession(profile)
-	os.Unsetenv("AWS_PROFILE")
 }
