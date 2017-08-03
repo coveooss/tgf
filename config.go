@@ -62,11 +62,9 @@ func (config *tgfConfig) SetDefaultValues(refresh bool) {
 	}
 
 	const awsDisabled = "AWSDisabled"
-	fmt.Println("Before Config = ", config)
 	if !config.complete() && (getLastRefresh(awsDisabled).Equal(time.Time{}) || refresh) {
 		// If we need to read the parameter store, we must init the session first to ensure that
 		// the credentials are only initialized once (avoiding asking multiple type the MFA)
-		fmt.Println("Trying to get from aws")
 		_, err := aws_helper.InitAwsSession("")
 
 		switch err := err.(type) {
@@ -80,18 +78,14 @@ func (config *tgfConfig) SetDefaultValues(refresh bool) {
 		}
 
 		for _, parameter := range Must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
-			fmt.Println("Setting", (*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
 			config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
 		}
-		fmt.Println("After Config = ", config)
-
 	}
 
 	config.SetValue(dockerImage, "coveo/tgf")
 	config.SetValue(dockerRefresh, "1h")
 	config.SetValue(loggingLevel, "notice")
 	config.SetValue(entryPoint, "terragrunt")
-	fmt.Println("Final Config = ", config)
 }
 
 // SetValue sets value of the key in the configuration only if it does not already have a value
