@@ -1,4 +1,4 @@
-FROM coveo/tgf
+FROM coveo/tgf:1.20-beta.1
 
 ARG EXE_FOLDER=/usr/local/bin
 ARG EXT=_linux_64-bits.zip
