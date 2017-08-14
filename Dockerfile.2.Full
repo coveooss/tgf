@@ -15,7 +15,7 @@ RUN apt-get update && \
     apt-get -y install python-software-properties
 
 # Install the basic command
-RUN apt-get -y install curl wget ksh zsh fish git unzip
+RUN apt-get -y install curl wget ksh zsh fish git unzip mysql-client
 
 # Install os-my-zsh
 RUN sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" || echo
