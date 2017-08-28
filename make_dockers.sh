@@ -16,5 +16,8 @@ do
     [[ $travis_tag == *-* ]] && unset latest
     
     docker build -f $df -t $version . && docker push $version &&
-    [ -n "$latest" ] && docker tag $version $latest && docker push $latest
+    if [ -n "$latest" ]
+    then 
+        docker tag $version $latest && docker push $latest
+    fi
 done
