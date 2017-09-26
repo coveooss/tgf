@@ -46,11 +46,12 @@ RUN apt-get -y install ruby && gem install terraforming
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
 ARG TERRAFORM_VERSION=0.10.6
-ARG TERRAFORM_QUANTUM=0.3.5
-ARG TERRAGRUNT_VERSION=0.12.25-coveo.2
+ARG TERRAFORM_QUANTUM=0.3.6
+ARG TERRAGRUNT_VERSION=0.12.25-coveo.3
 ARG GOTEMPLATE_VERSION=2.0.2
 ARG TFLINT_VERSION=0.3.6
 ARG JSON2HCL_VERSION=0.0.6
+ARG AWS_PROVIDER=0.1.4-coveo.3
 
 RUN curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
     unzip -p _ > ${EXE_FOLDER}/terraform  && chmod +x ${EXE_FOLDER}/terraform
@@ -64,3 +65,5 @@ RUN curl -sLo_ https://github.com/coveo/terraform-provider-quantum/releases/down
     unzip -p _ > ${EXE_FOLDER}/terraform-provider-quantum && chmod +x ${EXE_FOLDER}/terraform-provider-quantum
 RUN curl -sLo_ https://github.com/kvz/json2hcl/releases/download/v${JSON2HCL_VERSION}/json2hcl_v${JSON2HCL_VERSION}_linux_amd64 && \
     mv _ ${EXE_FOLDER}/json2hcl && chmod +x ${EXE_FOLDER}/json2hcl
+RUN curl -sLo_ https://github.com/coveo/terraform-provider-aws/releases/download/v${AWS_PROVIDER}/terraform-provider-aws_${AWS_PROVIDER}${EXT} && \
+    unzip -p _ > ${EXE_FOLDER}/terraform-provider-aws && chmod +x ${EXE_FOLDER}/terraform-provider-aws && rm _
