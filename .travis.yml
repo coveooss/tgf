@@ -21,7 +21,10 @@ install:
   fi
 
 script:
-- bash make_dockers.sh
+- if [ ${TRAVIS_TAG::6} = image- ];
+  then
+    bash make_dockers.sh;
+  fi
 - if [ ${TRAVIS_TAG::1} = v ];
   then
     curl -sL https://git.io/goreleaser | bash;
