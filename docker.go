@@ -13,7 +13,7 @@ import (
 	"github.com/gruntwork-io/terragrunt/util"
 )
 
-func callDocker(config tgfConfig, mapHome bool, args ...string) {
+func callDocker(config tgfConfig, mapHome bool, flushCache bool, args ...string) {
 	command := append([]string{config.EntryPoint}, args...)
 
 	// Change the default log level for terragrunt
@@ -28,7 +28,7 @@ func callDocker(config tgfConfig, mapHome bool, args ...string) {
 		}
 	}
 
-	if config.FlushCache != "" && config.EntryPoint == "terragrunt" {
+	if flushCache && config.EntryPoint == "terragrunt" {
 		command = append(command, "--terragrunt-source-update")
 	}
 

@@ -34,7 +34,7 @@ func main() {
 		getVersion        = app.Switch("version", "Get the current version of tgf", 'v').Bool()
 		loggingLevel      = app.Argument("logging", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5)", 'l').PlaceHolder("<level>").String()
 		noHome            = app.Switch("no-home", "Disable the mapping of the home directory").Bool()
-		flush             = app.Switch("flush-cache", "Pass --terragrunt-update-source to terragrunt to flush the cache", 'f').Bool()
+		flushCache        = app.Switch("flush-cache", "Pass --terragrunt-update-source to terragrunt to flush the cache", 'f').Bool()
 	)
 	app.Author("Coveo")
 	kingpin.CommandLine = app.Application
@@ -61,9 +61,6 @@ func main() {
 		config.SetValue(dockerDebug, "yes")
 	}
 
-	if *flush {
-		config.SetValue(flushCache, "yes")
-	}
 	if *tag != "" {
 		split := strings.Split(config.Image, ":")
 		config.Image = strings.Join([]string{split[0], *tag}, ":")
@@ -87,5 +84,5 @@ func main() {
 		fmt.Fprintf(os.Stderr, "A new version of tgf image is available, you use %s. The recommended image is %s\n\n", config.Image, config.RecommendedImage)
 	}
 
-	callDocker(config, !*noHome, unmanaged...)
+	callDocker(config, !*noHome, *flushCache, unmanaged...)
 }

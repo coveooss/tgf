@@ -27,7 +27,6 @@ const (
 	entryPoint       = "entry-point"
 	tgfVersion       = "tgf-recommended-version"
 	recommendedImage = "recommended-image"
-	flushCache       = "flush-cache"
 )
 
 type tgfConfig struct {
@@ -38,7 +37,6 @@ type tgfConfig struct {
 	RecommendedMinimalVersion string
 	RecommendedImage          string
 	Debug                     string
-	FlushCache                string
 }
 
 func (config *tgfConfig) complete() bool {
@@ -120,10 +118,6 @@ func (config *tgfConfig) SetValue(key, value string) {
 	case recommendedImage:
 		if config.RecommendedImage == "" {
 			config.RecommendedImage = value
-		}
-	case flushCache:
-		if config.FlushCache == "" {
-			config.FlushCache = value
 		}
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown parameter %s = %s\n", key, value)
