@@ -38,19 +38,19 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.13.2/tgf_1.13.2_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.13.3/tgf_1.13.3_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.13.2/tgf_1.13.2_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.13.3/tgf_1.13.3_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.13.2/tgf_1.13.2_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.13.3/tgf_1.13.3_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -108,7 +108,7 @@ Note: *The key names are not case sensitive*
 > tgf
 usage: tgf [<flags>]
 
-tgf v1.13.2, a docker frontend for terragrunt. Any parameter after -- will be directly sent to the command identified by entrypoint.
+tgf v1.13.3, a docker frontend for terragrunt. Any parameter after -- will be directly sent to the command identified by entrypoint.
 
 Flags:
   -h, --help                   Show context-sensitive help (also try --help-long and --help-man).
@@ -121,6 +121,7 @@ Flags:
   -v, --version                Get the current version of tgf
   -l, --logging=<level>        Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5)
       --no-home                Disable the mapping of the home directory
+  -f, --flush-cache            Pass --terragrunt-update-source to terragrunt to flush the cache
 ```
 
 If any of the tgf arguments conflicts with an argument of the desired entry point, you must place that argument after -- to ensure that they are
@@ -131,7 +132,7 @@ Example:
 
 ```bash
 > tgf --version
-v1.13.2
+v1.13.3
 ```
 
 Returns the current version of the tgf tool

@@ -28,6 +28,10 @@ func callDocker(config tgfConfig, mapHome bool, args ...string) {
 		}
 	}
 
+	if config.FlushCache != "" && config.EntryPoint == "terragrunt" {
+		command = append(command, "--terragrunt-source-update")
+	}
+
 	currentUser := Must(user.Current()).(*user.User)
 	home := filepath.ToSlash(currentUser.HomeDir)
 	homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
