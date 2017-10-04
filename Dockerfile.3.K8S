@@ -1,0 +1,27 @@
+FROM coveo/tgf:${TRAVIS_TAG}.aws
+
+ARG EXE_FOLDER=/usr/local/bin
+
+LABEL vendor="Coveo"
+LABEL maintainer "jgiroux@coveo.com"
+
+# Update version here (do not move at the beginning of the file since it would slow down the docker build)
+ARG KUBE_VERSION=1.7.7
+ARG KOPS_VERSION=1.7.0
+ARG HELM_VERSION=2.6.1
+
+# Install kubectl
+RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && \
+    chmod +x _ && mv _ ${EXE_FOLDER}/kubectl
+
+# Install kops
+RUN curl -sLo_ https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64 && \
+    chmod +x _ && mv _ ${EXE_FOLDER}/kops
+
+# Install helm
+RUN curl -s -L https://kubernetes-helm.storage.googleapis.com/helm-v${HELM_VERSION}-linux-amd64.tar.gz | tar xzv && \
+    chmod +x ./linux-amd64/helm && mv ./linux-amd64/helm ${EXE_FOLDER}/helm && \
+    mkdir -p $(helm home)/plugins && rm -rf ./linux-amd64
+
+# Install helm-template
+RUN helm plugin install https://github.com/technosophos/helm-template
