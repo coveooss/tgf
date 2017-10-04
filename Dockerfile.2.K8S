@@ -18,7 +18,8 @@ RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v${KUBE
 RUN curl -sLo_ https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64 && \
     chmod +x _ && mv _ ${EXE_FOLDER}/kops
 
-# Install helm
+# Install helm (git is also required by helm)
+RUN apk add git
 RUN curl -s -L https://kubernetes-helm.storage.googleapis.com/helm-v${HELM_VERSION}-linux-amd64.tar.gz | tar xzv && \
     chmod +x ./linux-amd64/helm && mv ./linux-amd64/helm ${EXE_FOLDER}/helm && \
     mkdir -p $(helm home)/plugins && rm -rf ./linux-amd64
