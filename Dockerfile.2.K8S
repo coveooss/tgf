@@ -6,9 +6,9 @@ LABEL vendor="Coveo"
 LABEL maintainer "jgiroux@coveo.com"
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
-ARG KUBE_VERSION=1.7.7
+ARG KUBE_VERSION=1.7.8
 ARG KOPS_VERSION=1.7.0
-ARG HELM_VERSION=2.6.1
+ARG HELM_VERSION=2.6.2
 
 # Install kubectl
 RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && \
@@ -26,3 +26,17 @@ RUN curl -s -L https://kubernetes-helm.storage.googleapis.com/helm-v${HELM_VERSI
 
 # Install helm-template
 RUN helm plugin install https://github.com/technosophos/helm-template
+
+# Instal previous and future versions of Kops    
+RUN curl -sLo_ https://github.com/kubernetes/kops/releases/download/1.6.2/kops-linux-amd64 && \
+    chmod +x _ && mv _ ${EXE_FOLDER}/kops16
+RUN ln ${EXE_FOLDER}/kops ${EXE_FOLDER}/kops17
+RUN curl -sLo_ https://github.com/kubernetes/kops/releases/download/1.8.0-alpha.1/kops-linux-amd64 && \
+    chmod +x _ && mv _ ${EXE_FOLDER}/kops18
+
+# Install previous and futre versions of Kubectl
+RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v1.6.11/bin/linux/amd64/kubectl && \
+    chmod +x _ && mv _ ${EXE_FOLDER}/kubectl16
+RUN ln ${EXE_FOLDER}/kubectl ${EXE_FOLDER}/kubectl17
+RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v1.8.0/bin/linux/amd64/kubectl && \
+    chmod +x _ && mv _ ${EXE_FOLDER}/kubectl18
