@@ -25,6 +25,7 @@ RUN curl -s -L https://kubernetes-helm.storage.googleapis.com/helm-v${HELM_VERSI
     mkdir -p $(helm home)/plugins && rm -rf ./linux-amd64
 
 # Install helm-template
+ENV HELM_HOME=/root/.helm
 RUN helm plugin install https://github.com/technosophos/helm-template
 
 # Instal previous and future versions of Kops    
