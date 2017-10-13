@@ -10,6 +10,9 @@ ARG KUBE_VERSION=1.7.8
 ARG KOPS_VERSION=1.7.0
 ARG HELM_VERSION=2.6.2
 
+# Install ssh (Required to perform port forwarding through bastion)
+RUN apk add openssh
+
 # Install kubectl
 RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && \
     chmod +x _ && mv _ ${EXE_FOLDER}/kubectl
@@ -28,7 +31,7 @@ RUN curl -s -L https://kubernetes-helm.storage.googleapis.com/helm-v${HELM_VERSI
 ENV HELM_HOME=/root/.helm
 RUN helm plugin install https://github.com/technosophos/helm-template
 
-# Instal previous and future versions of Kops    
+# Install previous and future versions of Kops    
 RUN curl -sLo_ https://github.com/kubernetes/kops/releases/download/1.6.2/kops-linux-amd64 && \
     chmod +x _ && mv _ ${EXE_FOLDER}/kops16
 RUN ln ${EXE_FOLDER}/kops ${EXE_FOLDER}/kops17
