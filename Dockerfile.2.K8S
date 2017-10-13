@@ -10,6 +10,9 @@ ARG KUBE_VERSION=1.7.8
 ARG KOPS_VERSION=1.7.0
 ARG HELM_VERSION=2.6.2
 
+# Install ssh (Required to perform port forwarding through bastion)
+RUN apk add openssh
+
 # Install kubectl
 RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && \
     chmod +x _ && mv _ ${EXE_FOLDER}/kubectl
@@ -41,6 +44,3 @@ RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v1.6.11
 RUN ln ${EXE_FOLDER}/kubectl ${EXE_FOLDER}/kubectl17
 RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v1.8.0/bin/linux/amd64/kubectl && \
     chmod +x _ && mv _ ${EXE_FOLDER}/kubectl18
-
-# Install ssh (Required to perform port forwarding through bastion)
-RUN apk add openssh
