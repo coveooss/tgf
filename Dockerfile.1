@@ -7,16 +7,16 @@ LABEL vendor="Coveo"
 LABEL maintainer "jgiroux@coveo.com"
 
 # Install Shells
-RUN apk add bash zsh fish
+RUN apk --no-cache add bash zsh fish
 
 # Installing the AWS cli
-RUN apk add py2-pip python3 && pip install --upgrade pip && pip install awscli
+RUN apk --no-cache add py2-pip python3 groff less && pip install --upgrade pip && pip install awscli
 
-# Install JQ
-RUN apk add jq
+# Install other tools
+RUN apk --no-cache add jq zip nano vim
 
 # Install terraforming
-RUN apk add ruby ruby-rdoc ruby-irb && gem install terraforming
+RUN apk --no-cache add ruby ruby-rdoc ruby-irb && gem install terraforming
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
 ARG TERRAFORM_QUANTUM=0.3.6

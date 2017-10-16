@@ -7,6 +7,8 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG EXE_FOLDER=/usr/local/bin
 ARG EXT=_linux_64-bits.zip
 
+RUN adduser tgf --gecos "" --disabled-password
+
 # Update apt-get
 RUN apt-get update && \
     apt-get -y install apt-utils && \
@@ -15,7 +17,7 @@ RUN apt-get update && \
     apt-get -y install python-software-properties
 
 # Install the basic command
-RUN apt-get -y install curl wget ksh zsh fish git unzip mysql-client
+RUN apt-get -y install curl wget ksh zsh fish git unzip mysql-client vim-tiny nano
 
 # Install os-my-zsh
 RUN sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" || echo
@@ -31,7 +33,7 @@ RUN add-apt-repository ppa:jonathonf/python-3.6
 RUN apt-get update && apt-get install -y python3.6 powershell
 
 # Installing the AWS cli
-RUN apt-get -y install python-pip && \
+RUN apt-get -y install python-pip groff && \
     pip install --upgrade pip && \
     pip install awscli
 
