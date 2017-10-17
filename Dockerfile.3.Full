@@ -53,7 +53,7 @@ ARG TERRAGRUNT_VERSION=0.12.25-coveo.4
 ARG GOTEMPLATE_VERSION=2.0.3
 ARG TFLINT_VERSION=0.3.6
 ARG JSON2HCL_VERSION=0.0.6
-ARG AWS_PROVIDER=1.0.0-coveo.0
+ARG AWS_PROVIDER=1.1.0-coveo.0
 
 RUN curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
     unzip -p _ > ${EXE_FOLDER}/terraform  && chmod +x ${EXE_FOLDER}/terraform
