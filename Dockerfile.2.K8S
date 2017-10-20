@@ -8,7 +8,7 @@ LABEL maintainer "jgiroux@coveo.com"
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
 ARG KUBE_VERSION=1.7.8
 ARG KOPS_VERSION=1.7.1
-ARG HELM_VERSION=2.6.2
+ARG HELM_VERSION=v2.7.0-rc1
 
 # Install ssh (Required to perform port forwarding through bastion)
 RUN apk --no-cache add openssh git
