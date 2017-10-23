@@ -16,7 +16,7 @@ RUN apk --no-cache add py2-pip python3 groff less && \
     pip3 install colorama
 
 # Install other tools
-RUN apk --no-cache add jq zip nano vim
+RUN apk --no-cache add jq zip nano vim git
 
 # Install terraforming
 RUN apk --no-cache add ruby ruby-rdoc ruby-irb && gem install terraforming
