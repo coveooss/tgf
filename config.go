@@ -18,25 +18,27 @@ import (
 )
 
 const (
-	parameterFolder  = "/default/tgf"
-	configFile       = ".tgf.config"
-	dockerImage      = "docker-image"
-	dockerRefresh    = "docker-refresh"
-	dockerDebug      = "docker-debug"
-	loggingLevel     = "logging-level"
-	entryPoint       = "entry-point"
-	tgfVersion       = "tgf-recommended-version"
-	recommendedImage = "recommended-image"
+	parameterFolder    = "/default/tgf"
+	configFile         = ".tgf.config"
+	dockerImage        = "docker-image"
+	dockerImageVersion = "docker-image-version"
+	dockerImageTag     = "docker-image-tag"
+	dockerRefresh      = "docker-refresh"
+	loggingLevel       = "logging-level"
+	entryPoint         = "entry-point"
+	tgfVersion         = "tgf-recommended-version"
+	recommendedImage   = "recommended-image"
 )
 
 type tgfConfig struct {
 	Image                     string
+	ImageVersion              string
+	ImageTag                  string
 	LogLevel                  string
 	EntryPoint                string
 	Refresh                   time.Duration
 	RecommendedMinimalVersion string
 	RecommendedImage          string
-	Debug                     string
 }
 
 func (config *tgfConfig) complete() bool {
@@ -95,13 +97,17 @@ func (config *tgfConfig) SetValue(key, value string) {
 		if config.Image == "" {
 			config.Image = value
 		}
+	case dockerImageVersion:
+		if config.ImageVersion == "" {
+			config.ImageVersion = value
+		}
+	case dockerImageTag:
+		if config.ImageTag == "" {
+			config.ImageTag = value
+		}
 	case dockerRefresh:
 		if config.Refresh == 0 {
 			config.Refresh = Must(time.ParseDuration(value)).(time.Duration)
-		}
-	case dockerDebug:
-		if config.Debug == "" {
-			config.Debug = value
 		}
 	case loggingLevel:
 		if config.LogLevel == "" {

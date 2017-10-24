@@ -33,8 +33,10 @@ func main() {
 		refresh           = app.Switch("refresh", "Force a refresh of the docker image", 'r').Bool()
 		getVersion        = app.Switch("version", "Get the current version of tgf", 'v').Bool()
 		loggingLevel      = app.Argument("logging", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5)", 'l').PlaceHolder("<level>").String()
+		flushCache        = app.Switch("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache", 'f').Bool()
 		noHome            = app.Switch("no-home", "Disable the mapping of the home directory").Bool()
-		flushCache        = app.Switch("flush-cache", "Pass --terragrunt-update-source to terragrunt to flush the cache", 'f').Bool()
+		getImageName      = app.Switch("get-image-name", "Just return the resulting image name").Bool()
+		dockerOptions     = app.Switch("docker-arg", "Supply extra argument to Docker").PlaceHolder("<opt>").Strings()
 	)
 	app.Author("Coveo")
 	kingpin.CommandLine = app.Application
@@ -57,13 +59,14 @@ func main() {
 	config.SetValue(entryPoint, *defaultEntryPoint)
 	config.SetDefaultValues(*refresh)
 
-	if *debug {
-		config.SetValue(dockerDebug, "yes")
-	}
-
 	if *tag != "" {
 		split := strings.Split(config.Image, ":")
 		config.Image = strings.Join([]string{split[0], *tag}, ":")
+	}
+
+	if *getImageName {
+		fmt.Println(config.Image)
+		os.Exit(0)
 	}
 
 	if !isVersionedImage(config.Image) && lastRefresh(config.Image) > config.Refresh || !checkImage(config.Image) || *refresh {
@@ -84,5 +87,5 @@ func main() {
 		fmt.Fprintf(os.Stderr, "A new version of tgf image is available, you use %s. The recommended image is %s\n\n", config.Image, config.RecommendedImage)
 	}
 
-	callDocker(config, !*noHome, *flushCache, unmanaged...)
+	callDocker(config, !*noHome, *flushCache, *debug, *dockerOptions, unmanaged...)
 }

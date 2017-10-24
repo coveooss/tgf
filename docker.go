@@ -13,7 +13,7 @@ import (
 	"github.com/gruntwork-io/terragrunt/util"
 )
 
-func callDocker(config tgfConfig, mapHome bool, flushCache bool, args ...string) {
+func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, dockerOptions []string, args ...string) {
 	command := append([]string{config.EntryPoint}, args...)
 
 	// Change the default log level for terragrunt
@@ -49,16 +49,29 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, args ...string)
 			"-e", fmt.Sprintf("HOME=%v", homeWithoutVolume),
 		}...)
 	}
+
+	os.Setenv("TGF_COMMAND", config.EntryPoint)
+	os.Setenv("TGF_VERSION", version)
+	image := strings.Split(config.Image, ":")
+	os.Setenv("TGF_IMAGE", image[0])
+	if len(image) > 1 {
+		os.Setenv("TGF_IMAGE_TAG", image[1])
+	} else {
+		os.Setenv("TGF_IMAGE_TAG", "latest")
+	}
+
+	for _, do := range dockerOptions {
+		dockerArgs = append(dockerArgs, strings.Split(do, " ")...)
+	}
 	dockerArgs = append(dockerArgs, getEnviron()...)
 	dockerArgs = append(dockerArgs, config.Image)
 	dockerArgs = append(dockerArgs, command...)
-
 	dockerCmd := exec.Command("docker", dockerArgs...)
 	dockerCmd.Stdin, dockerCmd.Stdout = os.Stdin, os.Stdout
 	var stderr bytes.Buffer
 	dockerCmd.Stderr = &stderr
 
-	if config.Debug != "" && config.Debug != "0" {
+	if debug {
 		fmt.Fprintf(os.Stderr, "%s\n\n", strings.Join(dockerCmd.Args, " "))
 	}
 
