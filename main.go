@@ -13,6 +13,19 @@ import (
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
 var version = "master"
 
+const description = `
+tgf %s, a Docker frontend for terragrunt.
+
+You can get the full documentation at https://github.com/coveo/tgf/blob/master/README.md and check for new version at https://github.com/coveo/tgf/releases.
+
+IMPORTANT:
+If you want to send parameter to the command within your docker and that argument is catched by tgf,
+you must send your parameter after --. Any parameter specified after -- will be sent directly to the command.
+
+Example:
+	tgf ls -- -al   # Avoid -l to be interpretated by tgf as --logging
+`
+
 func main() {
 	// Handle eventual panic message
 	defer func() {
@@ -23,7 +36,7 @@ func main() {
 	}()
 
 	var (
-		description       = fmt.Sprintf("tgf %s, a docker frontend for terragrunt. Any parameter after -- will be directly sent to the command identified by entrypoint.", version)
+		description       = fmt.Sprintf(description, version)
 		app               = NewApplication(kingpin.New(os.Args[0], description))
 		defaultEntryPoint = app.Argument("entrypoint", "Override the entry point for docker", 'e').PlaceHolder("terragrunt").String()
 		image             = app.Argument("image", "Use the specified image instead of the default one", 'i').PlaceHolder("coveo/tgf").String()
