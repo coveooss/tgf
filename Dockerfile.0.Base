@@ -11,8 +11,8 @@ RUN apk --no-cache add openssl ca-certificates libc6-compat curl
 RUN adduser -D tgf
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
-ARG TERRAFORM_VERSION=0.10.7
-ARG TERRAGRUNT_VERSION=0.12.26-coveo.2
+ARG TERRAFORM_VERSION=0.10.8
+ARG TERRAGRUNT_VERSION=0.12.26-coveo.3
 ARG GOTEMPLATE_VERSION=2.1.0
 
 RUN curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \

@@ -39,8 +39,8 @@ RUN curl -sLo_ https://github.com/kubernetes/kops/releases/download/1.8.0-alpha.
 
 # Install previous and futre versions of Kubectl
 ENV KUBECONFIG=~tgf/kube.config
-RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v1.6.11/bin/linux/amd64/kubectl && \
+RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v1.6.12/bin/linux/amd64/kubectl && \
     chmod +x _ && mv _ ${EXE_FOLDER}/kubectl16
 RUN ln ${EXE_FOLDER}/kubectl ${EXE_FOLDER}/kubectl17
-RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v1.8.1/bin/linux/amd64/kubectl && \
+RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v1.8.2/bin/linux/amd64/kubectl && \
     chmod +x _ && mv _ ${EXE_FOLDER}/kubectl18
