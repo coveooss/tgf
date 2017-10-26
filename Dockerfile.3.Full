@@ -26,12 +26,11 @@ RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - &
 # Install the last packages
 RUN apt-get update && \
     apt-get install -y powershell python3-pip python-pip groff && \
-    pip install --upgrade pip && \
-    pip install awscli && \
-    pip3 install colorama
+    pip install --upgrade pip && pip install awscli && \
+    pip3 install --upgrade pip && pip3 install colorama
 
 # Installing the AWS Powershell client
-RUN powershell -c Install-Package AWSPowerShell.NetCore -Force > /dev/null
+RUN pwsh -c Install-Package AWSPowerShell.NetCore -Force > /dev/null
 
 # Install terraforming
 RUN apt-get -y install ruby && gem install terraforming
