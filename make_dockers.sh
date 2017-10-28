@@ -11,8 +11,9 @@ do
     echo
     printf '%40s\n' | tr ' ' -
     printf "Processing file $df\n"
-    tag=${df:12}
+    tag=${df:13}
     tag=${tag,,}
+    [ -z ${tag} ] || tag=-${tag}
     travis_tag=${TRAVIS_TAG:6}
     version=coveo/tgf:${travis_tag}${tag}
     latest=${tag:1}
