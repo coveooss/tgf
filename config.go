@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"gopkg.in/yaml.v2"
 
-	"github.com/go-errors/errors"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
 	"github.com/hashicorp/hcl"
 )
@@ -46,7 +45,7 @@ func (config *tgfConfig) complete() bool {
 }
 
 // SetDefaultValues sets the uninitialized values from the config files and the parameter store
-func (config *tgfConfig) SetDefaultValues(refresh bool) {
+func (config *tgfConfig) SetDefaultValues() {
 	for _, configFile := range findConfigFiles(Must(os.Getwd()).(string)) {
 		var result map[string]string
 		content := Must(ioutil.ReadFile(configFile)).([]byte)
@@ -63,24 +62,15 @@ func (config *tgfConfig) SetDefaultValues(refresh bool) {
 		}
 	}
 
-	const awsDisabled = "AWSDisabled"
-	if !config.complete() && (getLastRefresh(awsDisabled).Equal(time.Time{}) || refresh) {
+	if !config.complete() && awsConfigExist() {
 		// If we need to read the parameter store, we must init the session first to ensure that
-		// the credentials are only initialized once (avoiding asking multiple type the MFA)
-		_, err := aws_helper.InitAwsSession("")
-
-		switch err := err.(type) {
-		case *errors.Error:
-			if err.Err == credentials.ErrNoValidProvidersFoundInChain {
-				// There is no AWS configuration, so we disable the check to accelerate further calls
-				fmt.Fprintln(os.Stderr, "No AWS Configuration, Parameter Store will be disabled (use -r to re-enable it)")
-				fmt.Fprintln(os.Stderr)
-				touchImageRefresh(awsDisabled)
+		// the credentials are only initialized once (avoiding asking multiple time the MFA)
+		if _, err := aws_helper.InitAwsSession(""); err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to authentify to AWS: %v\nPararameter store is ignored\n\n", err)
+		} else {
+			for _, parameter := range Must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
+				config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
 			}
-		}
-
-		for _, parameter := range Must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
-			config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
 		}
 	}
 
@@ -142,4 +132,22 @@ func findConfigFiles(folder string) (result []string) {
 	}
 
 	return
+}
+
+// Check if there is an AWS configuration available
+func awsConfigExist() bool {
+	if os.Getenv("AWS_PROFILE")+os.Getenv("AWS_ACCESS_KEY_ID")+os.Getenv("AWS_CONFIG_FILE") != "" {
+		return true
+	}
+
+	currentUser, err := user.Current()
+	if err != nil {
+		return false
+	}
+	awsFolder, err := os.Stat(filepath.Join(currentUser.HomeDir, ".aws"))
+	if err != nil {
+		return false
+	}
+
+	return awsFolder.IsDir()
 }

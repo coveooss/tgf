@@ -9,11 +9,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 
+	"github.com/fatih/color"
 	"github.com/gruntwork-io/terragrunt/util"
 )
 
-func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, dockerOptions []string, args ...string) {
+func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, dockerOptions []string, args ...string) int {
 	command := append([]string{config.EntryPoint}, args...)
 
 	// Change the default log level for terragrunt
@@ -36,11 +38,18 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 	home := filepath.ToSlash(currentUser.HomeDir)
 	homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
 	cwd := filepath.ToSlash(Must(os.Getwd()).(string))
+
 	currentDrive := fmt.Sprintf("%s/", filepath.VolumeName(cwd))
+	rootFolder := strings.Split(strings.TrimPrefix(cwd, currentDrive), "/")[0]
+
+	tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(os.TempDir()))
+	tempFolder := strings.Split(strings.TrimPrefix(os.TempDir(), tempDrive), "/")[0]
+
 	dockerArgs := []string{
 		"run", "-it",
-		"-v", fmt.Sprintf("%v:/local", convertDrive(currentDrive)),
-		"-w", util.JoinPath("/local", strings.TrimPrefix(cwd, filepath.VolumeName(cwd))),
+		"-v", fmt.Sprintf("%s%s:/%[2]s", convertDrive(currentDrive), rootFolder),
+		"-v", fmt.Sprintf("%s%s:/%[2]s", convertDrive(tempDrive), tempFolder),
+		"-w", strings.TrimPrefix(cwd, filepath.VolumeName(cwd)),
 		"--rm",
 	}
 	if mapHome {
@@ -63,7 +72,7 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 	for _, do := range dockerOptions {
 		dockerArgs = append(dockerArgs, strings.Split(do, " ")...)
 	}
-	dockerArgs = append(dockerArgs, getEnviron()...)
+	dockerArgs = append(dockerArgs, getEnviron(mapHome)...)
 	dockerArgs = append(dockerArgs, config.Image)
 	dockerArgs = append(dockerArgs, command...)
 	dockerCmd := exec.Command("docker", dockerArgs...)
@@ -72,19 +81,21 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 	dockerCmd.Stderr = &stderr
 
 	if debug {
-		fmt.Fprintf(os.Stderr, "%s\n\n", strings.Join(dockerCmd.Args, " "))
+		debugString := color.New(color.FgWhite, color.Faint).SprintfFunc()
+		fmt.Fprint(os.Stderr, debugString("%s\n\n", strings.Join(dockerCmd.Args, " ")))
 	}
 
 	if err := dockerCmd.Run(); err != nil {
 		if stderr.Len() > 0 {
 			fmt.Fprintf(os.Stderr, stderr.String())
-			fmt.Fprintf(os.Stderr, "\n%s %s\n", dockerCmd.Path, strings.Join(dockerArgs, " "))
+			fmt.Fprintf(os.Stderr, "\n%s %s\n", dockerCmd.Args[0], strings.Join(dockerArgs, " "))
 
 			if runtime.GOOS == "windows" {
 				fmt.Fprintln(os.Stderr, windowsMessage)
 			}
 		}
 	}
+	return dockerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 }
 
 func checkImage(image string) bool {
@@ -105,7 +116,7 @@ func refreshImage(image string) {
 	fmt.Fprintln(os.Stderr)
 }
 
-func getEnviron() (result []string) {
+func getEnviron(mapHome bool) (result []string) {
 	for _, env := range os.Environ() {
 		split := strings.Split(env, "=")
 		varName := strings.TrimSpace(split[0])
@@ -123,8 +134,13 @@ func getEnviron() (result []string) {
 		switch varName {
 		case
 			"_", "PWD", "OLDPWD", "TMPDIR",
-			"PROMPT", "HOME", "SHELL", "SH", "ZSH",
-			"DISPLAY", "TERM":
+			"PROMPT", "SHELL", "SH", "ZSH", "HOME",
+			"LANG", "LC_CTYPE", "DISPLAY", "TERM":
+		case "LOGNAME", "USER":
+			if !mapHome {
+				continue
+			}
+			fallthrough
 		default:
 			result = append(result, "-e")
 			result = append(result, split[0])

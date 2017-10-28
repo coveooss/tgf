@@ -1,9 +1,10 @@
 package main
 
 import (
-	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
 	"strings"
+
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 // ApplicationArguments allows proper management between managed and non managed arguments provided to kingpin
@@ -56,7 +57,7 @@ Arg:
 				managed = append(managed, arg)
 				if !isSwitch && len(argSplit) == 1 {
 					// This is not a switch (bool flag) and there is no argument with
-					// the flag, so the argumnent must be after and we add it to
+					// the flag, so the argument must be after and we add it to
 					// the managed args if there is.
 					i++
 					if i < len(os.Args) {
@@ -104,13 +105,12 @@ func NewApplication(app *kingpin.Application) ApplicationArguments {
 	return ApplicationArguments{
 		Application: app,
 		longs: map[string]bool{
-			"help":                   true,
 			"help-man":               true,
 			"help-long":              true,
 			"completion-bash":        true,
 			"completion-script-bash": true,
 			"completion-script-zsh":  true,
 		},
-		shorts: map[rune]bool{'h': true},
+		shorts: map[rune]bool{},
 	}
 }
