@@ -37,13 +37,14 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 	currentUser := Must(user.Current()).(*user.User)
 	home := filepath.ToSlash(currentUser.HomeDir)
 	homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
-	cwd := filepath.ToSlash(Must(os.Getwd()).(string))
 
+	cwd := filepath.ToSlash(Must(os.Getwd()).(string))
 	currentDrive := fmt.Sprintf("%s/", filepath.VolumeName(cwd))
 	rootFolder := strings.Split(strings.TrimPrefix(cwd, currentDrive), "/")[0]
 
-	tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(os.TempDir()))
-	tempFolder := strings.Split(strings.TrimPrefix(os.TempDir(), tempDrive), "/")[0]
+	temp := filepath.ToSlash(os.TempDir())
+	tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
+	tempFolder := strings.Split(strings.TrimPrefix(temp, tempDrive), "/")[0]
 
 	dockerArgs := []string{
 		"run", "-it",

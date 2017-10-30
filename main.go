@@ -49,7 +49,7 @@ func main() {
 	// Handle eventual panic message
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintln(os.Stderr, errorString("%[1]v (%[1]T)", err))
 			os.Exit(1)
 		}
 	}()
@@ -62,7 +62,7 @@ func main() {
 	descriptionTemplate.Execute(&descriptionBuffer, map[string]interface{}{
 		"parameterStoreKey": parameterFolder,
 		"config":            configFile,
-		"options":           color.GreenString(strings.Join([]string{dockerImage, dockerImageVersion, dockerImageTag, dockerRefresh, loggingLevel, entryPoint, tgfVersion, recommendedImage}, ", ")),
+		"options":           color.GreenString(strings.Join([]string{dockerImage, dockerImageVersion, dockerImageTag, dockerRefresh, loggingLevel, entryPoint, tgfVersion, recommendedVersion}, ", ")),
 		"readme":            link(gitSource + "/blob/master/README.md"),
 		"latest":            link(gitSource + "/releases/latest"),
 		"terragruntCoveo":   link("https://github.com/coveo/terragrunt/blob/master/README.md"),
@@ -125,17 +125,19 @@ func main() {
 
 	config := tgfConfig{}
 	config.SetValue(dockerImage, *image)
+	config.SetValue(dockerImageVersion, *imageVersion)
+	config.SetValue(dockerImageTag, *imageTag)
 	config.SetValue(entryPoint, *defaultEntryPoint)
-	config.SetDefaultValues()
-
-	_ = *imageVersion
-	if *imageTag != "" {
-		split := strings.Split(config.Image, ":")
-		config.Image = strings.Join([]string{split[0], *imageTag}, ":")
-	}
 
 	if *getImageName {
-		fmt.Println(config.Image)
+		fmt.Println("forced version =", &config)
+	}
+
+	config.SetDefaultValues()
+
+	if *getImageName {
+		fmt.Println("final version =", &config)
+		fmt.Println(config.GetImageName())
 		os.Exit(0)
 	}
 
@@ -150,14 +152,14 @@ func main() {
 	}
 
 	if config.RecommendedMinimalVersion != "" && version < config.RecommendedMinimalVersion {
-		fmt.Fprintf(os.Stderr, "Your version of tgf is outdated, you have %s. The recommended minimal version is %s\n\n", version, config.RecommendedMinimalVersion)
+		fmt.Fprintf(os.Stderr, warningString("Your version of tgf is outdated, you have %s. The recommended minimal version is %s\n\n", version, config.RecommendedMinimalVersion))
 	}
 
-	if config.RecommendedImage != "" && config.Image != config.RecommendedImage && image == nil && imageTag == nil {
-		fmt.Fprintf(os.Stderr, "A new version of tgf image is available, you use %s. The recommended image is %s\n\n", config.Image, config.RecommendedImage)
+	if config.RecommendedVersion != "" && config.ImageVersion != config.RecommendedVersion { //&& *imageVersion == "" && string.Contains(*image+*imageVersion+*imageTag == nil && imageVersion == nil && imageVersion2 == nil {
+		fmt.Fprintf(os.Stderr, warningString("A new version of tgf image is available, you use %s. The recommended image is %s\n\n", config.ImageVersion, config.RecommendedVersion))
 	}
 
-	if unmanaged == nil && !*debug {
+	if unmanaged == nil && !*debug && config.EntryPoint == "terragrunt" {
 		title := color.New(color.FgYellow, color.Underline).SprintFunc()
 		fmt.Println(title("\nTGF Usage\n"))
 		app.Usage(nil)
@@ -165,3 +167,6 @@ func main() {
 
 	os.Exit(callDocker(config, !*noHome, *flushCache, *debug, *dockerOptions, unmanaged...))
 }
+
+var warningString = color.New(color.FgYellow).SprintfFunc()
+var errorString = color.New(color.FgRed).SprintfFunc()

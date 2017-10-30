@@ -6,27 +6,29 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/ssm"
-	"gopkg.in/yaml.v2"
-
+	"github.com/blang/semver"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
 	"github.com/hashicorp/hcl"
+	"gopkg.in/yaml.v2"
 )
 
 const (
-	parameterFolder    = "/default/tgf"
-	configFile         = ".tgf.config"
-	dockerImage        = "docker-image"
-	dockerImageVersion = "docker-image-version"
-	dockerImageTag     = "docker-image-tag"
-	dockerRefresh      = "docker-refresh"
-	loggingLevel       = "logging-level"
-	entryPoint         = "entry-point"
-	tgfVersion         = "tgf-recommended-version"
-	recommendedImage   = "recommended-image"
+	parameterFolder            = "/default/tgf"
+	configFile                 = ".tgf.config"
+	dockerImage                = "docker-image"
+	dockerImageVersion         = "docker-image-version"
+	dockerImageTag             = "docker-image-tag"
+	dockerRefresh              = "docker-refresh"
+	loggingLevel               = "logging-level"
+	entryPoint                 = "entry-point"
+	tgfVersion                 = "tgf-recommended-version"
+	recommendedVersion         = "recommended-image-version"
+	deprecatedRecommendedImage = "recommended-image"
 )
 
 type tgfConfig struct {
@@ -37,7 +39,19 @@ type tgfConfig struct {
 	EntryPoint                string
 	Refresh                   time.Duration
 	RecommendedMinimalVersion string
-	RecommendedImage          string
+	RecommendedVersion        string
+}
+
+func (config *tgfConfig) String() (result string) {
+	result += fmt.Sprintf("Image: %s\n", config.Image)
+	result += fmt.Sprintf("  version: %s\n", config.ImageVersion)
+	result += fmt.Sprintf("  tag: %s\n", config.ImageTag)
+	result += fmt.Sprintf("Log level: %s\n", config.LogLevel)
+	result += fmt.Sprintf("Entry point: %s\n", config.EntryPoint)
+	result += fmt.Sprintf("Refresh rate: %s\n", config.Refresh)
+	result += fmt.Sprintf("Recommendend TGF version: %s\n", config.RecommendedMinimalVersion)
+	result += fmt.Sprintf("Recommended image version: %s\n", config.RecommendedVersion)
+	return
 }
 
 func (config *tgfConfig) complete() bool {
@@ -82,19 +96,25 @@ func (config *tgfConfig) SetDefaultValues() {
 
 // SetValue sets value of the key in the configuration only if it does not already have a value
 func (config *tgfConfig) SetValue(key, value string) {
+	if value == "" {
+		return
+	}
 	switch strings.ToLower(key) {
 	case dockerImage:
-		if config.Image == "" {
-			config.Image = value
+		if strings.Contains(value, ":") {
+			fmt.Fprintf(os.Stderr, warningString("Parameter %s should not contains the version: %s\n", key, value))
 		}
+		config.apply(value)
 	case dockerImageVersion:
-		if config.ImageVersion == "" {
-			config.ImageVersion = value
+		if strings.ContainsAny(value, ":-") {
+			fmt.Fprintf(os.Stderr, warningString("Parameter %s should not contains the image name nor the specialized version: %s\n", key, value))
 		}
+		config.apply(":" + value)
 	case dockerImageTag:
-		if config.ImageTag == "" {
-			config.ImageTag = value
+		if strings.ContainsAny(value, ":") {
+			fmt.Fprintf(os.Stderr, warningString("Parameter %s should not contains the image name: %s\n", key, value))
 		}
+		config.apply(":" + value)
 	case dockerRefresh:
 		if config.Refresh == 0 {
 			config.Refresh = Must(time.ParseDuration(value)).(time.Duration)
@@ -111,12 +131,69 @@ func (config *tgfConfig) SetValue(key, value string) {
 		if config.RecommendedMinimalVersion == "" {
 			config.RecommendedMinimalVersion = value
 		}
-	case recommendedImage:
-		if config.RecommendedImage == "" {
-			config.RecommendedImage = value
+	case recommendedVersion:
+		if config.RecommendedVersion == "" {
+			config.RecommendedVersion = value
 		}
+	case deprecatedRecommendedImage:
+		fmt.Fprintf(os.Stderr, warningString("%s is deprecated (%s ignored)\n", key, value))
 	default:
-		fmt.Fprintf(os.Stderr, "Unknown parameter %s = %s\n", key, value)
+		fmt.Fprintf(os.Stderr, errorString("Unknown parameter %s = %s\n", key, value))
+	}
+}
+
+func (config *tgfConfig) GetImageName() string {
+	if strings.Contains(config.Image, ":") {
+		return config.Image
+	}
+
+	image := config.Image
+	if config.ImageVersion != "" {
+		image += ":" + config.ImageVersion
+	}
+	if config.ImageTag != "" && !strings.Contains(config.Image, "-") {
+		if strings.Contains(image, ":") {
+			image += "-"
+		} else {
+			image += ":"
+		}
+		image += config.ImageTag
+	}
+
+	return image
+}
+
+func (config *tgfConfig) GetImageVersion() (*semver.Version, error) {
+	parts := strings.Split(config.GetImageName(), ":")
+	if len(parts) == 1 {
+		return nil, nil
+	}
+
+	return nil, nil
+}
+
+// https://regex101.com/r/ZKt4OP/1/
+var reVersion = regexp.MustCompile(`^(?P<image>.*?)(:((?P<version>\d+\.\d+\.\d+)([\.-](?P<spec>.+))?|(?P<fix>.+)))?$`)
+
+func (config *tgfConfig) apply(value string) {
+	matches := reVersion.FindStringSubmatch(value)
+	for i, name := range reVersion.SubexpNames() {
+		switch name {
+		case "image":
+			if config.Image == "" {
+				config.Image = matches[i]
+			}
+		case "version":
+			if config.ImageVersion == "" {
+				config.ImageVersion = matches[i]
+			}
+		case "spec":
+			fallthrough
+		case "fix":
+			if config.ImageTag == "" {
+				config.ImageTag = matches[i]
+			}
+		}
 	}
 }
 
