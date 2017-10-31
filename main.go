@@ -62,15 +62,18 @@ func main() {
 	descriptionTemplate.Execute(&descriptionBuffer, map[string]interface{}{
 		"parameterStoreKey": parameterFolder,
 		"config":            configFile,
-		"options":           color.GreenString(strings.Join([]string{dockerImage, dockerImageVersion, dockerImageTag, dockerRefresh, loggingLevel, entryPoint, tgfVersion, recommendedVersion}, ", ")),
-		"readme":            link(gitSource + "/blob/master/README.md"),
-		"latest":            link(gitSource + "/releases/latest"),
-		"terragruntCoveo":   link("https://github.com/coveo/terragrunt/blob/master/README.md"),
-		"terragruntGW":      link("https://github.com/gruntwork-io/terragrunt/blob/master/README.md"),
-		"terraform":         link("https://www.terraform.io/docs/index.html"),
-		"tgfImages":         link("https://hub.docker.com/r/coveo/tgf/tags"),
-		"terragrunt":        bold("t") + "erra" + bold("g") + "runt " + bold("f") + "rontend",
-		"version":           version,
+		"options": color.GreenString(strings.Join([]string{
+			dockerImage, dockerImageVersion, dockerImageTag, dockerRefresh, recommendedImageVersion, requiredImageVersion,
+			loggingLevel, entryPoint, tgfVersion,
+		}, ", ")),
+		"readme":          link(gitSource + "/blob/master/README.md"),
+		"latest":          link(gitSource + "/releases/latest"),
+		"terragruntCoveo": link("https://github.com/coveo/terragrunt/blob/master/README.md"),
+		"terragruntGW":    link("https://github.com/gruntwork-io/terragrunt/blob/master/README.md"),
+		"terraform":       link("https://www.terraform.io/docs/index.html"),
+		"tgfImages":       link("https://hub.docker.com/r/coveo/tgf/tags"),
+		"terragrunt":      bold("t") + "erra" + bold("g") + "runt " + bold("f") + "rontend",
+		"version":         version,
 	})
 
 	var app = NewApplication(kingpin.New(os.Args[0], descriptionBuffer.String()))
@@ -128,35 +131,41 @@ func main() {
 	config.SetValue(dockerImageVersion, *imageVersion)
 	config.SetValue(dockerImageTag, *imageTag)
 	config.SetValue(entryPoint, *defaultEntryPoint)
-
-	if *getImageName {
-		fmt.Println("forced version =", &config)
-	}
-
 	config.SetDefaultValues()
 
+	var fatalError bool
+	for _, err := range config.Validate() {
+		switch err := err.(type) {
+		case ConfigWarning:
+			fmt.Fprintln(os.Stderr, warningString("%v", err))
+		case VersionMistmatchError:
+			fmt.Fprintln(os.Stderr, errorString("%v", err))
+			if *imageVersion == "" {
+				// We consider this as a fatal error only if the version has not been explicitly specified on the command line
+				fatalError = true
+			}
+		default:
+			fmt.Fprintln(os.Stderr, errorString("%v", err))
+			fatalError = true
+		}
+	}
+	if fatalError {
+		os.Exit(1)
+	}
+
 	if *getImageName {
-		fmt.Println("final version =", &config)
 		fmt.Println(config.GetImageName())
 		os.Exit(0)
 	}
 
-	if !isVersionedImage(config.Image) && lastRefresh(config.Image) > config.Refresh || !checkImage(config.Image) || *refresh {
-		refreshImage(config.Image)
+	if config.ImageVersion == "" && lastRefresh(config.GetImageName()) > config.Refresh || !checkImage(config.GetImageName()) || *refresh {
+		refreshImage(config.GetImageName())
 	}
 
 	os.Setenv("TERRAGRUNT_CACHE", filepath.Join(os.TempDir(), "tgf-cache"))
 
 	if *loggingLevel != "" {
 		config.LogLevel = *loggingLevel
-	}
-
-	if config.RecommendedMinimalVersion != "" && version < config.RecommendedMinimalVersion {
-		fmt.Fprintf(os.Stderr, warningString("Your version of tgf is outdated, you have %s. The recommended minimal version is %s\n\n", version, config.RecommendedMinimalVersion))
-	}
-
-	if config.RecommendedVersion != "" && config.ImageVersion != config.RecommendedVersion { //&& *imageVersion == "" && string.Contains(*image+*imageVersion+*imageTag == nil && imageVersion == nil && imageVersion2 == nil {
-		fmt.Fprintf(os.Stderr, warningString("A new version of tgf image is available, you use %s. The recommended image is %s\n\n", config.ImageVersion, config.RecommendedVersion))
 	}
 
 	if unmanaged == nil && !*debug && config.EntryPoint == "terragrunt" {

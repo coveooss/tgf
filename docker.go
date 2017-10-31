@@ -62,19 +62,16 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 
 	os.Setenv("TGF_COMMAND", config.EntryPoint)
 	os.Setenv("TGF_VERSION", version)
-	image := strings.Split(config.Image, ":")
-	os.Setenv("TGF_IMAGE", image[0])
-	if len(image) > 1 {
-		os.Setenv("TGF_IMAGE_TAG", image[1])
-	} else {
-		os.Setenv("TGF_IMAGE_TAG", "latest")
-	}
+	os.Setenv("TGF_IMAGE", config.Image)
+	os.Setenv("TGF_IMAGE_VERSION", config.ImageVersion)
+	os.Setenv("TGF_IMAGE_TAG", config.ImageTag)
+	os.Setenv("TGF_IMAGE_NAME", config.GetImageName())
 
 	for _, do := range dockerOptions {
 		dockerArgs = append(dockerArgs, strings.Split(do, " ")...)
 	}
 	dockerArgs = append(dockerArgs, getEnviron(mapHome)...)
-	dockerArgs = append(dockerArgs, config.Image)
+	dockerArgs = append(dockerArgs, config.GetImageName())
 	dockerArgs = append(dockerArgs, command...)
 	dockerCmd := exec.Command("docker", dockerArgs...)
 	dockerCmd.Stdin, dockerCmd.Stdout = os.Stdin, os.Stdout

@@ -27,35 +27,36 @@ const (
 	loggingLevel               = "logging-level"
 	entryPoint                 = "entry-point"
 	tgfVersion                 = "tgf-recommended-version"
-	recommendedVersion         = "recommended-image-version"
+	recommendedImageVersion    = "recommended-image-version"
+	requiredImageVersion       = "required-image-version"
 	deprecatedRecommendedImage = "recommended-image"
 )
 
 type tgfConfig struct {
-	Image                     string
-	ImageVersion              string
-	ImageTag                  string
-	LogLevel                  string
-	EntryPoint                string
-	Refresh                   time.Duration
-	RecommendedMinimalVersion string
-	RecommendedVersion        string
+	Image                   string
+	ImageVersion            string
+	ImageTag                string
+	LogLevel                string
+	EntryPoint              string
+	Refresh                 time.Duration
+	RecommendedImageVersion string
+	RequiredVersionRange    string
+	RecommendedTGFVersion   string
+	recommendedImage        string
+	separator               string
 }
 
 func (config *tgfConfig) String() (result string) {
-	result += fmt.Sprintf("Image: %s\n", config.Image)
-	result += fmt.Sprintf("  version: %s\n", config.ImageVersion)
-	result += fmt.Sprintf("  tag: %s\n", config.ImageTag)
-	result += fmt.Sprintf("Log level: %s\n", config.LogLevel)
-	result += fmt.Sprintf("Entry point: %s\n", config.EntryPoint)
-	result += fmt.Sprintf("Refresh rate: %s\n", config.Refresh)
-	result += fmt.Sprintf("Recommendend TGF version: %s\n", config.RecommendedMinimalVersion)
-	result += fmt.Sprintf("Recommended image version: %s\n", config.RecommendedVersion)
+	result += fmt.Sprintln(dockerImage, "=", config.Image)
+	result += fmt.Sprintln("  ", dockerImageVersion, "=", config.ImageVersion)
+	result += fmt.Sprintln("  ", dockerImageTag, "=", config.ImageTag)
+	result += fmt.Sprintln("  ", recommendedImageVersion, "=", config.RecommendedImageVersion)
+	result += fmt.Sprintln("  ", requiredImageVersion, "=", config.RequiredVersionRange)
+	result += fmt.Sprintln("  ", dockerRefresh, "=", config.Refresh)
+	result += fmt.Sprintln(loggingLevel, "=", config.LogLevel)
+	result += fmt.Sprintln(entryPoint, "=", config.EntryPoint)
+	result += fmt.Sprintln(tgfVersion, config.RecommendedTGFVersion)
 	return
-}
-
-func (config *tgfConfig) complete() bool {
-	return config.Image != "" && config.LogLevel != "" && config.Refresh != 0 && config.EntryPoint != "" && config.RecommendedMinimalVersion != ""
 }
 
 // SetDefaultValues sets the uninitialized values from the config files and the parameter store
@@ -76,7 +77,7 @@ func (config *tgfConfig) SetDefaultValues() {
 		}
 	}
 
-	if !config.complete() && awsConfigExist() {
+	if awsConfigExist() {
 		// If we need to read the parameter store, we must init the session first to ensure that
 		// the credentials are only initialized once (avoiding asking multiple time the MFA)
 		if _, err := aws_helper.InitAwsSession(""); err != nil {
@@ -101,20 +102,28 @@ func (config *tgfConfig) SetValue(key, value string) {
 	}
 	switch strings.ToLower(key) {
 	case dockerImage:
-		if strings.Contains(value, ":") {
+		if strings.Contains(value, ":") && config.Image == "" {
 			fmt.Fprintf(os.Stderr, warningString("Parameter %s should not contains the version: %s\n", key, value))
 		}
 		config.apply(value)
 	case dockerImageVersion:
-		if strings.ContainsAny(value, ":-") {
+		if strings.ContainsAny(value, ":-") && config.ImageVersion == "" {
 			fmt.Fprintf(os.Stderr, warningString("Parameter %s should not contains the image name nor the specialized version: %s\n", key, value))
 		}
 		config.apply(":" + value)
 	case dockerImageTag:
-		if strings.ContainsAny(value, ":") {
+		if strings.ContainsAny(value, ":") && config.ImageTag == "" {
 			fmt.Fprintf(os.Stderr, warningString("Parameter %s should not contains the image name: %s\n", key, value))
 		}
 		config.apply(":" + value)
+	case recommendedImageVersion:
+		if config.RecommendedImageVersion == "" {
+			config.RecommendedImageVersion = value
+		}
+	case requiredImageVersion:
+		if config.RequiredVersionRange == "" {
+			config.RequiredVersionRange = value
+		}
 	case dockerRefresh:
 		if config.Refresh == 0 {
 			config.Refresh = Must(time.ParseDuration(value)).(time.Duration)
@@ -128,52 +137,54 @@ func (config *tgfConfig) SetValue(key, value string) {
 			config.EntryPoint = value
 		}
 	case tgfVersion:
-		if config.RecommendedMinimalVersion == "" {
-			config.RecommendedMinimalVersion = value
-		}
-	case recommendedVersion:
-		if config.RecommendedVersion == "" {
-			config.RecommendedVersion = value
+		if config.RecommendedTGFVersion == "" {
+			config.RecommendedTGFVersion = value
 		}
 	case deprecatedRecommendedImage:
-		fmt.Fprintf(os.Stderr, warningString("%s is deprecated (%s ignored)\n", key, value))
+		fmt.Fprintf(os.Stderr, warningString("Config key %s is deprecated (%s ignored)\n", key, value))
 	default:
 		fmt.Fprintf(os.Stderr, errorString("Unknown parameter %s = %s\n", key, value))
 	}
 }
 
-func (config *tgfConfig) GetImageName() string {
-	if strings.Contains(config.Image, ":") {
-		return config.Image
-	}
-
-	image := config.Image
-	if config.ImageVersion != "" {
-		image += ":" + config.ImageVersion
-	}
-	if config.ImageTag != "" && !strings.Contains(config.Image, "-") {
-		if strings.Contains(image, ":") {
-			image += "-"
-		} else {
-			image += ":"
+func (config *tgfConfig) Validate() (errors []error) {
+	if config.RecommendedImageVersion != "" {
+		if valid, err := CheckVersionRange(config.ImageVersion, config.RecommendedImageVersion); err != nil {
+			errors = append(errors, fmt.Errorf("Unable to check recommended image version %s vs %s: %v", config.ImageVersion, config.RecommendedImageVersion, err))
+		} else if !valid {
+			errors = append(errors, ConfigWarning(fmt.Sprintf("Image %s does not meet the recommended version range %s", config.GetImageName(), config.RecommendedImageVersion)))
 		}
-		image += config.ImageTag
 	}
 
+	if config.RequiredVersionRange != "" {
+		if valid, err := CheckVersionRange(config.ImageVersion, config.RequiredVersionRange); err != nil {
+			errors = append(errors, fmt.Errorf("Unable to check recommended image version %s vs %s: %v", config.ImageVersion, config.RequiredVersionRange, err))
+		} else if !valid {
+			errors = append(errors, VersionMistmatchError(fmt.Sprintf("Image %s does not meet the required version range %s", config.GetImageName(), config.RequiredVersionRange)))
+		}
+	}
+
+	if config.RecommendedTGFVersion != "" {
+		if valid, err := CheckVersionRange(version, config.RecommendedTGFVersion); err != nil {
+			errors = append(errors, fmt.Errorf("Unable to check recommended tgf version %s vs %s: %v", version, config.RecommendedTGFVersion, err))
+		} else if !valid {
+			errors = append(errors, ConfigWarning(fmt.Sprintf("TGF v%s does not meet the recommended version range %s", version, config.RecommendedTGFVersion)))
+		}
+	}
+	return
+}
+
+func (config *tgfConfig) GetImageName() string {
+	image := config.Image
+	suffix := fmt.Sprintf("%s%s%s", config.ImageVersion, config.separator, config.ImageTag)
+	if suffix != "" {
+		return fmt.Sprintf("%s:%s", image, suffix)
+	}
 	return image
 }
 
-func (config *tgfConfig) GetImageVersion() (*semver.Version, error) {
-	parts := strings.Split(config.GetImageName(), ":")
-	if len(parts) == 1 {
-		return nil, nil
-	}
-
-	return nil, nil
-}
-
-// https://regex101.com/r/ZKt4OP/1/
-var reVersion = regexp.MustCompile(`^(?P<image>.*?)(:((?P<version>\d+\.\d+\.\d+)([\.-](?P<spec>.+))?|(?P<fix>.+)))?$`)
+// https://regex101.com/r/ZKt4OP/2/
+var reVersion = regexp.MustCompile(`^(?P<image>.*?)(:((?P<version>\d+\.\d+\.\d+)((?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
 
 func (config *tgfConfig) apply(value string) {
 	matches := reVersion.FindStringSubmatch(value)
@@ -183,15 +194,22 @@ func (config *tgfConfig) apply(value string) {
 			if config.Image == "" {
 				config.Image = matches[i]
 			}
+			if matches[i] != "" {
+				config.recommendedImage = matches[i]
+			}
 		case "version":
-			if config.ImageVersion == "" {
+			if config.ImageVersion == "" && config.Image == config.recommendedImage {
 				config.ImageVersion = matches[i]
 			}
 		case "spec":
 			fallthrough
 		case "fix":
-			if config.ImageTag == "" {
+			if config.ImageTag == "" && config.Image == config.recommendedImage {
 				config.ImageTag = matches[i]
+			}
+		case "sep":
+			if config.separator == "" && config.Image == config.recommendedImage {
+				config.separator = matches[i]
 			}
 		}
 	}
@@ -227,4 +245,30 @@ func awsConfigExist() bool {
 	}
 
 	return awsFolder.IsDir()
+}
+
+func CheckVersionRange(version, compare string) (bool, error) {
+	v, err := semver.Make(version)
+	if err != nil {
+		return false, err
+	}
+
+	comp, err := semver.ParseRange(compare)
+	if err != nil {
+		return false, err
+	}
+
+	return comp(v), nil
+}
+
+type ConfigWarning string
+
+func (e ConfigWarning) Error() string {
+	return string(e)
+}
+
+type VersionMistmatchError string
+
+func (e VersionMistmatchError) Error() string {
+	return string(e)
 }
