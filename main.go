@@ -92,7 +92,7 @@ func main() {
 		debug             = app.Switch("debug-docker", "Print the docker command issued", 'D').Bool()
 		refresh           = app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").Bool()
 		getVersion        = app.Switch("tgf-version", "Get the current version of tgf", 'V').Bool()
-		loggingLevel      = app.Argument("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5)", 'L').PlaceHolder("<level>").String()
+		loggingLevel      = app.Argument("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)", 'L').PlaceHolder("<level>").String()
 		flushCache        = app.Switch("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache", 'F').Bool()
 		noHome            = app.Switch("no-home", "Disable the mapping of the home directory (alias --nh)").Bool()
 		getImageName      = app.Switch("get-image-name", "Just return the resulting image name (alias --gi)").Bool()
@@ -116,11 +116,6 @@ func main() {
 	*getImageName = *getImageName || *getImageName2
 	*dockerOptions = append(*dockerOptions, *dockerOptions2...)
 	*imageVersion += *imageVersion2
-
-	if *getVersion {
-		fmt.Println(version)
-		os.Exit(0)
-	}
 
 	if *awsProfile != "" {
 		Must(aws_helper.InitAwsSession(*awsProfile))
@@ -156,6 +151,11 @@ func main() {
 	if *getImageName {
 		fmt.Println(config.GetImageName())
 		os.Exit(0)
+	}
+
+	if *getVersion {
+		fmt.Println("TGF version", version)
+		unmanaged = []string{"-", "--version"}
 	}
 
 	if config.ImageVersion == "" && lastRefresh(config.GetImageName()) > config.Refresh || !checkImage(config.GetImageName()) || *refresh {

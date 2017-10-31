@@ -96,7 +96,7 @@ Key | Description | Default value
 | docker-image-version | Identify the image version |
 | docker-image-tag | Identify the image tag (could specify specilized version such as aws, mysql, k8s, full) | latest
 | docker-refresh | Delay before checking if a newer version of the docker image is available | 1h (1 hour)
-| logging-level | Terragrunt logging level (only apply to Terragrunt entry point).<br>*Critical (0), Error (1), Warning (2), Notice (3), Info (4), Debug (5)* | Notice
+| logging-level | Terragrunt logging level (only apply to Terragrunt entry point).<br>*Critical (0), Error (1), Warning (2), Notice (3), Info (4), Debug (5), Full (6)* | Notice
 | entry-point | The program that will be automatically launched when the docker starts | terragrunt
 | tgf-recommended-version | The minimal tgf version recommended in your context  (should not be placed in `.tgf.config file`) | *no default*
 | recommended-image | The tgf image recommended in your context (should not be placed in `.tgf.config file`) | *no default*
