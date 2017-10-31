@@ -29,7 +29,7 @@ script:
   then
     if [[ $TRAVIS_TAG =~ .*-.* ]];
     then
-      printf "\nrelease:\n  prerelease: true\n" >> .goreleaser.yml;
+      cat .prerelease.yml >> .goreleaser.yml;
     fi;
     curl -sL https://git.io/goreleaser | bash;
   fi
