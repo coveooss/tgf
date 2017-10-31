@@ -31,7 +31,7 @@ script:
     then
       cat .prerelease.yml >> .goreleaser.yml && set -- --skip-validate;
     fi;
-    curl -sL https://git.io/goreleaser | bash;
+    curl -sL https://git.io/goreleaser | bash /dev/stdin $@;
   fi
 
 notifications:
