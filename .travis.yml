@@ -29,7 +29,7 @@ script:
   then
     if [[ $TRAVIS_TAG =~ .*-.* ]];
     then
-      set --snapshot;
+      set -- --snapshot;
     fi;
     curl -sL https://git.io/goreleaser | bash;
   fi
