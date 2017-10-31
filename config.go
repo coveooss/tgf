@@ -176,8 +176,11 @@ func (config *tgfConfig) Validate() (errors []error) {
 
 func (config *tgfConfig) GetImageName() string {
 	image := config.Image
+	if config.separator == "" {
+		config.separator = "-"
+	}
 	suffix := fmt.Sprintf("%s%s%s", config.ImageVersion, config.separator, config.ImageTag)
-	if suffix != "" {
+	if len(suffix) > 1 {
 		return fmt.Sprintf("%s:%s", image, suffix)
 	}
 	return image
@@ -188,11 +191,13 @@ var reVersion = regexp.MustCompile(`^(?P<image>.*?)(:((?P<version>\d+\.\d+\.\d+)
 
 func (config *tgfConfig) apply(value string) {
 	matches := reVersion.FindStringSubmatch(value)
+	var valueUsed bool
 	for i, name := range reVersion.SubexpNames() {
 		switch name {
 		case "image":
 			if config.Image == "" {
 				config.Image = matches[i]
+				valueUsed = true
 			}
 			if matches[i] != "" {
 				config.recommendedImage = matches[i]
@@ -200,15 +205,17 @@ func (config *tgfConfig) apply(value string) {
 		case "version":
 			if config.ImageVersion == "" && config.Image == config.recommendedImage {
 				config.ImageVersion = matches[i]
+				valueUsed = true
 			}
 		case "spec":
 			fallthrough
 		case "fix":
 			if config.ImageTag == "" && config.Image == config.recommendedImage {
 				config.ImageTag = matches[i]
+				valueUsed = true
 			}
 		case "sep":
-			if config.separator == "" && config.Image == config.recommendedImage {
+			if config.separator == "" && config.Image == config.recommendedImage && valueUsed {
 				config.separator = matches[i]
 			}
 		}
