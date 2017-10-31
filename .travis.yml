@@ -27,6 +27,10 @@ script:
   fi
 - if [ ${TRAVIS_TAG::1} = v ];
   then
+    if [[ $TRAVIS_TAG =~ .*-.* ]];
+    then
+      set --snapshot;
+    fi;
     curl -sL https://git.io/goreleaser | bash;
   fi
 

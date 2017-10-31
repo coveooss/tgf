@@ -247,6 +247,8 @@ func awsConfigExist() bool {
 	return awsFolder.IsDir()
 }
 
+// CheckVersionRange compare a version with a range of values
+// Check https://github.com/blang/semver/blob/master/README.md for more information
 func CheckVersionRange(version, compare string) (bool, error) {
 	v, err := semver.Make(version)
 	if err != nil {
