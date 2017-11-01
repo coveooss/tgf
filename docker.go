@@ -48,14 +48,14 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 	currentDrive := fmt.Sprintf("%s/", filepath.VolumeName(cwd))
 	rootFolder := strings.Split(strings.TrimPrefix(cwd, currentDrive), "/")[0]
 
-	temp := filepath.ToSlash(os.TempDir())
+	temp := filepath.ToSlash(filepath.Join(os.TempDir(), "tgf-cache"))
 	tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
-	tempFolder := strings.Split(strings.TrimPrefix(temp, tempDrive), "/")[0]
+	tempFolder := strings.TrimPrefix(temp, tempDrive)
 
 	dockerArgs := []string{
 		"run", "-it",
 		"-v", fmt.Sprintf("%s%s:/%[2]s", convertDrive(currentDrive), rootFolder),
-		"-v", fmt.Sprintf("%s%s:/%[2]s", convertDrive(tempDrive), tempFolder),
+		"-v", fmt.Sprintf("%s%s:/var/tgf", convertDrive(tempDrive), tempFolder),
 		"-w", strings.TrimPrefix(cwd, filepath.VolumeName(cwd)),
 		"--rm",
 	}
@@ -66,6 +66,7 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 		}...)
 	}
 
+	os.Setenv("TERRAGRUNT_CACHE", "/var/tgf")
 	os.Setenv("TGF_COMMAND", config.EntryPoint)
 	os.Setenv("TGF_VERSION", version)
 	os.Setenv("TGF_IMAGE", config.Image)

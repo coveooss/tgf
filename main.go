@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/fatih/color"
@@ -161,8 +160,6 @@ func main() {
 	if config.ImageVersion == "" && lastRefresh(config.GetImageName()) > config.Refresh || !checkImage(config.GetImageName()) || *refresh {
 		refreshImage(config.GetImageName())
 	}
-
-	os.Setenv("TERRAGRUNT_CACHE", filepath.Join(os.TempDir(), "tgf-cache"))
 
 	if *loggingLevel != "" {
 		config.LogLevel = *loggingLevel
