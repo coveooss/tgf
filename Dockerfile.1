@@ -10,7 +10,7 @@ LABEL maintainer "jgiroux@coveo.com"
 RUN apk --no-cache add bash zsh fish
 
 # Installing the AWS cli
-RUN apk --no-cache add py2-pip python3 groff less && \
+RUN apk --no-cache add py2-pip python3 groff less tree && \
     pip install --upgrade pip && \
     pip install awscli && \
     pip3 install colorama

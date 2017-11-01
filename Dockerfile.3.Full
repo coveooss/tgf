@@ -14,7 +14,7 @@ RUN apt-get update && \
     apt-get -y install apt-utils && \
     apt-get -y install apt-transport-https software-properties-common python-software-properties && \
     apt-get -y install software-properties-common python-software-properties && \
-    apt-get -y install curl wget ksh zsh fish git unzip mysql-client vim-tiny nano jq
+    apt-get -y install curl wget ksh zsh fish git unzip mysql-client vim-tiny nano jq tree
 
 # Install os-my-zsh
 RUN sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" || echo
