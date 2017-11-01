@@ -155,7 +155,7 @@ func main() {
 
 	if *getVersion {
 		fmt.Println("TGF version", version)
-		unmanaged = []string{"-", "--version"}
+		unmanaged = []string{"get-versions"}
 	}
 
 	if config.ImageVersion == "" && lastRefresh(config.GetImageName()) > config.Refresh || !checkImage(config.GetImageName()) || *refresh {

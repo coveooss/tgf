@@ -38,19 +38,19 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.14.0/tgf_1.14.0_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.14.1/tgf_1.14.1_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.14.0/tgf_1.14.0_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.14.1/tgf_1.14.1_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.14.0/tgf_1.14.0_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.14.1/tgf_1.14.1_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -132,30 +132,23 @@ must supply parameters to your command and they are unwillingly catched by tgf, 
 
   tgf ls -- -D   # Avoid -D to be interpretated by tgf as --debug-docker
 
-VERSION: master
+VERSION: 1.14.1
 
 AUTHOR: Coveo 🇲🇶 🇨🇦
 
 Flags:
-  -H, --tgf-help               Show context-sensitive help (also try
-                               --help-man).
+  -H, --tgf-help               Show context-sensitive help (also try --help-man).
   -E, --entrypoint=terragrunt  Override the entry point for docker
-      --image=coveo/tgf        Use the specified image instead of the default
-                               one
-      --image-version=version  Use a different version of docker image instead
-                               of the default one (alias --iv)
-  -T, --tag=latest             Use a different tag of docker image instead of
-                               the default one
+      --image=coveo/tgf        Use the specified image instead of the default one
+      --image-version=version  Use a different version of docker image instead of the default one (alias --iv)
+  -T, --tag=latest             Use a different tag of docker image instead of the default one
       --profile=""             Set the AWS profile configuration to use
   -D, --debug-docker           Print the docker command issued
       --refresh-image          Force a refresh of the docker image (alias --ri)
   -V, --tgf-version            Get the current version of tgf
-  -L, --logging-level=<level>  Set the logging level (critical=0, error=1,
-                               warning=2, notice=3, info=4, debug=5)
-  -F, --flush-cache            Invoke terragrunt with --terragrunt-update-source
-                               to flush the cache
-      --no-home                Disable the mapping of the home directory (alias
-                               --nh)
+  -L, --logging-level=<level>  Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)
+  -F, --flush-cache            Invoke terragrunt with --terragrunt-update-source to flush the cache
+      --no-home                Disable the mapping of the home directory (alias --nh)
       --get-image-name         Just return the resulting image name (alias --gi)
       --docker-arg=<opt> ...   Supply extra argument to Docker (alias --da)
 ```
@@ -168,7 +161,7 @@ Example:
 
 ```bash
 > tgf --version
-v1.14.0
+v1.14.1
 ```
 
 Returns the current version of the tgf tool
