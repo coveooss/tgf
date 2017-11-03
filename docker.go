@@ -21,6 +21,12 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 	// Change the default log level for terragrunt
 	const logLevelArg = "--terragrunt-logging-level"
 	if !util.ListContainsElement(command, logLevelArg) && config.EntryPoint == "terragrunt" {
+		if config.LogLevel == "6" || strings.ToLower(config.LogLevel) == "full" {
+			config.LogLevel = "debug"
+			os.Setenv("TF_LOG", "DEBUG")
+			os.Setenv("TERRAGRUNT_DEBUG", "1")
+		}
+
 		// The log level option should not be supplied if there is no actual command
 		for _, arg := range args {
 			if !strings.HasPrefix(arg, "-") {
@@ -37,18 +43,19 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 	currentUser := Must(user.Current()).(*user.User)
 	home := filepath.ToSlash(currentUser.HomeDir)
 	homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
-	cwd := filepath.ToSlash(Must(os.Getwd()).(string))
 
+	cwd := filepath.ToSlash(Must(os.Getwd()).(string))
 	currentDrive := fmt.Sprintf("%s/", filepath.VolumeName(cwd))
 	rootFolder := strings.Split(strings.TrimPrefix(cwd, currentDrive), "/")[0]
 
-	tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(os.TempDir()))
-	tempFolder := strings.Split(strings.TrimPrefix(os.TempDir(), tempDrive), "/")[0]
+	temp := filepath.ToSlash(filepath.Join(os.TempDir(), "tgf-cache"))
+	tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
+	tempFolder := strings.TrimPrefix(temp, tempDrive)
 
 	dockerArgs := []string{
 		"run", "-it",
 		"-v", fmt.Sprintf("%s%s:/%[2]s", convertDrive(currentDrive), rootFolder),
-		"-v", fmt.Sprintf("%s%s:/%[2]s", convertDrive(tempDrive), tempFolder),
+		"-v", fmt.Sprintf("%s%s:/var/tgf", convertDrive(tempDrive), tempFolder),
 		"-w", strings.TrimPrefix(cwd, filepath.VolumeName(cwd)),
 		"--rm",
 	}
@@ -59,21 +66,19 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 		}...)
 	}
 
+	os.Setenv("TERRAGRUNT_CACHE", "/var/tgf")
 	os.Setenv("TGF_COMMAND", config.EntryPoint)
 	os.Setenv("TGF_VERSION", version)
-	image := strings.Split(config.Image, ":")
-	os.Setenv("TGF_IMAGE", image[0])
-	if len(image) > 1 {
-		os.Setenv("TGF_IMAGE_TAG", image[1])
-	} else {
-		os.Setenv("TGF_IMAGE_TAG", "latest")
-	}
+	os.Setenv("TGF_IMAGE", config.Image)
+	os.Setenv("TGF_IMAGE_VERSION", config.ImageVersion)
+	os.Setenv("TGF_IMAGE_TAG", config.ImageTag)
+	os.Setenv("TGF_IMAGE_NAME", config.GetImageName())
 
 	for _, do := range dockerOptions {
 		dockerArgs = append(dockerArgs, strings.Split(do, " ")...)
 	}
 	dockerArgs = append(dockerArgs, getEnviron(mapHome)...)
-	dockerArgs = append(dockerArgs, config.Image)
+	dockerArgs = append(dockerArgs, config.GetImageName())
 	dockerArgs = append(dockerArgs, command...)
 	dockerCmd := exec.Command("docker", dockerArgs...)
 	dockerCmd.Stdin, dockerCmd.Stdout = os.Stdin, os.Stdout

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/fatih/color"
@@ -18,12 +17,13 @@ var version = "master"
 
 var description = `
 DESCRIPTION:
-TGF ({{ .terragrunt }}) is a Docker frontend for terragrunt/terraform. It automatically maps your current folder, your HOME folder, your TEMP folder
-as well of most environment variables to the docker process. You can add -D to your command to get the exact docker command that is generated.
+TGF ({{ .terragrunt }}) is a Docker frontend for terragrunt/terraform. It automatically maps your current folder,
+your HOME folder, your TEMP folder as well of most environment variables to the docker process. You can add -D to
+your command to get the exact docker command that is generated.
 
-It then looks in your current folder and all its parents to find a file named '{{ .config }}' to retrieve the default configuration. If not all
-configurable values are satisfied and you have an AWS configuration, it will then try to retrieve the missing elements from the AWS Parameter
-Store under the key '{{ .parameterStoreKey }}'.
+It then looks in your current folder and all its parents to find a file named '{{ .config }}' to retrieve the
+default configuration. If not all configurable values are satisfied and you have an AWS configuration, it will
+then try to retrieve the missing elements from the AWS Parameter Store under the key '{{ .parameterStoreKey }}'.
 
 Configurable values are: {{ .options }}.
 
@@ -36,8 +36,11 @@ Terragrunt documentation could be found at {{ .terragruntCoveo }} (Coveo fork) o
 Terraform documentation could be found at {{ .terraform }}.
 
 IMPORTANT:
-Most of the tgf command line arguments are in uppercase to avoid potential conflict with the underlying command. If you must
-supply parameters to your command and they are unwillingly catched by tgf, you have to put them after '--' such as in the following example:
+Most of the tgf command line arguments are in uppercase to avoid potential conflict with the underlying command.
+If any of the tgf arguments conflicts with an argument of the desired entry point, you must place that argument
+after -- to ensure that they are not interpreted by tgf and are passed to the entry point. Any non conflicting
+argument will be passed to the entry point wherever it is located on the invocation arguments.
+
 	tgf ls -- -D   # Avoid -D to be interpretated by tgf as --debug-docker
 
 VERSION: {{ .version }}
@@ -49,7 +52,7 @@ func main() {
 	// Handle eventual panic message
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Fprintln(os.Stderr, err)
+			fmt.Fprintln(os.Stderr, errorString("%[1]v (%[1]T)", err))
 			os.Exit(1)
 		}
 	}()
@@ -62,15 +65,18 @@ func main() {
 	descriptionTemplate.Execute(&descriptionBuffer, map[string]interface{}{
 		"parameterStoreKey": parameterFolder,
 		"config":            configFile,
-		"options":           color.GreenString(strings.Join([]string{dockerImage, dockerImageVersion, dockerImageTag, dockerRefresh, loggingLevel, entryPoint, tgfVersion, recommendedImage}, ", ")),
-		"readme":            link(gitSource + "/blob/master/README.md"),
-		"latest":            link(gitSource + "/releases/latest"),
-		"terragruntCoveo":   link("https://github.com/coveo/terragrunt/blob/master/README.md"),
-		"terragruntGW":      link("https://github.com/gruntwork-io/terragrunt/blob/master/README.md"),
-		"terraform":         link("https://www.terraform.io/docs/index.html"),
-		"tgfImages":         link("https://hub.docker.com/r/coveo/tgf/tags"),
-		"terragrunt":        bold("t") + "erra" + bold("g") + "runt " + bold("f") + "rontend",
-		"version":           version,
+		"options": color.GreenString(strings.Join([]string{
+			dockerImage, dockerImageVersion, dockerImageTag, dockerRefresh, recommendedImageVersion, requiredImageVersion,
+			loggingLevel, entryPoint, tgfVersion,
+		}, ", ")),
+		"readme":          link(gitSource + "/blob/master/README.md"),
+		"latest":          link(gitSource + "/releases/latest"),
+		"terragruntCoveo": link("https://github.com/coveo/terragrunt/blob/master/README.md"),
+		"terragruntGW":    link("https://github.com/gruntwork-io/terragrunt/blob/master/README.md"),
+		"terraform":       link("https://www.terraform.io/docs/index.html"),
+		"tgfImages":       link("https://hub.docker.com/r/coveo/tgf/tags"),
+		"terragrunt":      bold("t") + "erra" + bold("g") + "runt " + bold("f") + "rontend",
+		"version":         version,
 	})
 
 	var app = NewApplication(kingpin.New(os.Args[0], descriptionBuffer.String()))
@@ -88,19 +94,22 @@ func main() {
 		awsProfile        = app.Argument("profile", "Set the AWS profile configuration to use").Default("").String()
 		debug             = app.Switch("debug-docker", "Print the docker command issued", 'D').Bool()
 		refresh           = app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").Bool()
-		getVersion        = app.Switch("tgf-version", "Get the current version of tgf", 'V').Bool()
-		loggingLevel      = app.Argument("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5)", 'L').PlaceHolder("<level>").String()
+		loggingLevel      = app.Argument("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)", 'L').PlaceHolder("<level>").String()
 		flushCache        = app.Switch("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache", 'F').Bool()
 		noHome            = app.Switch("no-home", "Disable the mapping of the home directory (alias --nh)").Bool()
 		getImageName      = app.Switch("get-image-name", "Just return the resulting image name (alias --gi)").Bool()
 		dockerOptions     = app.Argument("docker-arg", "Supply extra argument to Docker (alias --da)").PlaceHolder("<opt>").Strings()
+		getAllVersions    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
+		getCurrentVersion = app.Switch("current-version", "Get current version infomation (alias --cv)").Bool()
 
 		// Shorten version of the tags
-		refresh2       = app.Switch("ri", "alias for refresh-image)").Hidden().Bool()
-		getImageName2  = app.Switch("gi", "alias for get-image-name").Hidden().Bool()
-		noHome2        = app.Switch("nh", "alias for no-home-mapping").Hidden().Bool()
-		dockerOptions2 = app.Argument("da", "alias for docker-arg").Hidden().Strings()
-		imageVersion2  = app.Argument("iv", "alias for image-version").Hidden().String()
+		refresh2           = app.Switch("ri", "alias for refresh-image)").Hidden().Bool()
+		getImageName2      = app.Switch("gi", "alias for get-image-name").Hidden().Bool()
+		noHome2            = app.Switch("nh", "alias for no-home-mapping").Hidden().Bool()
+		getCurrentVersion2 = app.Switch("cv", "alias for current-version").Hidden().Bool()
+		getAllVersions2    = app.Switch("av", "alias for all-versions").Hidden().Bool()
+		dockerOptions2     = app.Argument("da", "alias for docker-arg").Hidden().Strings()
+		imageVersion2      = app.Argument("iv", "alias for image-version").Hidden().String()
 	)
 
 	// Split up the managed parameters from the unmanaged ones
@@ -110,14 +119,11 @@ func main() {
 	// We combine the tags that have multiple definitions
 	*refresh = *refresh || *refresh2
 	*noHome = *noHome || *noHome2
+	*getCurrentVersion = *getCurrentVersion || *getCurrentVersion2
+	*getAllVersions = *getAllVersions || *getAllVersions2
 	*getImageName = *getImageName || *getImageName2
 	*dockerOptions = append(*dockerOptions, *dockerOptions2...)
 	*imageVersion += *imageVersion2
-
-	if *getVersion {
-		fmt.Println(version)
-		os.Exit(0)
-	}
 
 	if *awsProfile != "" {
 		Must(aws_helper.InitAwsSession(*awsProfile))
@@ -125,39 +131,59 @@ func main() {
 
 	config := tgfConfig{}
 	config.SetValue(dockerImage, *image)
+	config.SetValue(dockerImageVersion, *imageVersion)
+	config.SetValue(dockerImageTag, *imageTag)
 	config.SetValue(entryPoint, *defaultEntryPoint)
 	config.SetDefaultValues()
 
-	_ = *imageVersion
-	if *imageTag != "" {
-		split := strings.Split(config.Image, ":")
-		config.Image = strings.Join([]string{split[0], *imageTag}, ":")
+	var fatalError bool
+	for _, err := range config.Validate() {
+		switch err := err.(type) {
+		case ConfigWarning:
+			fmt.Fprintln(os.Stderr, warningString("%v", err))
+		case VersionMistmatchError:
+			fmt.Fprintln(os.Stderr, errorString("%v", err))
+			if *imageVersion == "" {
+				// We consider this as a fatal error only if the version has not been explicitly specified on the command line
+				fatalError = true
+			}
+		default:
+			fmt.Fprintln(os.Stderr, errorString("%v", err))
+			fatalError = true
+		}
+	}
+	if fatalError {
+		os.Exit(1)
 	}
 
 	if *getImageName {
-		fmt.Println(config.Image)
+		fmt.Println(config.GetImageName())
 		os.Exit(0)
 	}
 
-	if !isVersionedImage(config.Image) && lastRefresh(config.Image) > config.Refresh || !checkImage(config.Image) || *refresh {
-		refreshImage(config.Image)
+	if *getCurrentVersion {
+		fmt.Printf("tgf v%s\n", version)
+		os.Exit(0)
 	}
 
-	os.Setenv("TERRAGRUNT_CACHE", filepath.Join(os.TempDir(), "tgf-cache"))
+	if *getAllVersions {
+		if config.EntryPoint != "terragrunt" {
+			fmt.Fprintln(os.Stderr, errorString("--all-version works only with terragrunt as the entrypoint"))
+			os.Exit(1)
+		}
+		fmt.Println("TGF version", version)
+		unmanaged = []string{"get-versions"}
+	}
+
+	if config.ImageVersion == "" && lastRefresh(config.GetImageName()) > config.Refresh || !checkImage(config.GetImageName()) || *refresh {
+		refreshImage(config.GetImageName())
+	}
 
 	if *loggingLevel != "" {
 		config.LogLevel = *loggingLevel
 	}
 
-	if config.RecommendedMinimalVersion != "" && version < config.RecommendedMinimalVersion {
-		fmt.Fprintf(os.Stderr, "Your version of tgf is outdated, you have %s. The recommended minimal version is %s\n\n", version, config.RecommendedMinimalVersion)
-	}
-
-	if config.RecommendedImage != "" && config.Image != config.RecommendedImage && image == nil && imageTag == nil {
-		fmt.Fprintf(os.Stderr, "A new version of tgf image is available, you use %s. The recommended image is %s\n\n", config.Image, config.RecommendedImage)
-	}
-
-	if unmanaged == nil && !*debug {
+	if unmanaged == nil && !*debug && config.EntryPoint == "terragrunt" {
 		title := color.New(color.FgYellow, color.Underline).SprintFunc()
 		fmt.Println(title("\nTGF Usage\n"))
 		app.Usage(nil)
@@ -165,3 +191,6 @@ func main() {
 
 	os.Exit(callDocker(config, !*noHome, *flushCache, *debug, *dockerOptions, unmanaged...))
 }
+
+var warningString = color.New(color.FgYellow).SprintfFunc()
+var errorString = color.New(color.FgRed).SprintfFunc()
