@@ -17,12 +17,13 @@ var version = "master"
 
 var description = `
 DESCRIPTION:
-TGF ({{ .terragrunt }}) is a Docker frontend for terragrunt/terraform. It automatically maps your current folder, your HOME folder, your TEMP folder
-as well of most environment variables to the docker process. You can add -D to your command to get the exact docker command that is generated.
+TGF ({{ .terragrunt }}) is a Docker frontend for terragrunt/terraform. It automatically maps your current folder,
+your HOME folder, your TEMP folder as well of most environment variables to the docker process. You can add -D to
+your command to get the exact docker command that is generated.
 
-It then looks in your current folder and all its parents to find a file named '{{ .config }}' to retrieve the default configuration. If not all
-configurable values are satisfied and you have an AWS configuration, it will then try to retrieve the missing elements from the AWS Parameter
-Store under the key '{{ .parameterStoreKey }}'.
+It then looks in your current folder and all its parents to find a file named '{{ .config }}' to retrieve the
+default configuration. If not all configurable values are satisfied and you have an AWS configuration, it will
+then try to retrieve the missing elements from the AWS Parameter Store under the key '{{ .parameterStoreKey }}'.
 
 Configurable values are: {{ .options }}.
 
@@ -35,8 +36,11 @@ Terragrunt documentation could be found at {{ .terragruntCoveo }} (Coveo fork) o
 Terraform documentation could be found at {{ .terraform }}.
 
 IMPORTANT:
-Most of the tgf command line arguments are in uppercase to avoid potential conflict with the underlying command. If you must
-supply parameters to your command and they are unwillingly catched by tgf, you have to put them after '--' such as in the following example:
+Most of the tgf command line arguments are in uppercase to avoid potential conflict with the underlying command.
+If any of the tgf arguments conflicts with an argument of the desired entry point, you must place that argument
+after -- to ensure that they are not interpreted by tgf and are passed to the entry point. Any non conflicting
+argument will be passed to the entry point wherever it is located on the invocation arguments.
+
 	tgf ls -- -D   # Avoid -D to be interpretated by tgf as --debug-docker
 
 VERSION: {{ .version }}
@@ -158,7 +162,7 @@ func main() {
 	}
 
 	if *getCurrentVersion {
-		fmt.Println("tgf", version)
+		fmt.Printf("tgf v%s\n", version)
 		os.Exit(0)
 	}
 

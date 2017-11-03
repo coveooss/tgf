@@ -188,12 +188,13 @@ Returns the version of `Terraform` since we specified the entry point to be terr
 * [Terraform](https://www.terraform.io/)
 * [Terragrunt](https://github.com/coveo/terragrunt)
 * [Go Template](https://github.com/coveo/gotemplate)
-* Shells
+* Shells & tools
   * `sh`
+  * `openssl`
 
 ### Default image: coveo/tgf (based on Alpine)
 
-All tools included in `coveo/tgf.base` plus:
+All tools included in `coveo/tgf:base` plus:
 
 * [Python](https://www.python.org/) (2 and 3)
 * [Ruby](https://www.ruby-lang.org/en/)
@@ -201,17 +202,43 @@ All tools included in `coveo/tgf.base` plus:
 * [jq](https://stedolan.github.io/jq/)
 * [Terraforming](https://github.com/dtan4/terraforming)
 * [Tflint](https://github.com/wata727/tflint)
+* [Terraform-docs](https://github.com/segmentio/terraform-docs)
 * [Terraform Quantum Provider](https://github.com/coveo/terraform-provider-quantum)
 * Shells
   * `bash`
   * `zsh`
   * `fish`
+* Tools & editors
+  * `vim`
+  * `nano`
+  * `zip`
+  * `git`
 
-### Full image: coveo/tgf.full (based on Ubuntu)
+### AWS provider specialized image: coveo/tgf:aws (based on Alpine)
 
 All tools included in `coveo/tgf` plus:
 
-* [AWS Tools for Powershell](https://aws.amazon.com/powershell/)
+* [terraform-provider-aws (fork)](https://github.com/coveo/terraform-provider-aws)
+
+### Kubernetes tools (based on Alpine)
+
+All tools included in `coveo/tgf:aws` plus:
+
+* `kubectl`
+* `kops`
+* `helm`
+
+### MySQL image: coveo/tgf:mysql (based on Alpine)
+
+All tools included in `coveo/tgf:aws` plus:
+
+* `mysql-client`
+
+### Full image: coveo/tgf:full (based on Ubuntu)
+
+All tools included in the other images plus:
+
+* [AWS Tools for Powershell](https://aws.amazon.com/powershell)
 * [Oh My ZSH](http://ohmyz.sh/)
 * Shells
   * `powershell`
