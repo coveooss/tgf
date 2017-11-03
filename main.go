@@ -90,19 +90,22 @@ func main() {
 		awsProfile        = app.Argument("profile", "Set the AWS profile configuration to use").Default("").String()
 		debug             = app.Switch("debug-docker", "Print the docker command issued", 'D').Bool()
 		refresh           = app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").Bool()
-		getVersion        = app.Switch("tgf-version", "Get the current version of tgf", 'V').Bool()
 		loggingLevel      = app.Argument("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)", 'L').PlaceHolder("<level>").String()
 		flushCache        = app.Switch("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache", 'F').Bool()
 		noHome            = app.Switch("no-home", "Disable the mapping of the home directory (alias --nh)").Bool()
 		getImageName      = app.Switch("get-image-name", "Just return the resulting image name (alias --gi)").Bool()
 		dockerOptions     = app.Argument("docker-arg", "Supply extra argument to Docker (alias --da)").PlaceHolder("<opt>").Strings()
+		getAllVersions    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
+		getCurrentVersion = app.Switch("current-version", "Get current version infomation (alias --cv)").Bool()
 
 		// Shorten version of the tags
-		refresh2       = app.Switch("ri", "alias for refresh-image)").Hidden().Bool()
-		getImageName2  = app.Switch("gi", "alias for get-image-name").Hidden().Bool()
-		noHome2        = app.Switch("nh", "alias for no-home-mapping").Hidden().Bool()
-		dockerOptions2 = app.Argument("da", "alias for docker-arg").Hidden().Strings()
-		imageVersion2  = app.Argument("iv", "alias for image-version").Hidden().String()
+		refresh2           = app.Switch("ri", "alias for refresh-image)").Hidden().Bool()
+		getImageName2      = app.Switch("gi", "alias for get-image-name").Hidden().Bool()
+		noHome2            = app.Switch("nh", "alias for no-home-mapping").Hidden().Bool()
+		getCurrentVersion2 = app.Switch("cv", "alias for current-version").Hidden().Bool()
+		getAllVersions2    = app.Switch("av", "alias for all-versions").Hidden().Bool()
+		dockerOptions2     = app.Argument("da", "alias for docker-arg").Hidden().Strings()
+		imageVersion2      = app.Argument("iv", "alias for image-version").Hidden().String()
 	)
 
 	// Split up the managed parameters from the unmanaged ones
@@ -112,6 +115,8 @@ func main() {
 	// We combine the tags that have multiple definitions
 	*refresh = *refresh || *refresh2
 	*noHome = *noHome || *noHome2
+	*getCurrentVersion = *getCurrentVersion || *getCurrentVersion2
+	*getAllVersions = *getAllVersions || *getAllVersions2
 	*getImageName = *getImageName || *getImageName2
 	*dockerOptions = append(*dockerOptions, *dockerOptions2...)
 	*imageVersion += *imageVersion2
@@ -152,7 +157,16 @@ func main() {
 		os.Exit(0)
 	}
 
-	if *getVersion {
+	if *getCurrentVersion {
+		fmt.Println("tgf", version)
+		os.Exit(0)
+	}
+
+	if *getAllVersions {
+		if config.EntryPoint != "terragrunt" {
+			fmt.Fprintln(os.Stderr, errorString("--all-version works only with terragrunt as the entrypoint"))
+			os.Exit(1)
+		}
 		fmt.Println("TGF version", version)
 		unmanaged = []string{"get-versions"}
 	}

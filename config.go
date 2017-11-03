@@ -270,12 +270,14 @@ func CheckVersionRange(version, compare string) (bool, error) {
 	return comp(v), nil
 }
 
+// ConfigWarning is used to represent messages that should not be considered as critical error
 type ConfigWarning string
 
 func (e ConfigWarning) Error() string {
 	return string(e)
 }
 
+// VersionMistmatchError is used to describe an out of range version
 type VersionMistmatchError string
 
 func (e VersionMistmatchError) Error() string {
