@@ -7,11 +7,12 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG EXE_FOLDER=/usr/local/bin
 ARG EXT=_linux_64-bits.zip
 
-RUN adduser tgf --gecos "" --disabled-password
+RUN adduser tgf --gecos "" --disabled-password && \
+    adduser deploy --gecos "" --disabled-password
 
 # Update apt-get
 RUN apt-get update && \
-    apt-get -y install apt-utils && \
+    apt-get -y install apt-utils bash-completion && \
     apt-get -y install apt-transport-https software-properties-common python-software-properties && \
     apt-get -y install software-properties-common python-software-properties && \
     apt-get -y install curl wget ksh zsh fish git unzip mysql-client vim-tiny nano jq tree

@@ -5,4 +5,4 @@ ARG EXE_FOLDER=/usr/local/bin
 LABEL vendor="Coveo"
 LABEL maintainer "jgiroux@coveo.com"
 
-RUN apk --no-cache add mysql-client
+RUN apk add mysql-client
