@@ -8,8 +8,8 @@ LABEL maintainer "jgiroux@coveo.com"
 
 RUN apk update && \
     apk add openssl ca-certificates libc6-compat curl && \
-    RUN adduser -D tgf && \
-    RUN adduser -D deploy
+    adduser -D tgf && \
+    adduser -D deploy
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
 ARG TERRAFORM_VERSION=0.10.8
