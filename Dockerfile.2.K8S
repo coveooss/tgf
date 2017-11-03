@@ -21,7 +21,7 @@ RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v${KUBE
 ENV KUBECONFIG=/home/tgf/.kube/config
 RUN curl -sLo_ https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64 && \
     chmod +x _ && mv _ ${EXE_FOLDER}/kops && \
-    mkdir -p /home/tgf/.kube & touch ${KUBECONFIG}} & chmod 666 ${KUBECONFIG}}
+    mkdir -p /home/tgf/.kube & touch ${KUBECONFIG} & chmod 666 ${KUBECONFIG}
 
 # Install helm (git is also required by helm)
 ENV HELM_HOME=/home/tgf
