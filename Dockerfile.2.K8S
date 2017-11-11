@@ -6,7 +6,7 @@ LABEL vendor="Coveo"
 LABEL maintainer "jgiroux@coveo.com"
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
-ARG KUBE_VERSION=1.8.2
+ARG KUBE_VERSION=1.8.3
 ARG KOPS_VERSION=1.7.1
 ARG HELM_VERSION=2.7.0
 
@@ -36,5 +36,5 @@ RUN helm plugin install https://github.com/technosophos/helm-template
 RUN curl -sLo_ https://github.com/kubernetes/kops/releases/download/1.6.2/kops-linux-amd64 && \
     chmod +x _ && mv _ ${EXE_FOLDER}/kops16 && \
     ln ${EXE_FOLDER}/kops ${EXE_FOLDER}/kops17 && \
-    curl -sLo_ https://github.com/kubernetes/kops/releases/download/1.8.0-alpha.1/kops-linux-amd64 && \
+    curl -sLo_ https://github.com/kubernetes/kops/releases/download/1.8.0-beta.1/kops-linux-amd64 && \
     chmod +x _ && mv _ ${EXE_FOLDER}/kops18
