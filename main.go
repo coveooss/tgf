@@ -45,8 +45,18 @@ argument will be passed to the entry point wherever it is located on the invocat
 
 VERSION: {{ .version }}
 
-AUTHOR:	Coveo 🇲🇶 🇨🇦
+AUTHOR:	Coveo
 `
+
+var (
+	config        tgfConfig
+	dockerOptions []string
+	debug         bool
+	flushCache    bool
+	getImageName  bool
+	mapHome       bool
+	refresh       bool
+)
 
 func main() {
 	// Handle eventual panic message
@@ -62,6 +72,7 @@ func main() {
 	descriptionTemplate, _ := template.New("usage").Parse(description)
 	link := color.New(color.FgHiBlue, color.Italic).SprintfFunc()
 	bold := color.New(color.Bold).SprintfFunc()
+
 	descriptionTemplate.Execute(&descriptionBuffer, map[string]interface{}{
 		"parameterStoreKey": parameterFolder,
 		"config":            configFile,
@@ -87,20 +98,20 @@ func main() {
 	kingpin.CommandLine = app.Application
 
 	var (
-		defaultEntryPoint = app.Argument("entrypoint", "Override the entry point for docker", 'E').PlaceHolder("terragrunt").String()
-		image             = app.Argument("image", "Use the specified image instead of the default one").PlaceHolder("coveo/tgf").String()
-		imageVersion      = app.Argument("image-version", "Use a different version of docker image instead of the default one (alias --iv)").PlaceHolder("version").String()
-		imageTag          = app.Argument("tag", "Use a different tag of docker image instead of the default one", 'T').PlaceHolder("latest").String()
-		awsProfile        = app.Argument("profile", "Set the AWS profile configuration to use").Default("").String()
-		debug             = app.Switch("debug-docker", "Print the docker command issued", 'D').Bool()
-		refresh           = app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").Bool()
-		loggingLevel      = app.Argument("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)", 'L').PlaceHolder("<level>").String()
-		flushCache        = app.Switch("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache", 'F').Bool()
-		noHome            = app.Switch("no-home", "Disable the mapping of the home directory (alias --nh)").Bool()
-		getImageName      = app.Switch("get-image-name", "Just return the resulting image name (alias --gi)").Bool()
-		dockerOptions     = app.Argument("docker-arg", "Supply extra argument to Docker (alias --da)").PlaceHolder("<opt>").Strings()
-		getAllVersions    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
-		getCurrentVersion = app.Switch("current-version", "Get current version infomation (alias --cv)").Bool()
+		defaultEntryPoint  = app.Argument("entrypoint", "Override the entry point for docker", 'E').PlaceHolder("terragrunt").String()
+		image              = app.Argument("image", "Use the specified image instead of the default one").PlaceHolder("coveo/tgf").String()
+		imageVersion       = app.Argument("image-version", "Use a different version of docker image instead of the default one (alias --iv)").PlaceHolder("version").Default("-").String()
+		imageTag           = app.Argument("tag", "Use a different tag of docker image instead of the default one", 'T').PlaceHolder("latest").Default("-").String()
+		awsProfile         = app.Argument("profile", "Set the AWS profile configuration to use", 'P').Default("").String()
+		debug1             = app.Switch("debug-docker", "Print the docker command issued", 'D').Bool()
+		refresh1           = app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").Bool()
+		loggingLevel       = app.Argument("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)", 'L').PlaceHolder("<level>").String()
+		flushCache1        = app.Switch("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache", 'F').Bool()
+		noHome1            = app.Switch("no-home", "Disable the mapping of the home directory (alias --nh)").Bool()
+		getImageName1      = app.Switch("get-image-name", "Just return the resulting image name (alias --gi)").Bool()
+		dockerOptions1     = app.Argument("docker-arg", "Supply extra argument to Docker (alias --da)").PlaceHolder("<opt>").Strings()
+		getAllVersions1    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
+		getCurrentVersion1 = app.Switch("current-version", "Get current version infomation (alias --cv)").Bool()
 
 		// Shorten version of the tags
 		refresh2           = app.Switch("ri", "alias for refresh-image)").Hidden().Bool()
@@ -109,7 +120,7 @@ func main() {
 		getCurrentVersion2 = app.Switch("cv", "alias for current-version").Hidden().Bool()
 		getAllVersions2    = app.Switch("av", "alias for all-versions").Hidden().Bool()
 		dockerOptions2     = app.Argument("da", "alias for docker-arg").Hidden().Strings()
-		imageVersion2      = app.Argument("iv", "alias for image-version").Hidden().String()
+		imageVersion2      = app.Argument("iv", "alias for image-version").Default("-").Hidden().String()
 	)
 
 	// Split up the managed parameters from the unmanaged ones
@@ -117,22 +128,35 @@ func main() {
 	Must(app.Parse(managed))
 
 	// We combine the tags that have multiple definitions
-	*refresh = *refresh || *refresh2
-	*noHome = *noHome || *noHome2
-	*getCurrentVersion = *getCurrentVersion || *getCurrentVersion2
-	*getAllVersions = *getAllVersions || *getAllVersions2
-	*getImageName = *getImageName || *getImageName2
-	*dockerOptions = append(*dockerOptions, *dockerOptions2...)
-	*imageVersion += *imageVersion2
+	debug = *debug1
+	flushCache = *flushCache1
+	getImageName = *getImageName1 || *getImageName2
+	mapHome = !(*noHome1 || *noHome2)
+	refresh = *refresh1 || *refresh2
+	dockerOptions = append(*dockerOptions1, *dockerOptions2...)
+	getCurrentVersion := *getCurrentVersion1 || *getCurrentVersion2
+	getAllVersions := *getAllVersions1 || *getAllVersions2
+	dockerOptions = append(*dockerOptions1, *dockerOptions2...)
+	if *imageVersion2 != "-" {
+		imageVersion = imageVersion2
+	}
 
+	// If AWS profile is supplied, we freeze the current session
 	if *awsProfile != "" {
 		Must(aws_helper.InitAwsSession(*awsProfile))
 	}
 
-	config := tgfConfig{}
-	config.SetValue(dockerImage, *image)
-	config.SetValue(dockerImageVersion, *imageVersion)
-	config.SetValue(dockerImageTag, *imageTag)
+	if *image != "" {
+		config.SetValue(dockerImage, *image)
+	}
+
+	if *imageVersion != "-" {
+		config.SetValue(dockerImageVersion, *imageVersion)
+	}
+
+	if *imageTag != "-" {
+		config.SetValue(dockerImageTag, *imageTag)
+	}
 	config.SetValue(entryPoint, *defaultEntryPoint)
 	config.SetDefaultValues()
 
@@ -143,7 +167,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, warningString("%v", err))
 		case VersionMistmatchError:
 			fmt.Fprintln(os.Stderr, errorString("%v", err))
-			if *imageVersion == "" {
+			if *imageVersion == "-" {
 				// We consider this as a fatal error only if the version has not been explicitly specified on the command line
 				fatalError = true
 			}
@@ -156,17 +180,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if *getImageName {
-		fmt.Println(config.GetImageName())
-		os.Exit(0)
-	}
-
-	if *getCurrentVersion {
+	if getCurrentVersion {
 		fmt.Printf("tgf v%s\n", version)
 		os.Exit(0)
 	}
 
-	if *getAllVersions {
+	if getAllVersions {
 		if config.EntryPoint != "terragrunt" {
 			fmt.Fprintln(os.Stderr, errorString("--all-version works only with terragrunt as the entrypoint"))
 			os.Exit(1)
@@ -175,7 +194,7 @@ func main() {
 		unmanaged = []string{"get-versions"}
 	}
 
-	if config.ImageVersion == "" && lastRefresh(config.GetImageName()) > config.Refresh || !checkImage(config.GetImageName()) || *refresh {
+	if config.ImageVersion == nil && lastRefresh(config.GetImageName()) > config.Refresh || !checkImage(config.GetImageName()) || refresh {
 		refreshImage(config.GetImageName())
 	}
 
@@ -183,13 +202,13 @@ func main() {
 		config.LogLevel = *loggingLevel
 	}
 
-	if unmanaged == nil && !*debug && config.EntryPoint == "terragrunt" {
+	if config.EntryPoint == "terragrunt" && unmanaged == nil && !debug && !getImageName {
 		title := color.New(color.FgYellow, color.Underline).SprintFunc()
 		fmt.Println(title("\nTGF Usage\n"))
 		app.Usage(nil)
 	}
 
-	os.Exit(callDocker(config, !*noHome, *flushCache, *debug, *dockerOptions, unmanaged...))
+	os.Exit(callDocker(unmanaged...))
 }
 
 var warningString = color.New(color.FgYellow).SprintfFunc()

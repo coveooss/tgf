@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"os/user"
@@ -15,7 +16,7 @@ import (
 	"github.com/gruntwork-io/terragrunt/util"
 )
 
-func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, dockerOptions []string, args ...string) int {
+func callDocker(args ...string) int {
 	command := append([]string{config.EntryPoint}, args...)
 
 	// Change the default log level for terragrunt
@@ -38,6 +39,13 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 
 	if flushCache && config.EntryPoint == "terragrunt" {
 		command = append(command, "--terragrunt-source-update")
+	}
+
+	imageName := getImage()
+
+	if getImageName {
+		fmt.Println(imageName)
+		return 0
 	}
 
 	currentUser := Must(user.Current()).(*user.User)
@@ -70,15 +78,19 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 	os.Setenv("TGF_COMMAND", config.EntryPoint)
 	os.Setenv("TGF_VERSION", version)
 	os.Setenv("TGF_IMAGE", config.Image)
-	os.Setenv("TGF_IMAGE_VERSION", config.ImageVersion)
-	os.Setenv("TGF_IMAGE_TAG", config.ImageTag)
-	os.Setenv("TGF_IMAGE_NAME", config.GetImageName())
+	if config.ImageVersion != nil {
+		os.Setenv("TGF_IMAGE_VERSION", *config.ImageVersion)
+	}
+	if config.ImageTag != nil {
+		os.Setenv("TGF_IMAGE_TAG", *config.ImageTag)
+	}
+	os.Setenv("TGF_IMAGE_NAME", imageName)
 
 	for _, do := range dockerOptions {
 		dockerArgs = append(dockerArgs, strings.Split(do, " ")...)
 	}
 	dockerArgs = append(dockerArgs, getEnviron(mapHome)...)
-	dockerArgs = append(dockerArgs, config.GetImageName())
+	dockerArgs = append(dockerArgs, imageName)
 	dockerArgs = append(dockerArgs, command...)
 	dockerCmd := exec.Command("docker", dockerArgs...)
 	dockerCmd.Stdin, dockerCmd.Stdout = os.Stdin, os.Stdout
@@ -86,8 +98,7 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 	dockerCmd.Stderr = &stderr
 
 	if debug {
-		debugString := color.New(color.FgWhite, color.Faint).SprintfFunc()
-		fmt.Fprint(os.Stderr, debugString("%s\n\n", strings.Join(dockerCmd.Args, " ")))
+		printfDebug(os.Stderr, "%s\n\n", strings.Join(dockerCmd.Args, " "))
 	}
 
 	if err := dockerCmd.Run(); err != nil {
@@ -101,6 +112,35 @@ func callDocker(config tgfConfig, mapHome bool, flushCache bool, debug bool, doc
 		}
 	}
 	return dockerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+}
+
+var printfDebug = color.New(color.FgWhite, color.Faint).FprintfFunc()
+
+// Returns the image name to use
+// If docker-image-build option has been set, an image is dynamically built and the resulting image digest is returned
+func getImage() string {
+	if config.ImageBuild == "" {
+		return config.GetImageName()
+	}
+
+	args := []string{"build", "-", "--quiet", "--force-rm"}
+	if refresh {
+		args = append(args, "--pull")
+	}
+	buildCmd := exec.Command("docker", args...)
+	var dockerFile string
+	dockerFile += fmt.Sprintln("FROM", config.GetImageName())
+	dockerFile += fmt.Sprintln(config.ImageBuild)
+
+	if debug {
+		printfDebug(os.Stderr, "%s\n", strings.Join(buildCmd.Args, " "))
+		printfDebug(os.Stderr, "%s", dockerFile)
+	}
+	buildCmd.Stderr = os.Stderr
+	stdin := Must(buildCmd.StdinPipe()).(io.WriteCloser)
+	fmt.Fprintln(stdin, dockerFile)
+	stdin.Close()
+	return strings.TrimSpace(string(Must(buildCmd.Output()).([]byte)))
 }
 
 func checkImage(image string) bool {
