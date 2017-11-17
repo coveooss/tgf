@@ -39,7 +39,7 @@ RUN apt-get -y install ruby && gem install terraforming
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
 ARG TERRAFORM_VERSION=0.11.0
 ARG TERRAFORM_QUANTUM=0.3.6
-ARG TERRAGRUNT_VERSION=0.12.26-coveo.4
+ARG TERRAGRUNT_VERSION=0.12.26-coveo.5
 ARG GOTEMPLATE_VERSION=2.1.1
 ARG TFLINT_VERSION=0.3.6
 ARG AWS_PROVIDER=1.3.0-coveo.1
