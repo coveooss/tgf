@@ -7,20 +7,15 @@ LABEL maintainer "jgiroux@coveo.com"
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
 ARG KUBE_VERSION=1.8.3
-ARG KOPS_VERSION=1.7.1
-ARG HELM_VERSION=2.7.0
+ARG HELM_VERSION=2.7.2
 
 # Install ssh (Required to perform port forwarding through bastion)
 RUN apk add openssh git
 
 # Install kubectl
-RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && \
-    chmod +x _ && mv _ ${EXE_FOLDER}/kubectl
-
-# Install kops
 ENV KUBECONFIG=/home/tgf/.kube/config
-RUN curl -sLo_ https://github.com/kubernetes/kops/releases/download/${KOPS_VERSION}/kops-linux-amd64 && \
-    chmod +x _ && mv _ ${EXE_FOLDER}/kops && \
+RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && \
+    chmod +x _ && mv _ ${EXE_FOLDER}/kubectl && \
     mkdir -p /home/tgf/.kube && touch ${KUBECONFIG} && chmod 666 ${KUBECONFIG}
 
 # Install helm (git is also required by helm)
@@ -30,11 +25,5 @@ RUN curl -s -L https://kubernetes-helm.storage.googleapis.com/helm-v${HELM_VERSI
     mkdir -p $(helm home)/plugins && rm -rf ./linux-amd64
 
 # Install helm-template
-RUN helm plugin install https://github.com/technosophos/helm-template
-
-# Install previous and future versions of Kops    
-RUN curl -sLo_ https://github.com/kubernetes/kops/releases/download/1.6.2/kops-linux-amd64 && \
-    chmod +x _ && mv _ ${EXE_FOLDER}/kops16 && \
-    ln ${EXE_FOLDER}/kops ${EXE_FOLDER}/kops17 && \
-    curl -sLo_ https://github.com/kubernetes/kops/releases/download/1.8.0-beta.1/kops-linux-amd64 && \
-    chmod +x _ && mv _ ${EXE_FOLDER}/kops18
+RUN helm plugin install https://github.com/technosophos/helm-template && \
+    pip3 install click deepdiff flatten_dict PyYAML

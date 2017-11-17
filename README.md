@@ -226,12 +226,6 @@ All tools included in `coveo/tgf:aws` plus:
 * `kops`
 * `helm`
 
-### MySQL image: coveo/tgf:mysql (based on Alpine)
-
-All tools included in `coveo/tgf:aws` plus:
-
-* `mysql-client`
-
 ### Full image: coveo/tgf:full (based on Ubuntu)
 
 All tools included in the other images plus:

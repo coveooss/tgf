@@ -12,7 +12,7 @@ RUN apk update && \
     adduser -D deploy
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
-ARG TERRAFORM_VERSION=0.10.8
+ARG TERRAFORM_VERSION=0.11.0
 ARG TERRAGRUNT_VERSION=0.12.26-coveo.4
 ARG GOTEMPLATE_VERSION=2.1.1
 

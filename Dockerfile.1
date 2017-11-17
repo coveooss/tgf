@@ -20,7 +20,6 @@ RUN apk add py2-pip python3 groff less tree && \
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
 ARG TERRAFORM_QUANTUM=0.3.6
 ARG TFLINT_VERSION=0.3.6
-ARG JSON2HCL_VERSION=0.0.6
 ARG TERRAFORM_DOCS_VERSION=0.3.0
 
 RUN curl -sLo_ https://github.com/wata727/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip && \
@@ -28,6 +27,4 @@ RUN curl -sLo_ https://github.com/wata727/tflint/releases/download/v${TFLINT_VER
     curl -sLo_ https://github.com/segmentio/terraform-docs/releases/download/v${TERRAFORM_DOCS_VERSION}/terraform-docs_linux_amd64 && \
     mv _ ${EXE_FOLDER}/terraform-docs && chmod +x ${EXE_FOLDER}/terraform-docs && \
     curl -sLo_ https://github.com/coveo/terraform-provider-quantum/releases/download/v${TERRAFORM_QUANTUM}/terraform-provider-quantum_${TERRAFORM_QUANTUM}${EXT} && \
-    unzip -p _ > ${EXE_FOLDER}/terraform-provider-quantum && chmod +x ${EXE_FOLDER}/terraform-provider-quantum && \
-    curl -sLo_ https://github.com/kvz/json2hcl/releases/download/v${JSON2HCL_VERSION}/json2hcl_v${JSON2HCL_VERSION}_linux_amd64 && \
-    mv _ ${EXE_FOLDER}/json2hcl && chmod +x ${EXE_FOLDER}/json2hcl
+    unzip -p _ > ${EXE_FOLDER}/terraform-provider-quantum && chmod +x ${EXE_FOLDER}/terraform-provider-quantum

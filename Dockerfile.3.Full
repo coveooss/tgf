@@ -15,7 +15,7 @@ RUN apt-get update && \
     apt-get -y install apt-utils bash-completion && \
     apt-get -y install apt-transport-https software-properties-common python-software-properties && \
     apt-get -y install software-properties-common python-software-properties && \
-    apt-get -y install curl wget ksh zsh fish git unzip mysql-client vim-tiny nano jq tree
+    apt-get -y install curl wget ksh zsh fish git unzip vim-tiny nano jq tree
 
 # Install os-my-zsh
 RUN sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" || echo
@@ -28,7 +28,7 @@ RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - &
 RUN apt-get update && \
     apt-get install -y powershell python3-pip python-pip groff && \
     pip install --upgrade pip && pip install awscli && \
-    pip3 install --upgrade pip && pip3 install colorama
+    pip3 install --upgrade pip && pip3 install colorama click deepdiff flatten_dict PyYAML
 
 # Installing the AWS Powershell client
 RUN pwsh -c Install-Package AWSPowerShell.NetCore -Force > /dev/null
@@ -37,13 +37,12 @@ RUN pwsh -c Install-Package AWSPowerShell.NetCore -Force > /dev/null
 RUN apt-get -y install ruby && gem install terraforming
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
-ARG TERRAFORM_VERSION=0.10.8
+ARG TERRAFORM_VERSION=0.11.0
 ARG TERRAFORM_QUANTUM=0.3.6
 ARG TERRAGRUNT_VERSION=0.12.26-coveo.4
 ARG GOTEMPLATE_VERSION=2.1.1
 ARG TFLINT_VERSION=0.3.6
-ARG JSON2HCL_VERSION=0.0.6
-ARG AWS_PROVIDER=1.2.0-coveo.1
+ARG AWS_PROVIDER=1.3.0-coveo.1
 ARG TERRAFORM_DOCS_VERSION=0.3.0
 
 RUN curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
@@ -58,7 +57,5 @@ RUN curl -sLo_ https://github.com/segmentio/terraform-docs/releases/download/v${
     mv _ ${EXE_FOLDER}/terraform-docs && chmod +x ${EXE_FOLDER}/terraform-docs
 RUN curl -sLo_ https://github.com/coveo/terraform-provider-quantum/releases/download/v${TERRAFORM_QUANTUM}/terraform-provider-quantum_${TERRAFORM_QUANTUM}${EXT} && \
     unzip -p _ > ${EXE_FOLDER}/terraform-provider-quantum && chmod +x ${EXE_FOLDER}/terraform-provider-quantum
-RUN curl -sLo_ https://github.com/kvz/json2hcl/releases/download/v${JSON2HCL_VERSION}/json2hcl_v${JSON2HCL_VERSION}_linux_amd64 && \
-    mv _ ${EXE_FOLDER}/json2hcl && chmod +x ${EXE_FOLDER}/json2hcl
 RUN curl -sLo_ https://github.com/coveo/terraform-provider-aws/releases/download/v${AWS_PROVIDER}/terraform-provider-aws_${AWS_PROVIDER}${EXT} && \
     unzip -p _ > ${EXE_FOLDER}/terraform-provider-aws && chmod +x ${EXE_FOLDER}/terraform-provider-aws && rm _
