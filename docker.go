@@ -72,6 +72,8 @@ func callDocker(args ...string) int {
 			"-v", fmt.Sprintf("%v:%v", convertDrive(home), homeWithoutVolume),
 			"-e", fmt.Sprintf("HOME=%v", homeWithoutVolume),
 		}...)
+
+		dockerArgs = append(dockerArgs, config.DockerOptions...)
 	}
 
 	os.Setenv("TERRAGRUNT_CACHE", "/var/tgf")

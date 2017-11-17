@@ -26,6 +26,7 @@ const (
 	dockerImageTag             = "docker-image-tag"
 	dockerImageBuild           = "docker-image-build"
 	dockerRefresh              = "docker-refresh"
+	dockerOptionsTag           = "docker-options"
 	loggingLevel               = "logging-level"
 	entryPoint                 = "entry-point"
 	tgfVersion                 = "tgf-recommended-version"
@@ -42,6 +43,7 @@ type tgfConfig struct {
 	LogLevel                string
 	EntryPoint              string
 	Refresh                 time.Duration
+	DockerOptions           []string
 	RecommendedImageVersion string
 	RequiredVersionRange    string
 	RecommendedTGFVersion   string
@@ -79,6 +81,7 @@ func (config tgfConfig) String() (result string) {
 
 		ifNotZero(dockerImageBuild, buildScript)
 	}
+	ifNotZero(dockerOptionsTag, config.DockerOptions)
 	ifNotZero(recommendedImageVersion, config.RecommendedImageVersion)
 	ifNotZero(requiredImageVersion, config.RequiredVersionRange)
 	ifNotZero(dockerRefresh, config.Refresh)
@@ -143,6 +146,8 @@ func (config *tgfConfig) SetValue(key, value string) {
 			fmt.Fprintf(os.Stderr, warningString("Parameter %s should not contains the image name: %s\n", key, value))
 		}
 		config.apply(key, ":"+value)
+	case dockerOptionsTag:
+		config.DockerOptions = append(config.DockerOptions, strings.Split(value, " ")...)
 	case dockerImageBuild:
 		// We concatenate the various levels of docker build instructions
 		config.ImageBuild = strings.Join([]string{strings.TrimSpace(value), strings.TrimSpace(config.ImageBuild)}, "\n")

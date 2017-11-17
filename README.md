@@ -38,19 +38,19 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.15.1/tgf_1.15.1_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.15.2/tgf_1.15.2_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.15.1/tgf_1.15.1_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.15.2/tgf_1.15.2_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.15.1/tgf_1.15.1_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.15.2/tgf_1.15.2_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -91,6 +91,7 @@ Key | Description | Default value
 | docker-image-tag | Identify the image tag (could specify specialized version such as k8s, full) | latest
 | docker-image-build | List of Dockerfile instructions to customize the specified docker image) |
 | docker-refresh | Delay before checking if a newer version of the docker image is available | 1h (1 hour)
+| docker-options | Additional options to supply to the Docker command |
 | logging-level | Terragrunt logging level (only apply to Terragrunt entry point).<br>*Critical (0), Error (1), Warning (2), Notice (3), Info (4), Debug (5), Full (6)* | Notice
 | entry-point | The program that will be automatically launched when the docker starts | terragrunt
 | tgf-recommended-version | The minimal tgf version recommended in your context  (should not be placed in `.tgf.config file`) | *no default*
@@ -113,7 +114,7 @@ It then looks in your current folder and all its parents to find a file named '.
 default configuration. If not all configurable values are satisfied and you have an AWS configuration, it
 will then try to retrieve the missing elements from the AWS Parameter Store under the key '/default/tgf'.
 
-Configurable values are: docker-image, docker-image-version, docker-image-tag, docker-refresh, recommended-image-version, required-image-version, logging-level, entry-point, tgf-recommended-version.
+Configurable values are: docker-image, docker-image-version, docker-image-tag, docker-refresh, docker-options, recommended-image-version, required-image-version, logging-level, entry-point, tgf-recommended-version.
 
 You can get the full documentation at https://github.com/coveo/tgf/blob/master/README.md and check for new
 version at https://github.com/coveo/tgf/releases/latest.
@@ -131,7 +132,7 @@ Any non conflicting argument will be passed to the entry point wherever it is lo
 
   tgf ls -- -D   # Avoid -D to be interpretated by tgf as --debug-docker
 
-VERSION: 1.15.1
+VERSION: 1.15.2
 
 AUTHOR: Coveo
 
@@ -158,7 +159,7 @@ Example:
 
 ```bash
 > tgf --current-version
-tgf v1.15.1
+tgf v1.15.2
 ```
 
 Returns the current version of the tgf tool
