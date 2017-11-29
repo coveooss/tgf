@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -125,23 +125,26 @@ func getImage() string {
 		return config.GetImageName()
 	}
 
-	args := []string{"build", "-", "--quiet", "--force-rm"}
+	var dockerFile string
+	dockerFile += fmt.Sprintln("FROM", config.GetImageName())
+	dockerFile += fmt.Sprintln(config.ImageBuild)
+
+	tempDir := Must(ioutil.TempDir("", "tgf-docker")).(string)
+	PanicOnError(ioutil.WriteFile(fmt.Sprintf("%s/Dockerfile", tempDir), []byte(dockerFile), 0644))
+	defer os.RemoveAll(tempDir)
+
+	args := []string{"build", tempDir, "--quiet", "--force-rm"}
 	if refresh {
 		args = append(args, "--pull")
 	}
 	buildCmd := exec.Command("docker", args...)
-	var dockerFile string
-	dockerFile += fmt.Sprintln("FROM", config.GetImageName())
-	dockerFile += fmt.Sprintln(config.ImageBuild)
 
 	if debug {
 		printfDebug(os.Stderr, "%s\n", strings.Join(buildCmd.Args, " "))
 		printfDebug(os.Stderr, "%s", dockerFile)
 	}
 	buildCmd.Stderr = os.Stderr
-	stdin := Must(buildCmd.StdinPipe()).(io.WriteCloser)
-	fmt.Fprintln(stdin, dockerFile)
-	stdin.Close()
+
 	return strings.TrimSpace(string(Must(buildCmd.Output()).([]byte)))
 }
 
