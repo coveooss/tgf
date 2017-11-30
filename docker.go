@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/blang/semver"
 	"github.com/fatih/color"
 	"github.com/gruntwork-io/terragrunt/util"
 )
@@ -80,8 +81,13 @@ func callDocker(args ...string) int {
 	os.Setenv("TGF_COMMAND", config.EntryPoint)
 	os.Setenv("TGF_VERSION", version)
 	os.Setenv("TGF_IMAGE", config.Image)
+	os.Setenv("TGF_ARGS", strings.Join(os.Args, " "))
+	os.Setenv("TGF_LAUNCH_FOLDER", Must(os.Getwd()).(string))
 	if config.ImageVersion != nil {
 		os.Setenv("TGF_IMAGE_VERSION", *config.ImageVersion)
+		if version, err := semver.Make(*config.ImageVersion); err == nil {
+			os.Setenv("TGF_MAJ_MIN", fmt.Sprintf("%d.%d", version.Major, version.Minor))
+		}
 	}
 	if config.ImageTag != nil {
 		os.Setenv("TGF_IMAGE_TAG", *config.ImageTag)
