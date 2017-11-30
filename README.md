@@ -38,19 +38,19 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.15.2/tgf_1.15.2_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.15.3/tgf_1.15.3_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.15.2/tgf_1.15.2_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.15.3/tgf_1.15.3_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.15.2/tgf_1.15.2_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.15.3/tgf_1.15.3_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -132,7 +132,7 @@ Any non conflicting argument will be passed to the entry point wherever it is lo
 
   tgf ls -- -D   # Avoid -D to be interpretated by tgf as --debug-docker
 
-VERSION: 1.15.2
+VERSION: 1.15.3
 
 AUTHOR: Coveo
 
@@ -159,7 +159,7 @@ Example:
 
 ```bash
 > tgf --current-version
-tgf v1.15.2
+tgf v1.15.3
 ```
 
 Returns the current version of the tgf tool
