@@ -27,7 +27,7 @@ RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - &
 # Install the last packages
 RUN apt-get update && \
     apt-get install -y powershell python3-pip python-pip groff && \
-    pip install --upgrade pip && pip install awscli && \
+    pip install --upgrade pip && pip install awscli mdv && \
     pip3 install --upgrade pip && pip3 install colorama click deepdiff flatten_dict PyYAML
 
 # Installing the AWS Powershell client
@@ -39,10 +39,10 @@ RUN apt-get -y install ruby && gem install terraforming
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
 ARG TERRAFORM_VERSION=0.11.0
 ARG TERRAFORM_QUANTUM=0.3.6
-ARG TERRAGRUNT_VERSION=0.12.26-coveo.5
-ARG GOTEMPLATE_VERSION=2.1.1
+ARG TERRAGRUNT_VERSION=0.12.26-coveo.6
+ARG GOTEMPLATE_VERSION=2.2.0
 ARG TFLINT_VERSION=0.3.6
-ARG AWS_PROVIDER=1.3.0-coveo.1
+ARG AWS_PROVIDER=1.3.1-coveo.1
 ARG TERRAFORM_DOCS_VERSION=0.3.0
 
 RUN curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
