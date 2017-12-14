@@ -211,6 +211,7 @@ All tools included in `coveo/tgf:base` plus:
   * `nano`
   * `zip`
   * `git`
+  * `mercurial`
 
 ### AWS provider specialized image: coveo/tgf:aws (based on Alpine)
 
