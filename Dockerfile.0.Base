@@ -14,7 +14,7 @@ RUN apk update && \
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
 ARG TERRAFORM_VERSION=0.11.1
 ARG TERRAGRUNT_VERSION=0.12.26-coveo.5
-ARG GOTEMPLATE_VERSION=2.2.3 
+ARG GOTEMPLATE_VERSION=2.2.4
 
 RUN curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
     unzip -p _ > ${EXE_FOLDER}/terraform  && chmod +x ${EXE_FOLDER}/terraform && \
