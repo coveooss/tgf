@@ -18,6 +18,9 @@ RUN curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v${KUBE
     chmod +x _ && mv _ ${EXE_FOLDER}/kubectl && \
     mkdir -p /home/tgf/.kube && touch ${KUBECONFIG} && chmod 666 ${KUBECONFIG}
 
+# Install docker
+RUN apk add docker
+
 # Install helm (git is also required by helm)
 ENV HELM_HOME=/home/tgf
 RUN curl -s -L https://kubernetes-helm.storage.googleapis.com/helm-v${HELM_VERSION}-linux-amd64.tar.gz | tar xzv && \

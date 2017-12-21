@@ -97,6 +97,10 @@ func callDocker(args ...string) int {
 	for _, do := range dockerOptions {
 		dockerArgs = append(dockerArgs, strings.Split(do, " ")...)
 	}
+
+    // This makes docker on the machine use the local daemon, aka spawn "sister containers"
+	dockerArgs = append(dockerArgs, "-v", "/var/run/docker.sock:/var/run/docker.sock")
+
 	dockerArgs = append(dockerArgs, getEnviron(mapHome)...)
 	dockerArgs = append(dockerArgs, imageName)
 	dockerArgs = append(dockerArgs, command...)

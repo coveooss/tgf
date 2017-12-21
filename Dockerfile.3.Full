@@ -20,7 +20,7 @@ RUN apt-get update && \
 # Install os-my-zsh
 RUN sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" || echo
 
-# Resgister Microsoft to apt
+# Register Microsoft to apt
 RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
     curl -sL https://packages.microsoft.com/config/ubuntu/16.04/prod.list | tee /etc/apt/sources.list.d/microsoft.list
 
@@ -35,6 +35,9 @@ RUN pwsh -c Install-Package AWSPowerShell.NetCore -Force > /dev/null
 
 # Install terraforming
 RUN apt-get -y install ruby && gem install terraforming
+
+# Install docker
+RUN apt-get -y install docker
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
 ARG TERRAFORM_VERSION=0.11.1
