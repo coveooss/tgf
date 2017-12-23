@@ -26,4 +26,6 @@ RUN curl -s -L https://kubernetes-helm.storage.googleapis.com/helm-v${HELM_VERSI
 
 # Install helm-template
 RUN helm plugin install https://github.com/technosophos/helm-template && \
-    pip3 install click deepdiff flatten_dict PyYAML
+    pip3 install deepdiff && \
+    pip3 install flatten_dict && \
+    pip3 install PyYAML

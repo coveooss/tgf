@@ -27,8 +27,15 @@ RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - &
 # Install the last packages
 RUN apt-get update && \
     apt-get install -y powershell python3-pip python-pip groff && \
-    pip install --upgrade pip && pip install awscli mdv && \
-    pip3 install --upgrade pip && pip3 install colorama click deepdiff flatten_dict PyYAML
+    pip install --upgrade pip && \
+    pip install awscli && \
+    pip install mdv && \
+    pip3 install --upgrade pip && \
+    pip3 install colorama && \
+    pip3 install click && \
+    pip3 install deepdiff && \
+    pip3 install flatten_dict && \
+    pip3 install PyYAML
 
 # Installing the AWS Powershell client
 RUN pwsh -c Install-Package AWSPowerShell.NetCore -Force > /dev/null
@@ -40,7 +47,7 @@ RUN apt-get -y install ruby && gem install terraforming
 ARG TERRAFORM_VERSION=0.11.1
 ARG TERRAFORM_QUANTUM=0.3.6
 ARG TERRAGRUNT_VERSION=0.12.26-coveo.6
-ARG GOTEMPLATE_VERSION=2.2.3
+ARG GOTEMPLATE_VERSION=2.2.4
 ARG TFLINT_VERSION=0.3.6
 ARG AWS_PROVIDER=1.5.0-coveo.1
 ARG TERRAFORM_DOCS_VERSION=0.3.0
