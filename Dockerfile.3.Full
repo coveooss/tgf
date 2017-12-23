@@ -20,7 +20,7 @@ RUN apt-get update && \
 # Install os-my-zsh
 RUN sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" || echo
 
-# Resgister Microsoft to apt
+# Register Microsoft to apt
 RUN curl -sL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
     curl -sL https://packages.microsoft.com/config/ubuntu/16.04/prod.list | tee /etc/apt/sources.list.d/microsoft.list
 
