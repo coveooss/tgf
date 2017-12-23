@@ -11,11 +11,8 @@ RUN apk update && apk add bash zsh fish bash-completion
 
 # Installing the AWS cli
 RUN apk add py2-pip python3 groff less tree && \
-    pip install --upgrade pip && \
-    pip install awscli && \
-    pip install mdv && \
-    pip3 install colorama && \
-    pip3 install click && \
+    pip install --upgrade pip && pip install awscli mdv && \
+    pip3 install colorama jenkinsapi click && \
     apk add jq zip nano vim git mercurial ruby ruby-rdoc ruby-irb && \
     gem install terraforming
 
