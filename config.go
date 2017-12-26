@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -104,8 +105,16 @@ func (config *tgfConfig) SetDefaultValues() {
 				continue
 			}
 		}
-		for key, value := range result {
-			config.SetValue(key, value)
+
+		// We sort the keys to ensure that we alway process them in the same order
+		keys := make([]string, 0, len(result))
+		for key := range result {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+
+		for _, key := range keys {
+			config.SetValue(key, result[key])
 		}
 	}
 
@@ -183,6 +192,29 @@ func (config *tgfConfig) SetValue(key, value string) {
 }
 
 func (config *tgfConfig) Validate() (errors []error) {
+	if config.RecommendedTGFVersion != "" {
+		if valid, err := CheckVersionRange(version, config.RecommendedTGFVersion); err != nil {
+			errors = append(errors, fmt.Errorf("Unable to check recommended tgf version %s vs %s: %v", version, config.RecommendedTGFVersion, err))
+		} else if !valid {
+			errors = append(errors, ConfigWarning(fmt.Sprintf("TGF v%s does not meet the recommended version range %s", version, config.RecommendedTGFVersion)))
+		}
+	}
+
+	if config.Image != config.recommendedImage {
+		// We should not issue version warning if the recommended image is not the same as the current image
+		return
+	}
+
+	if config.RequiredVersionRange != "" && config.ImageVersion != nil && *config.ImageVersion != "" {
+		if valid, err := CheckVersionRange(*config.ImageVersion, config.RequiredVersionRange); err != nil {
+			errors = append(errors, fmt.Errorf("Unable to check recommended image version %s vs %s: %v", *config.ImageVersion, config.RequiredVersionRange, err))
+			return
+		} else if !valid {
+			errors = append(errors, VersionMistmatchError(fmt.Sprintf("Image %s does not meet the required version range %s", config.GetImageName(), config.RequiredVersionRange)))
+			return
+		}
+	}
+
 	if config.RecommendedImageVersion != "" && config.ImageVersion != nil && *config.ImageVersion != "" {
 		if valid, err := CheckVersionRange(*config.ImageVersion, config.RecommendedImageVersion); err != nil {
 			errors = append(errors, fmt.Errorf("Unable to check recommended image version %s vs %s: %v", *config.ImageVersion, config.RecommendedImageVersion, err))
@@ -191,21 +223,6 @@ func (config *tgfConfig) Validate() (errors []error) {
 		}
 	}
 
-	if config.RequiredVersionRange != "" && config.ImageVersion != nil && *config.ImageVersion != "" {
-		if valid, err := CheckVersionRange(*config.ImageVersion, config.RequiredVersionRange); err != nil {
-			errors = append(errors, fmt.Errorf("Unable to check recommended image version %s vs %s: %v", *config.ImageVersion, config.RequiredVersionRange, err))
-		} else if !valid {
-			errors = append(errors, VersionMistmatchError(fmt.Sprintf("Image %s does not meet the required version range %s", config.GetImageName(), config.RequiredVersionRange)))
-		}
-	}
-
-	if config.RecommendedTGFVersion != "" {
-		if valid, err := CheckVersionRange(version, config.RecommendedTGFVersion); err != nil {
-			errors = append(errors, fmt.Errorf("Unable to check recommended tgf version %s vs %s: %v", version, config.RecommendedTGFVersion, err))
-		} else if !valid {
-			errors = append(errors, ConfigWarning(fmt.Sprintf("TGF v%s does not meet the recommended version range %s", version, config.RecommendedTGFVersion)))
-		}
-	}
 	return
 }
 
