@@ -54,7 +54,8 @@ var (
 	debug         bool
 	flushCache    bool
 	getImageName  bool
-	mapHome       bool
+	noHome        bool
+	noTemp        bool
 	refresh       bool
 )
 
@@ -97,49 +98,37 @@ func main() {
 	app.HelpFlag.Bool()
 	kingpin.CommandLine = app.Application
 
-	var (
-		defaultEntryPoint  = app.Argument("entrypoint", "Override the entry point for docker", 'E').PlaceHolder("terragrunt").String()
-		image              = app.Argument("image", "Use the specified image instead of the default one").PlaceHolder("coveo/tgf").String()
-		imageVersion       = app.Argument("image-version", "Use a different version of docker image instead of the default one (alias --iv)").PlaceHolder("version").Default("-").String()
-		imageTag           = app.Argument("tag", "Use a different tag of docker image instead of the default one", 'T').PlaceHolder("latest").Default("-").String()
-		awsProfile         = app.Argument("profile", "Set the AWS profile configuration to use", 'P').Default("").String()
-		debug1             = app.Switch("debug-docker", "Print the docker command issued", 'D').Bool()
-		refresh1           = app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").Bool()
-		loggingLevel       = app.Argument("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)", 'L').PlaceHolder("<level>").String()
-		flushCache1        = app.Switch("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache", 'F').Bool()
-		noHome1            = app.Switch("no-home", "Disable the mapping of the home directory (alias --nh)").Bool()
-		getImageName1      = app.Switch("get-image-name", "Just return the resulting image name (alias --gi)").Bool()
-		dockerOptions1     = app.Argument("docker-arg", "Supply extra argument to Docker (alias --da)").PlaceHolder("<opt>").Strings()
-		getAllVersions1    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
-		getCurrentVersion1 = app.Switch("current-version", "Get current version infomation (alias --cv)").Bool()
+	app.Switch("debug-docker", "Print the docker command issued", 'D').BoolVar(&debug)
+	app.Switch("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache", 'F').BoolVar(&flushCache)
+	app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").BoolVar(&refresh)
+	app.Argument("docker-arg", "Supply extra argument to Docker (alias --da)").PlaceHolder("<opt>").StringsVar(&dockerOptions)
+	app.Switch("get-image-name", "Just return the resulting image name (alias --gi)").BoolVar(&getImageName)
+	app.Switch("no-home", "Disable the mapping of the home directory (alias --nh)").BoolVar(&noHome)
+	app.Switch("no-temp", "Disable the mapping of the temp directory (alias --nt)").BoolVar(&noTemp)
 
-		// Shorten version of the tags
-		refresh2           = app.Switch("ri", "alias for refresh-image)").Hidden().Bool()
-		getImageName2      = app.Switch("gi", "alias for get-image-name").Hidden().Bool()
-		noHome2            = app.Switch("nh", "alias for no-home-mapping").Hidden().Bool()
-		getCurrentVersion2 = app.Switch("cv", "alias for current-version").Hidden().Bool()
-		getAllVersions2    = app.Switch("av", "alias for all-versions").Hidden().Bool()
-		dockerOptions2     = app.Argument("da", "alias for docker-arg").Hidden().Strings()
-		imageVersion2      = app.Argument("iv", "alias for image-version").Default("-").Hidden().String()
+	var (
+		defaultEntryPoint = app.Argument("entrypoint", "Override the entry point for docker", 'E').PlaceHolder("terragrunt").String()
+		image             = app.Argument("image", "Use the specified image instead of the default one").PlaceHolder("coveo/tgf").String()
+		imageVersion      = app.Argument("image-version", "Use a different version of docker image instead of the default one (alias --iv)").PlaceHolder("version").Default("-").String()
+		imageTag          = app.Argument("tag", "Use a different tag of docker image instead of the default one", 'T').PlaceHolder("latest").Default("-").String()
+		awsProfile        = app.Argument("profile", "Set the AWS profile configuration to use", 'P').Default("").String()
+		loggingLevel      = app.Argument("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)", 'L').PlaceHolder("<level>").String()
+		getAllVersions    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
+		getCurrentVersion = app.Switch("current-version", "Get current version infomation (alias --cv)").Bool()
 	)
+
+	app.Switch("ri", "alias for refresh-image)").Hidden().BoolVar(&refresh)
+	app.Switch("gi", "alias for get-image-name").Hidden().BoolVar(&getImageName)
+	app.Switch("nh", "alias for no-home").Hidden().BoolVar(&noHome)
+	app.Switch("nt", "alias for no-temp").Hidden().BoolVar(&noTemp)
+	app.Switch("cv", "alias for current-version").Hidden().BoolVar(getCurrentVersion)
+	app.Switch("av", "alias for all-versions").Hidden().BoolVar(getAllVersions)
+	app.Argument("da", "alias for docker-arg").Hidden().StringsVar(&dockerOptions)
+	app.Argument("iv", "alias for image-version").Default("-").Hidden().StringVar(imageVersion)
 
 	// Split up the managed parameters from the unmanaged ones
 	managed, unmanaged := app.SplitManaged()
 	Must(app.Parse(managed))
-
-	// We combine the tags that have multiple definitions
-	debug = *debug1
-	flushCache = *flushCache1
-	getImageName = *getImageName1 || *getImageName2
-	mapHome = !(*noHome1 || *noHome2)
-	refresh = *refresh1 || *refresh2
-	dockerOptions = append(*dockerOptions1, *dockerOptions2...)
-	getCurrentVersion := *getCurrentVersion1 || *getCurrentVersion2
-	getAllVersions := *getAllVersions1 || *getAllVersions2
-	dockerOptions = append(*dockerOptions1, *dockerOptions2...)
-	if *imageVersion2 != "-" {
-		imageVersion = imageVersion2
-	}
 
 	// If AWS profile is supplied, we freeze the current session
 	if *awsProfile != "" {
@@ -180,12 +169,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if getCurrentVersion {
+	if *getCurrentVersion {
 		fmt.Printf("tgf v%s\n", version)
 		os.Exit(0)
 	}
 
-	if getAllVersions {
+	if *getAllVersions {
 		if config.EntryPoint != "terragrunt" {
 			fmt.Fprintln(os.Stderr, errorString("--all-version works only with terragrunt as the entrypoint"))
 			os.Exit(1)

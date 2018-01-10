@@ -54,21 +54,17 @@ func callDocker(args ...string) int {
 	homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
 
 	cwd := filepath.ToSlash(Must(os.Getwd()).(string))
+	cwd = Must(filepath.EvalSymlinks(cwd)).(string)
 	currentDrive := fmt.Sprintf("%s/", filepath.VolumeName(cwd))
 	rootFolder := strings.Split(strings.TrimPrefix(cwd, currentDrive), "/")[0]
-
-	temp := filepath.ToSlash(filepath.Join(os.TempDir(), "tgf-cache"))
-	tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
-	tempFolder := strings.TrimPrefix(temp, tempDrive)
 
 	dockerArgs := []string{
 		"run", "-it",
 		"-v", fmt.Sprintf("%s%s:/%[2]s", convertDrive(currentDrive), rootFolder),
-		"-v", fmt.Sprintf("%s%s:/var/tgf", convertDrive(tempDrive), tempFolder),
 		"-w", strings.TrimPrefix(cwd, filepath.VolumeName(cwd)),
 		"--rm",
 	}
-	if mapHome {
+	if !noHome {
 		dockerArgs = append(dockerArgs, []string{
 			"-v", fmt.Sprintf("%v:%v", convertDrive(home), homeWithoutVolume),
 			"-e", fmt.Sprintf("HOME=%v", homeWithoutVolume),
@@ -77,7 +73,14 @@ func callDocker(args ...string) int {
 		dockerArgs = append(dockerArgs, config.DockerOptions...)
 	}
 
-	os.Setenv("TERRAGRUNT_CACHE", "/var/tgf")
+	if !noTemp {
+		temp := filepath.ToSlash(filepath.Join(Must(filepath.EvalSymlinks(os.TempDir())).(string), "tgf-cache"))
+		tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
+		tempFolder := strings.TrimPrefix(temp, tempDrive)
+		dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:/var/tgf", convertDrive(tempDrive), tempFolder))
+		os.Setenv("TERRAGRUNT_CACHE", "/var/tgf")
+	}
+
 	os.Setenv("TGF_COMMAND", config.EntryPoint)
 	os.Setenv("TGF_VERSION", version)
 	os.Setenv("TGF_IMAGE", config.Image)
@@ -97,7 +100,7 @@ func callDocker(args ...string) int {
 	for _, do := range dockerOptions {
 		dockerArgs = append(dockerArgs, strings.Split(do, " ")...)
 	}
-	dockerArgs = append(dockerArgs, getEnviron(mapHome)...)
+	dockerArgs = append(dockerArgs, getEnviron(!noHome)...)
 	dockerArgs = append(dockerArgs, imageName)
 	dockerArgs = append(dockerArgs, command...)
 	dockerCmd := exec.Command("docker", dockerArgs...)
@@ -106,7 +109,12 @@ func callDocker(args ...string) int {
 	dockerCmd.Stderr = &stderr
 
 	if debug {
-		printfDebug(os.Stderr, "%s\n\n", strings.Join(dockerCmd.Args, " "))
+		for _, s := range os.Environ() {
+			if strings.HasPrefix(s, "TGF_") || strings.HasPrefix(s, "TERRAGRUNT_") || strings.HasPrefix(s, "AWS_") {
+				printfDebug(os.Stderr, "export %s\n", s)
+			}
+		}
+		printfDebug(os.Stderr, "\n%s\n\n", strings.Join(dockerCmd.Args, " "))
 	}
 
 	if err := dockerCmd.Run(); err != nil {
@@ -172,7 +180,7 @@ func refreshImage(image string) {
 	fmt.Fprintln(os.Stderr)
 }
 
-func getEnviron(mapHome bool) (result []string) {
+func getEnviron(noHome bool) (result []string) {
 	for _, env := range os.Environ() {
 		split := strings.Split(env, "=")
 		varName := strings.TrimSpace(split[0])
@@ -193,7 +201,7 @@ func getEnviron(mapHome bool) (result []string) {
 			"PROMPT", "SHELL", "SH", "ZSH", "HOME",
 			"LANG", "LC_CTYPE", "DISPLAY", "TERM":
 		case "LOGNAME", "USER":
-			if !mapHome {
+			if noHome {
 				continue
 			}
 			fallthrough
