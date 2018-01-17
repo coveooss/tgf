@@ -55,8 +55,8 @@ Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.15.4/tgf_1.1
 
 ## Configuration
 
-TGF looks for a file named .tgf.config in the current working folder (and recursively in any parent folders) to get its parameters. If some parameters
-are missing, it tries to find the remaining configuration through the [AWS parameter store](https://aws.amazon.com/ec2/systems-manager/parameter-store/)
+TGF looks for a file named .tgf.config or tgf.user.config in the current working folder (and recursively in any parent folders) to get its parameters.
+If some parameters are missing, it tries to find the remaining configuration through the [AWS parameter store](https://aws.amazon.com/ec2/systems-manager/parameter-store/)
 under `/default/tgf` using your current [AWS CLI configuration](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html) if any.
 
 Your configuration file could be expressed in any of the [YAML](http://www.yaml.org/start.html), [JSON](http://www.json.org/) or [Terraform HCL](https://www.terraform.io/docs/configuration/syntax.html) declarative language.
@@ -96,6 +96,7 @@ Key | Description | Default value
 | entry-point | The program that will be automatically launched when the docker starts | terragrunt
 | tgf-recommended-version | The minimal tgf version recommended in your context  (should not be placed in `.tgf.config file`) | *no default*
 | recommended-image | The tgf image recommended in your context (should not be placed in `.tgf.config file`) | *no default*
+| environment | Allows temporary addition of environment variables | *no default*
 
 Note: *The key names are not case sensitive*
 

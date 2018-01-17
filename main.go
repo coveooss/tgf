@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/gruntwork-io/terragrunt/aws_helper"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -49,7 +48,7 @@ AUTHOR:	Coveo
 `
 
 var (
-	config        tgfConfig
+	config        = InitConfig()
 	dockerOptions []string
 	debug         bool
 	flushCache    bool
@@ -57,7 +56,10 @@ var (
 	noHome        bool
 	noTemp        bool
 	refresh       bool
+	mountPoint    string
 )
+
+const tgfArgs = "TGF_ARGS"
 
 func main() {
 	// Handle eventual panic message
@@ -101,20 +103,21 @@ func main() {
 	app.Switch("debug-docker", "Print the docker command issued", 'D').BoolVar(&debug)
 	app.Switch("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache", 'F').BoolVar(&flushCache)
 	app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").BoolVar(&refresh)
-	app.Argument("docker-arg", "Supply extra argument to Docker (alias --da)").PlaceHolder("<opt>").StringsVar(&dockerOptions)
 	app.Switch("get-image-name", "Just return the resulting image name (alias --gi)").BoolVar(&getImageName)
 	app.Switch("no-home", "Disable the mapping of the home directory (alias --nh)").BoolVar(&noHome)
 	app.Switch("no-temp", "Disable the mapping of the temp directory (alias --nt)").BoolVar(&noTemp)
+	app.Argument("mount-point", "Specify a mount point for the current folder --mp)").StringVar(&mountPoint)
+	app.Argument("docker-arg", "Supply extra argument to Docker (alias --da)").PlaceHolder("<opt>").StringsVar(&dockerOptions)
 
 	var (
+		getAllVersions    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
+		getCurrentVersion = app.Switch("current-version", "Get current version infomation (alias --cv)").Bool()
 		defaultEntryPoint = app.Argument("entrypoint", "Override the entry point for docker", 'E').PlaceHolder("terragrunt").String()
 		image             = app.Argument("image", "Use the specified image instead of the default one").PlaceHolder("coveo/tgf").String()
 		imageVersion      = app.Argument("image-version", "Use a different version of docker image instead of the default one (alias --iv)").PlaceHolder("version").Default("-").String()
 		imageTag          = app.Argument("tag", "Use a different tag of docker image instead of the default one", 'T').PlaceHolder("latest").Default("-").String()
 		awsProfile        = app.Argument("profile", "Set the AWS profile configuration to use", 'P').Default("").String()
 		loggingLevel      = app.Argument("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)", 'L').PlaceHolder("<level>").String()
-		getAllVersions    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
-		getCurrentVersion = app.Switch("current-version", "Get current version infomation (alias --cv)").Bool()
 	)
 
 	app.Switch("ri", "alias for refresh-image)").Hidden().BoolVar(&refresh)
@@ -125,14 +128,18 @@ func main() {
 	app.Switch("av", "alias for all-versions").Hidden().BoolVar(getAllVersions)
 	app.Argument("da", "alias for docker-arg").Hidden().StringsVar(&dockerOptions)
 	app.Argument("iv", "alias for image-version").Default("-").Hidden().StringVar(imageVersion)
+	app.Argument("mp", "alias for mount-point").Hidden().StringVar(&mountPoint)
 
 	// Split up the managed parameters from the unmanaged ones
-	managed, unmanaged := app.SplitManaged()
+	if extraArgs, ok := os.LookupEnv(tgfArgs); ok {
+		os.Args = append(os.Args, strings.Split(extraArgs, " ")...)
+	}
+	managed, unmanaged := app.SplitManaged(os.Args)
 	Must(app.Parse(managed))
 
 	// If AWS profile is supplied, we freeze the current session
 	if *awsProfile != "" {
-		Must(aws_helper.InitAwsSession(*awsProfile))
+		Must(config.InitAWS(*awsProfile))
 	}
 
 	if *image != "" {

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"strings"
 
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -43,16 +42,16 @@ func (app ApplicationArguments) Argument(name, description string, shorts ...run
 }
 
 // SplitManaged splits the managed by kingpin and unmanaged argument to avoid error
-func (app ApplicationArguments) SplitManaged() (managed []string, unmanaged []string) {
+func (app ApplicationArguments) SplitManaged(args []string) (managed []string, unmanaged []string) {
 Arg:
-	for i := 1; i < len(os.Args); i++ {
-		arg := os.Args[i]
+	for i := 1; i < len(args); i++ {
+		arg := args[i]
 		if arg == "--" {
-			unmanaged = append(unmanaged, os.Args[i+1:]...)
+			unmanaged = append(unmanaged, args[i+1:]...)
 			break
 		}
 		if strings.HasPrefix(arg, "--") {
-			argSplit := strings.Split(os.Args[i][2:], "=")
+			argSplit := strings.Split(args[i][2:], "=")
 			if isSwitch, ok := app.longs[argSplit[0]]; ok {
 				managed = append(managed, arg)
 				if !isSwitch && len(argSplit) == 1 {
@@ -60,8 +59,8 @@ Arg:
 					// the flag, so the argument must be after and we add it to
 					// the managed args if there is.
 					i++
-					if i < len(os.Args) {
-						managed = append(managed, os.Args[i])
+					if i < len(args) {
+						managed = append(managed, args[i])
 					}
 				}
 			} else {
@@ -89,8 +88,8 @@ Arg:
 			if withArg {
 				// The next argument must be an argument to the current flag
 				i++
-				if i < len(os.Args) {
-					managed = append(managed, os.Args[i])
+				if i < len(args) {
+					managed = append(managed, args[i])
 				}
 			}
 		} else {

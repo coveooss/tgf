@@ -25,8 +25,8 @@ func callDocker(args ...string) int {
 	if !util.ListContainsElement(command, logLevelArg) && config.EntryPoint == "terragrunt" {
 		if config.LogLevel == "6" || strings.ToLower(config.LogLevel) == "full" {
 			config.LogLevel = "debug"
-			os.Setenv("TF_LOG", "DEBUG")
-			os.Setenv("TERRAGRUNT_DEBUG", "1")
+			config.Environment["TF_LOG"] = "DEBUG"
+			config.Environment["TERRAGRUNT_DEBUG"] = "1"
 		}
 
 		// The log level option should not be supplied if there is no actual command
@@ -49,22 +49,22 @@ func callDocker(args ...string) int {
 		return 0
 	}
 
-	currentUser := Must(user.Current()).(*user.User)
-	home := filepath.ToSlash(currentUser.HomeDir)
-	homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
-
-	cwd := filepath.ToSlash(Must(os.Getwd()).(string))
-	cwd = Must(filepath.EvalSymlinks(cwd)).(string)
+	cwd := filepath.ToSlash(Must(filepath.EvalSymlinks(Must(os.Getwd()).(string))).(string))
 	currentDrive := fmt.Sprintf("%s/", filepath.VolumeName(cwd))
+	sourceFolder := filepath.ToSlash(filepath.Join("/", mountPoint, strings.TrimPrefix(cwd, currentDrive)))
 	rootFolder := strings.Split(strings.TrimPrefix(cwd, currentDrive), "/")[0]
 
 	dockerArgs := []string{
 		"run", "-it",
-		"-v", fmt.Sprintf("%s%s:/%[2]s", convertDrive(currentDrive), rootFolder),
-		"-w", strings.TrimPrefix(cwd, filepath.VolumeName(cwd)),
+		"-v", fmt.Sprintf("%s%s:%s", convertDrive(currentDrive), rootFolder, filepath.ToSlash(filepath.Join("/", mountPoint, rootFolder))),
+		"-w", sourceFolder,
 		"--rm",
 	}
 	if !noHome {
+		currentUser := Must(user.Current()).(*user.User)
+		home := filepath.ToSlash(currentUser.HomeDir)
+		homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
+
 		dockerArgs = append(dockerArgs, []string{
 			"-v", fmt.Sprintf("%v:%v", convertDrive(home), homeWithoutVolume),
 			"-e", fmt.Sprintf("HOME=%v", homeWithoutVolume),
@@ -78,24 +78,31 @@ func callDocker(args ...string) int {
 		tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
 		tempFolder := strings.TrimPrefix(temp, tempDrive)
 		dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:/var/tgf", convertDrive(tempDrive), tempFolder))
-		os.Setenv("TERRAGRUNT_CACHE", "/var/tgf")
+		config.Environment["TERRAGRUNT_CACHE"] = "/var/tgf"
 	}
 
-	os.Setenv("TGF_COMMAND", config.EntryPoint)
-	os.Setenv("TGF_VERSION", version)
-	os.Setenv("TGF_IMAGE", config.Image)
-	os.Setenv("TGF_ARGS", strings.Join(os.Args, " "))
-	os.Setenv("TGF_LAUNCH_FOLDER", Must(os.Getwd()).(string))
+	config.Environment["TGF_COMMAND"] = config.EntryPoint
+	config.Environment["TGF_VERSION"] = version
+	config.Environment["TGF_IMAGE"] = config.Image
+	config.Environment["TGF_ARGS"] = strings.Join(os.Args, " ")
+	config.Environment["TGF_LAUNCH_FOLDER"] = sourceFolder
 	if config.ImageVersion != nil {
-		os.Setenv("TGF_IMAGE_VERSION", *config.ImageVersion)
+		config.Environment["TGF_IMAGE_VERSION"] = *config.ImageVersion
 		if version, err := semver.Make(*config.ImageVersion); err == nil {
-			os.Setenv("TGF_MAJ_MIN", fmt.Sprintf("%d.%d", version.Major, version.Minor))
+			config.Environment["TGF_MAJ_MIN"] = fmt.Sprintf("%d.%d", version.Major, version.Minor)
 		}
 	}
 	if config.ImageTag != nil {
-		os.Setenv("TGF_IMAGE_TAG", *config.ImageTag)
+		config.Environment["TGF_IMAGE_TAG"] = *config.ImageTag
 	}
-	os.Setenv("TGF_IMAGE_NAME", imageName)
+	config.Environment["TGF_IMAGE_NAME"] = imageName
+
+	for key, val := range config.Environment {
+		os.Setenv(key, val)
+		if debug {
+			printfDebug(os.Stderr, "export %v=%v\n", key, val)
+		}
+	}
 
 	for _, do := range dockerOptions {
 		dockerArgs = append(dockerArgs, strings.Split(do, " ")...)
@@ -109,17 +116,15 @@ func callDocker(args ...string) int {
 	dockerCmd.Stderr = &stderr
 
 	if debug {
-		for _, s := range os.Environ() {
-			if strings.HasPrefix(s, "TGF_") || strings.HasPrefix(s, "TERRAGRUNT_") || strings.HasPrefix(s, "AWS_") {
-				printfDebug(os.Stderr, "export %s\n", s)
-			}
+		if len(config.Environment) > 0 {
+			fmt.Fprintln(os.Stderr)
 		}
-		printfDebug(os.Stderr, "\n%s\n\n", strings.Join(dockerCmd.Args, " "))
+		printfDebug(os.Stderr, "%s\n\n", strings.Join(dockerCmd.Args, " "))
 	}
 
 	if err := dockerCmd.Run(); err != nil {
 		if stderr.Len() > 0 {
-			fmt.Fprintf(os.Stderr, stderr.String())
+			fmt.Fprintf(os.Stderr, errorString(stderr.String()))
 			fmt.Fprintf(os.Stderr, "\n%s %s\n", dockerCmd.Args[0], strings.Join(dockerArgs, " "))
 
 			if runtime.GOOS == "windows" {

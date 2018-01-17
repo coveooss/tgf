@@ -14,14 +14,16 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/blang/semver"
+	"github.com/coveo/gotemplate/hcl"
+	"github.com/coveo/gotemplate/utils"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
-	"github.com/hashicorp/hcl"
 	"gopkg.in/yaml.v2"
 )
 
 const (
 	parameterFolder            = "/default/tgf"
 	configFile                 = ".tgf.config"
+	userConfigFile             = "tgf.user.config"
 	dockerImage                = "docker-image"
 	dockerImageVersion         = "docker-image-version"
 	dockerImageTag             = "docker-image-tag"
@@ -34,9 +36,10 @@ const (
 	recommendedImageVersion    = "recommended-image-version"
 	requiredImageVersion       = "required-image-version"
 	deprecatedRecommendedImage = "recommended-image"
+	environment                = "environment"
 )
 
-type tgfConfig struct {
+type TGFConfig struct {
 	Image                   string
 	ImageVersion            *string
 	ImageTag                *string
@@ -48,11 +51,18 @@ type tgfConfig struct {
 	RecommendedImageVersion string
 	RequiredVersionRange    string
 	RecommendedTGFVersion   string
-	recommendedImage        string
-	separator               string
+	Environment             map[string]string
+
+	recommendedImage string
+	separator        string
 }
 
-func (config tgfConfig) String() (result string) {
+// InitConfig returns a properly initialized TGF configuration struct
+func InitConfig() *TGFConfig {
+	return &TGFConfig{Environment: make(map[string]string)}
+}
+
+func (config TGFConfig) String() (result string) {
 	ifNotZero := func(name string, value interface{}) {
 		if reflect.DeepEqual(value, reflect.Zero(reflect.TypeOf(value)).Interface()) {
 			return
@@ -92,38 +102,69 @@ func (config tgfConfig) String() (result string) {
 	return
 }
 
+// InitAWS tries to open an AWS session and init AWS environment variable on success
+func (config *TGFConfig) InitAWS(profile string) error {
+	if _, err := aws_helper.InitAwsSession(profile); err != nil {
+		return err
+	}
+	for _, s := range os.Environ() {
+		if strings.HasPrefix(s, "AWS_") {
+			split := strings.SplitN(s, "=", 2)
+			if len(split) < 2 {
+				continue
+			}
+			config.Environment[split[0]] = split[1]
+		}
+	}
+	return nil
+}
+
 // SetDefaultValues sets the uninitialized values from the config files and the parameter store
-func (config *tgfConfig) SetDefaultValues() {
+func (config *TGFConfig) SetDefaultValues() {
 	for _, configFile := range findConfigFiles(Must(os.Getwd()).(string)) {
-		var result map[string]string
+		var result interface{}
+		if debug {
+			printfDebug(os.Stderr, "# Reading configuration from %s\n", configFile)
+		}
 		content := Must(ioutil.ReadFile(configFile)).([]byte)
 		errYAML := yaml.Unmarshal(content, &result)
 		if errYAML != nil {
 			errHCL := hcl.Unmarshal(content, &result)
 			if errHCL != nil {
-				fmt.Fprintf(os.Stderr, "Error while loading configuration file %s\nConfiguration file must be valid YAML, JSON or HCL\n", configFile)
+				fmt.Fprintln(os.Stderr, errorString("Error while loading configuration file %s\nConfiguration file must be valid YAML, JSON or HCL", configFile))
 				continue
 			}
+			result = hcl.Flatten(utils.MapKeyInterface2string(result).(map[string]interface{}))
+		} else {
+			result = utils.MapKeyInterface2string(result).(map[string]interface{})
 		}
 
-		// We sort the keys to ensure that we alway process them in the same order
-		keys := make([]string, 0, len(result))
-		for key := range result {
-			keys = append(keys, key)
-		}
-		sort.Strings(keys)
+		switch result := result.(type) {
+		case map[string]interface{}:
+			// We sort the keys to ensure that we alway process them in the same order
+			keys := make([]string, 0, len(result))
+			for key := range result {
+				keys = append(keys, key)
+			}
+			sort.Strings(keys)
 
-		for _, key := range keys {
-			config.SetValue(key, result[key])
+			for _, key := range keys {
+				config.SetValue(key, result[key])
+			}
+		default:
+			fmt.Fprintln(os.Stderr, errorString("Invalid configuration format in file %s", configFile))
 		}
 	}
 
 	if awsConfigExist() {
 		// If we need to read the parameter store, we must init the session first to ensure that
 		// the credentials are only initialized once (avoiding asking multiple time the MFA)
-		if _, err := aws_helper.InitAwsSession(""); err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to authentify to AWS: %v\nPararameter store is ignored\n\n", err)
+		if err := config.InitAWS(""); err != nil {
+			fmt.Fprintln(os.Stderr, errorString("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err))
 		} else {
+			if debug {
+				printfDebug(os.Stderr, "# Reading configuration from AWS parameter store %s\n", parameterFolder)
+			}
 			for _, parameter := range Must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
 				config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
 			}
@@ -137,61 +178,73 @@ func (config *tgfConfig) SetDefaultValues() {
 }
 
 // SetValue sets value of the key in the configuration only if it does not already have a value
-func (config *tgfConfig) SetValue(key, value string) {
+func (config *TGFConfig) SetValue(key string, value interface{}) {
 	key = strings.ToLower(key)
+	valueStr := fmt.Sprintf("%v", value)
 	switch key {
 	case dockerImage:
-		if strings.Contains(value, ":") && config.Image == "" {
-			fmt.Fprintf(os.Stderr, warningString("Parameter %s should not contains the version: %s\n", key, value))
+		if strings.Contains(valueStr, ":") && config.Image == "" {
+			fmt.Fprintln(os.Stderr, warningString("Parameter %s should not contains the version: %s", key, valueStr))
 		}
-		config.apply(key, value)
+		config.apply(key, valueStr)
 	case dockerImageVersion:
-		if strings.ContainsAny(value, ":-") && config.ImageVersion == nil {
-			fmt.Fprintf(os.Stderr, warningString("Parameter %s should not contains the image name nor the specialized version: %s\n", key, value))
+		if strings.ContainsAny(valueStr, ":-") && config.ImageVersion == nil {
+			fmt.Fprintln(os.Stderr, warningString("Parameter %s should not contains the image name nor the specialized version: %s", key, valueStr))
 		}
-		config.apply(key, ":"+value)
+		config.apply(key, ":"+valueStr)
 	case dockerImageTag:
-		if strings.ContainsAny(value, ":") && config.ImageTag == nil {
-			fmt.Fprintf(os.Stderr, warningString("Parameter %s should not contains the image name: %s\n", key, value))
+		if strings.ContainsAny(valueStr, ":") && config.ImageTag == nil {
+			fmt.Fprintln(os.Stderr, warningString("Parameter %s should not contains the image name: %s", key, valueStr))
 		}
-		config.apply(key, ":"+value)
+		config.apply(key, ":"+valueStr)
 	case dockerOptionsTag:
-		config.DockerOptions = append(config.DockerOptions, strings.Split(value, " ")...)
+		config.DockerOptions = append(config.DockerOptions, strings.Split(valueStr, " ")...)
 	case dockerImageBuild:
 		// We concatenate the various levels of docker build instructions
-		config.ImageBuild = strings.Join([]string{strings.TrimSpace(value), strings.TrimSpace(config.ImageBuild)}, "\n")
+		config.ImageBuild = strings.Join([]string{strings.TrimSpace(valueStr), strings.TrimSpace(config.ImageBuild)}, "\n")
 	case recommendedImageVersion:
 		if config.RecommendedImageVersion == "" {
-			config.RecommendedImageVersion = value
+			config.RecommendedImageVersion = valueStr
 		}
 	case requiredImageVersion:
 		if config.RequiredVersionRange == "" {
-			config.RequiredVersionRange = value
+			config.RequiredVersionRange = valueStr
 		}
 	case dockerRefresh:
 		if config.Refresh == 0 {
-			config.Refresh = Must(time.ParseDuration(value)).(time.Duration)
+			config.Refresh = Must(time.ParseDuration(valueStr)).(time.Duration)
 		}
 	case loggingLevel:
 		if config.LogLevel == "" {
-			config.LogLevel = value
+			config.LogLevel = valueStr
 		}
 	case entryPoint:
 		if config.EntryPoint == "" {
-			config.EntryPoint = value
+			config.EntryPoint = valueStr
 		}
 	case tgfVersion:
 		if config.RecommendedTGFVersion == "" {
-			config.RecommendedTGFVersion = value
+			config.RecommendedTGFVersion = valueStr
+		}
+	case environment:
+		switch value := value.(type) {
+		case map[string]interface{}:
+			for key, val := range value {
+				if _, set := config.Environment[key]; !set {
+					config.Environment[key] = fmt.Sprintf("%v", val)
+				}
+			}
+		default:
+			fmt.Fprintln(os.Stderr, warningString("Environment must be a map of key/value %T", value))
 		}
 	case deprecatedRecommendedImage:
-		fmt.Fprintf(os.Stderr, warningString("Config key %s is deprecated (%s ignored)\n", key, value))
+		fmt.Fprintln(os.Stderr, warningString("Config key %s is deprecated (%s ignored)", key, valueStr))
 	default:
-		fmt.Fprintf(os.Stderr, errorString("Unknown parameter %s = %s\n", key, value))
+		fmt.Fprintln(os.Stderr, errorString("Unknown parameter %s = %s", key, value))
 	}
 }
 
-func (config *tgfConfig) Validate() (errors []error) {
+func (config *TGFConfig) Validate() (errors []error) {
 	if config.RecommendedTGFVersion != "" {
 		if valid, err := CheckVersionRange(version, config.RecommendedTGFVersion); err != nil {
 			errors = append(errors, fmt.Errorf("Unable to check recommended tgf version %s vs %s: %v", version, config.RecommendedTGFVersion, err))
@@ -226,7 +279,7 @@ func (config *tgfConfig) Validate() (errors []error) {
 	return
 }
 
-func (config *tgfConfig) GetImageName() string {
+func (config *TGFConfig) GetImageName() string {
 	var suffix string
 	if config.ImageVersion != nil {
 		suffix += *config.ImageVersion
@@ -249,7 +302,7 @@ func (config *tgfConfig) GetImageName() string {
 // https://regex101.com/r/ZKt4OP/2/
 var reVersion = regexp.MustCompile(`^(?P<image>.*?)(:((?P<version>\d+\.\d+\.\d+)((?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+))?)?$`)
 
-func (config *tgfConfig) apply(key, value string) {
+func (config *TGFConfig) apply(key, value string) {
 	matches := reVersion.FindStringSubmatch(value)
 	var valueUsed bool
 	for i, name := range reVersion.SubexpNames() {
@@ -285,11 +338,13 @@ func (config *tgfConfig) apply(key, value string) {
 	}
 }
 
-// Return the list of configuration file found from the current working directory up to the root folder
+// Return the list of configuration files found from the current working directory up to the root folder
 func findConfigFiles(folder string) (result []string) {
-	configFile := filepath.Join(folder, configFile)
-	if _, err := os.Stat(configFile); !os.IsNotExist(err) {
-		result = append(result, configFile)
+	for _, file := range []string{userConfigFile, configFile} {
+		file = filepath.Join(folder, file)
+		if _, err := os.Stat(file); !os.IsNotExist(err) {
+			result = append(result, file)
+		}
 	}
 
 	if parent := filepath.Dir(folder); parent != folder {
