@@ -7,7 +7,7 @@ LABEL vendor="Coveo"
 LABEL maintainer "jgiroux@coveo.com"
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
-ENV AWS_PROVIDER=1.5.0-coveo.1
+ARG AWS_PROVIDER=1.7.0-coveo.0
 
 RUN curl -sLo_ https://github.com/coveo/terraform-provider-aws/releases/download/v${AWS_PROVIDER}/terraform-provider-aws_${AWS_PROVIDER}${EXT} && \
     unzip -p _ > ${EXE_FOLDER}/terraform-provider-aws && chmod +x ${EXE_FOLDER}/terraform-provider-aws && rm _

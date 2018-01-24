@@ -39,12 +39,12 @@ RUN pwsh -c Install-Package AWSPowerShell.NetCore -Force > /dev/null
 RUN apt-get -y install ruby && gem install terraforming
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
-ARG TERRAFORM_VERSION=0.11.1
+ARG TERRAFORM_VERSION=0.11.2
 ARG TERRAFORM_QUANTUM=0.3.6
 ARG TERRAGRUNT_VERSION=0.12.26-coveo.6
-ARG GOTEMPLATE_VERSION=2.2.3
+ARG GOTEMPLATE_VERSION=2.2.6
 ARG TFLINT_VERSION=0.3.6
-ARG AWS_PROVIDER=1.5.0-coveo.1
+ARG AWS_PROVIDER=1.7.0-coveo.0
 ARG TERRAFORM_DOCS_VERSION=0.3.0
 
 RUN curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
