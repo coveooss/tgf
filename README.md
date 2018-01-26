@@ -38,19 +38,19 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.15.4/tgf_1.15.4_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.16.0/tgf_1.16.0_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin && chmod +x /usr/local/bin/tgf
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.15.4/tgf_1.15.4_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.16.0/tgf_1.16.0_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.15.4/tgf_1.15.4_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.16.0/tgf_1.16.0_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -97,8 +97,32 @@ Key | Description | Default value
 | tgf-recommended-version | The minimal tgf version recommended in your context  (should not be placed in `.tgf.config file`) | *no default*
 | recommended-image | The tgf image recommended in your context (should not be placed in `.tgf.config file`) | *no default*
 | environment | Allows temporary addition of environment variables | *no default*
+| run-before | Script that is executed before the actual command | *no default*
+| run-after | Script that is executed after the actual command | *no default*
 
 Note: *The key names are not case sensitive*
+
+### Configuration section
+
+It is possible to specify configuration elements that only apply on specific os.
+
+Example of HCL configuration file:
+
+```text
+docker-refresh: 1h
+logging-level: notice
+windows:
+  logging-level: debug
+linux:
+  docker-refresh: 2h
+```
+
+section | Description
+--- | ---
+| windows | Configuration that is applied only on Windows systems
+| linux | Configuration that is applied only on Linux systems
+| darwin | Configuration that is applied only on OSX systems
+| ix | Configuration that is applied only on Linux or OSX systems
 
 ## TGF Invocation
 
@@ -130,34 +154,35 @@ invocation arguments.
 
   tgf ls -- -D   # Avoid -D to be interpretated by tgf as --debug-docker
 
-VERSION: 1.15.4
+VERSION: 1.16.0
 
 AUTHOR: Coveo
 
 Flags:
-  -H, --tgf-help               Show context-sensitive help (also try --help-man).
-  -D, --debug-docker           Print the docker command issued
-  -F, --flush-cache            Invoke terragrunt with --terragrunt-update-source to flush the cache
-      --refresh-image          Force a refresh of the docker image (alias --ri)
-      --docker-arg=<opt> ...   Supply extra argument to Docker (alias --da)
-      --get-image-name         Just return the resulting image name (alias --gi)
-      --no-home                Disable the mapping of the home directory (alias --nh)
-      --no-temp                Disable the mapping of the temp directory (alias --nt)
-  -E, --entrypoint=terragrunt  Override the entry point for docker
-      --image=coveo/tgf        Use the specified image instead of the default one
-      --image-version=version  Use a different version of docker image instead of the default one (alias --iv)
-  -T, --tag=latest             Use a different tag of docker image instead of the default one
-  -P, --profile=""             Set the AWS profile configuration to use
-  -L, --logging-level=<level>  Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)
-      --all-versions           Get versions of TGF & all others underlying utilities (alias --av)
-      --current-version        Get current version infomation (alias --cv)
+  -H, --tgf-help                 Show context-sensitive help (also try --help-man).
+  -D, --debug-docker             Print the docker command issued
+  -F, --flush-cache              Invoke terragrunt with --terragrunt-update-source to flush the cache
+      --refresh-image            Force a refresh of the docker image (alias --ri)
+      --get-image-name           Just return the resulting image name (alias --gi)
+      --no-home                  Disable the mapping of the home directory (alias --nh)
+      --no-temp                  Disable the mapping of the temp directory (alias --nt)
+      --mount-point=MOUNT-POINT  Specify a mount point for the current folder --mp)
+      --docker-arg=<opt> ...     Supply extra argument to Docker (alias --da)
+      --all-versions             Get versions of TGF & all others underlying utilities (alias --av)
+      --current-version          Get current version infomation (alias --cv)
+  -E, --entrypoint=terragrunt    Override the entry point for docker
+      --image=coveo/tgf          Use the specified image instead of the default one
+      --image-version=version    Use a different version of docker image instead of the default one (alias --iv)
+  -T, --tag=latest               Use a different tag of docker image instead of the default one
+  -P, --profile=""               Set the AWS profile configuration to use
+  -L, --logging-level=<level>    Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)
 ```
 
 Example:
 
 ```bash
 > tgf --current-version
-tgf v1.15.4
+tgf v1.16.0
 ```
 
 Returns the current version of the tgf tool

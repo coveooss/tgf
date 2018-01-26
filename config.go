@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -37,8 +38,11 @@ const (
 	requiredImageVersion       = "required-image-version"
 	deprecatedRecommendedImage = "recommended-image"
 	environment                = "environment"
+	runBefore                  = "run-before"
+	runAfter                   = "run-after"
 )
 
+// TGFConfig contains the resulting configuration that will be applied
 type TGFConfig struct {
 	Image                   string
 	ImageVersion            *string
@@ -52,6 +56,7 @@ type TGFConfig struct {
 	RequiredVersionRange    string
 	RecommendedTGFVersion   string
 	Environment             map[string]string
+	RunBefore, RunAfter     []string
 
 	recommendedImage string
 	separator        string
@@ -122,35 +127,67 @@ func (config *TGFConfig) InitAWS(profile string) error {
 // SetDefaultValues sets the uninitialized values from the config files and the parameter store
 func (config *TGFConfig) SetDefaultValues() {
 	for _, configFile := range findConfigFiles(Must(os.Getwd()).(string)) {
-		var result interface{}
+		var content interface{}
 		if debug {
 			printfDebug(os.Stderr, "# Reading configuration from %s\n", configFile)
 		}
-		content := Must(ioutil.ReadFile(configFile)).([]byte)
-		errYAML := yaml.Unmarshal(content, &result)
+		fileContent := Must(ioutil.ReadFile(configFile)).([]byte)
+		errYAML := yaml.Unmarshal(fileContent, &content)
 		if errYAML != nil {
-			errHCL := hcl.Unmarshal(content, &result)
+			errHCL := hcl.Unmarshal(fileContent, &content)
 			if errHCL != nil {
 				fmt.Fprintln(os.Stderr, errorString("Error while loading configuration file %s\nConfiguration file must be valid YAML, JSON or HCL", configFile))
 				continue
 			}
-			result = hcl.Flatten(utils.MapKeyInterface2string(result).(map[string]interface{}))
+			content = hcl.Flatten(utils.MapKeyInterface2string(content).(map[string]interface{}))
 		} else {
-			result = utils.MapKeyInterface2string(result).(map[string]interface{})
+			content = utils.MapKeyInterface2string(content).(map[string]interface{})
 		}
 
-		switch result := result.(type) {
+		switch content := content.(type) {
 		case map[string]interface{}:
-			// We sort the keys to ensure that we alway process them in the same order
-			keys := make([]string, 0, len(result))
-			for key := range result {
-				keys = append(keys, key)
+			extract := func(key string) (result interface{}) {
+				result = content[key]
+				delete(content, key)
+				return
 			}
-			sort.Strings(keys)
 
-			for _, key := range keys {
-				config.SetValue(key, result[key])
+			apply := func(content interface{}) {
+				if content == nil {
+					return
+				}
+				switch content := content.(type) {
+				case map[string]interface{}:
+					// We sort the keys to ensure that we alway process them in the same order
+					keys := make([]string, 0, len(content))
+					for key := range content {
+						keys = append(keys, key)
+					}
+					sort.Strings(keys)
+					for _, key := range keys {
+						config.SetValue(key, content[key])
+					}
+				default:
+					fmt.Fprintln(os.Stderr, errorString("Invalid configuration format in file %s", configFile))
+				}
 			}
+
+			windows := extract("windows")
+			darwin := extract("darwin")
+			linux := extract("linux")
+			ix := extract("ix")
+
+			switch runtime.GOOS {
+			case "windows":
+				apply(windows)
+			case "darwin":
+				apply(darwin)
+				apply(ix)
+			case "linux":
+				apply(linux)
+				apply(ix)
+			}
+			apply(content)
 		default:
 			fmt.Fprintln(os.Stderr, errorString("Invalid configuration format in file %s", configFile))
 		}
@@ -236,6 +273,23 @@ func (config *TGFConfig) SetValue(key string, value interface{}) {
 			}
 		default:
 			fmt.Fprintln(os.Stderr, warningString("Environment must be a map of key/value %T", value))
+		}
+	case runBefore, runAfter:
+		list := &config.RunBefore
+		if key == runAfter {
+			list = &config.RunAfter
+		}
+		switch value := value.(type) {
+		case string:
+			*list = append(*list, value)
+		case []interface{}:
+			for i := len(value) - 1; i >= 0; i-- {
+				*list = append(*list, fmt.Sprint(value[i]))
+			}
+		case map[string]interface{}:
+			for _, value := range value {
+				*list = append(*list, fmt.Sprint(value))
+			}
 		}
 	case deprecatedRecommendedImage:
 		fmt.Fprintln(os.Stderr, warningString("Config key %s is deprecated (%s ignored)", key, valueStr))
