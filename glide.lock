@@ -1,5 +1,5 @@
 hash: 96ced07ec1d31e0cf7231750d315960abc47ecdaf65fef8f7b535fa9363eede4
-updated: 2018-01-25T20:54:37.178006-05:00
+updated: 2018-01-26T15:56:41.297776-05:00
 imports:
 - name: github.com/agext/levenshtein
   version: 5f10fee965225ac1eecdc234c09daf5cd9e7f7b6
@@ -22,7 +22,7 @@ imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: d7ca0344c929a6e28bf7e1dd17ea32f800634374
+  version: 094c4e4e03d9f1c2c7d25a17b5df5f2685ae922a
   subpackages:
   - aws
   - aws/awserr
@@ -61,7 +61,7 @@ imports:
 - name: github.com/blang/semver
   version: 2ee87856327ba09384cabd113bc6b5d174e9ec0f
 - name: github.com/coveo/gotemplate
-  version: c5c5634c4c19c0eac8fc896587aa52a45e85fc32
+  version: 3b36d589a9a1b985de47e974c301214a17ec538a
   subpackages:
   - errors
   - hcl
@@ -75,7 +75,7 @@ imports:
 - name: github.com/go-ini/ini
   version: 32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a
 - name: github.com/gruntwork-io/terragrunt
-  version: 03b1f96ad64f35b53856b123b94074e50e6df5d2
+  version: 9c5fc6d0d5dccbfb29a568e54862203201574b62
   repo: https://github.com/coveo/terragrunt.git
   subpackages:
   - aws_helper
@@ -196,7 +196,7 @@ imports:
   - cty/json
   - cty/set
 - name: golang.org/x/crypto
-  version: 3d37316aaa6bd9929127ac9a527abf408178ea7b
+  version: 0efb9460aaf800c6376acf625be2853bceac2e06
   subpackages:
   - bcrypt
   - blowfish

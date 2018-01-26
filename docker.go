@@ -24,7 +24,7 @@ func callDocker(args ...string) int {
 
 	// Change the default log level for terragrunt
 	const logLevelArg = "--terragrunt-logging-level"
-	if !util.ListContainsElement(command, logLevelArg) && config.EntryPoint == "terragrunt" {
+	if !util.ListContainsElement(command, logLevelArg) && filepath.Base(config.EntryPoint) == "terragrunt" {
 		if config.LogLevel == "6" || strings.ToLower(config.LogLevel) == "full" {
 			config.LogLevel = "debug"
 			config.Environment["TF_LOG"] = "DEBUG"
@@ -40,7 +40,7 @@ func callDocker(args ...string) int {
 		}
 	}
 
-	if flushCache && config.EntryPoint == "terragrunt" {
+	if flushCache && filepath.Base(config.EntryPoint) == "terragrunt" {
 		command = append(command, "--terragrunt-source-update")
 	}
 

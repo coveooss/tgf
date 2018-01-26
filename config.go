@@ -127,7 +127,7 @@ func (config *TGFConfig) InitAWS(profile string) error {
 // SetDefaultValues sets the uninitialized values from the config files and the parameter store
 func (config *TGFConfig) SetDefaultValues() {
 	for _, configFile := range findConfigFiles(Must(os.Getwd()).(string)) {
-		var content interface{}
+		var content map[string]interface{}
 		if debug {
 			printfDebug(os.Stderr, "# Reading configuration from %s\n", configFile)
 		}
@@ -144,53 +144,48 @@ func (config *TGFConfig) SetDefaultValues() {
 			content = utils.MapKeyInterface2string(content).(map[string]interface{})
 		}
 
-		switch content := content.(type) {
-		case map[string]interface{}:
-			extract := func(key string) (result interface{}) {
-				result = content[key]
-				delete(content, key)
+		extract := func(key string) (result interface{}) {
+			result = content[key]
+			delete(content, key)
+			return
+		}
+
+		apply := func(content interface{}) {
+			if content == nil {
 				return
 			}
-
-			apply := func(content interface{}) {
-				if content == nil {
-					return
+			switch content := content.(type) {
+			case map[string]interface{}:
+				// We sort the keys to ensure that we alway process them in the same order
+				keys := make([]string, 0, len(content))
+				for key := range content {
+					keys = append(keys, key)
 				}
-				switch content := content.(type) {
-				case map[string]interface{}:
-					// We sort the keys to ensure that we alway process them in the same order
-					keys := make([]string, 0, len(content))
-					for key := range content {
-						keys = append(keys, key)
-					}
-					sort.Strings(keys)
-					for _, key := range keys {
-						config.SetValue(key, content[key])
-					}
-				default:
-					fmt.Fprintln(os.Stderr, errorString("Invalid configuration format in file %s", configFile))
+				sort.Strings(keys)
+				for _, key := range keys {
+					config.SetValue(key, content[key])
 				}
+			default:
+				fmt.Fprintln(os.Stderr, errorString("Invalid configuration format in file %s (%T)", configFile, content))
 			}
-
-			windows := extract("windows")
-			darwin := extract("darwin")
-			linux := extract("linux")
-			ix := extract("ix")
-
-			switch runtime.GOOS {
-			case "windows":
-				apply(windows)
-			case "darwin":
-				apply(darwin)
-				apply(ix)
-			case "linux":
-				apply(linux)
-				apply(ix)
-			}
-			apply(content)
-		default:
-			fmt.Fprintln(os.Stderr, errorString("Invalid configuration format in file %s", configFile))
 		}
+
+		windows := extract("windows")
+		darwin := extract("darwin")
+		linux := extract("linux")
+		ix := extract("ix")
+
+		switch runtime.GOOS {
+		case "windows":
+			apply(windows)
+		case "darwin":
+			apply(darwin)
+			apply(ix)
+		case "linux":
+			apply(linux)
+			apply(ix)
+		}
+		apply(content)
 	}
 
 	if awsConfigExist() {
