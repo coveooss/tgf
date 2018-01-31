@@ -39,19 +39,11 @@ RUN pwsh -c Install-Package AWSPowerShell.NetCore -Force > /dev/null
 RUN apt-get -y install ruby && gem install terraforming
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
-ARG TERRAFORM_VERSION=0.11.2
-ARG TERRAFORM_QUANTUM=0.3.6
-ARG TERRAGRUNT_VERSION=0.12.26-coveo.8
-ARG GOTEMPLATE_VERSION=2.3.0
-ARG TFLINT_VERSION=0.5.4
-ARG AWS_PROVIDER=1.8.0-coveo.0
-ARG TERRAFORM_DOCS_VERSION=0.3.1
-
-RUN curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && unzip -p _ > ${EXE_FOLDER}/terraform && chmod +x ${EXE_FOLDER}/terraform && \
-    curl -sLo_ https://github.com/coveo/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_${TERRAGRUNT_VERSION}${EXT} && unzip -p _ > ${EXE_FOLDER}/terragrunt && \
-    curl -sLo_ https://github.com/coveo/gotemplate/releases/download/v${GOTEMPLATE_VERSION}/gotemplate_${GOTEMPLATE_VERSION}${EXT} && unzip -p _ > ${EXE_FOLDER}/gotemplate && \
-    curl -sLo_ https://github.com/wata727/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip && unzip -p _ > ${EXE_FOLDER}/tflint && chmod +x ${EXE_FOLDER}/tflint && \
-    curl -sLo_ https://github.com/coveo/terraform-docs/releases/download/v${TERRAFORM_DOCS_VERSION}/terraform-docs_${TERRAFORM_DOCS_VERSION}${EXT} && unzip -p _ > ${EXE_FOLDER}/terraform-docs && \
-    curl -sLo_ https://github.com/coveo/terraform-provider-quantum/releases/download/v${TERRAFORM_QUANTUM}/terraform-provider-quantum_${TERRAFORM_QUANTUM}${EXT} && unzip -p _ > ${EXE_FOLDER}/terraform-provider-quantum && \
-    curl -sLo_ https://github.com/coveo/terraform-provider-aws/releases/download/v${AWS_PROVIDER}/terraform-provider-aws_${AWS_PROVIDER}${EXT} && unzip -p _ > ${EXE_FOLDER}/terraform-provider-aws && \
-    rm _
+RUN TERRAFORM=0.11.2     && curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM}/terraform_${TERRAFORM}_linux_amd64.zip && unzip -p _ > ${EXE_FOLDER}/terraform && \
+    TG=0.12.26-coveo.8   && curl -sLo_ https://github.com/coveo/terragrunt/releases/download/v${TG}/terragrunt_${TG}${EXT} && unzip -p _ > ${EXE_FOLDER}/terragrunt && \
+    GOTEMPLATE=2.3.0     && curl -sLo_ https://github.com/coveo/gotemplate/releases/download/v${GOTEMPLATE}/gotemplate_${GOTEMPLATE}${EXT} && unzip -p _ > ${EXE_FOLDER}/gotemplate && \
+    TF_LINT=0.5.4        && curl -sLo_ https://github.com/wata727/tflint/releases/download/v${TF_LINT}/tflint_linux_amd64.zip && unzip -p _ > ${EXE_FOLDER}/tflint && \
+    TF_DOCS=0.3.1        && curl -sLo_ https://github.com/coveo/terraform-docs/releases/download/v${TF_DOCS}/terraform-docs_${TF_DOCS}${EXT} && unzip -p _ > ${EXE_FOLDER}/terraform-docs && \
+    TF_QUANTUM=0.3.6     && curl -sLo_ https://github.com/coveo/terraform-provider-quantum/releases/download/v${TF_QUANTUM}/terraform-provider-quantum_${TF_QUANTUM}${EXT} && unzip -p _ > ${EXE_FOLDER}/terraform-provider-quantum && \
+    TF_AWS=1.8.0-coveo.0 && curl -sLo_ https://github.com/coveo/terraform-provider-aws/releases/download/v${TF_AWS}/terraform-provider-aws_${TF_AWS}${EXT} && unzip -p _ > ${EXE_FOLDER}/terraform-provider-aws && \
+    chmod +x $EXE_FOLDER/* && rm _
