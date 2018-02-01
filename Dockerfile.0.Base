@@ -12,7 +12,7 @@ RUN apk update && \
     adduser -D deploy
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
-RUN TERRAFORM=0.11.2   && curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM}/terraform_${TERRAFORM}_linux_amd64.zip && unzip -p _ > ${EXE_FOLDER}/terraform && \
-    TG=0.12.26-coveo.8 && curl -sLo_ https://github.com/coveo/terragrunt/releases/download/v${TG}/terragrunt_${TG}${EXT} && unzip -p _ > ${EXE_FOLDER}/terragrunt && \
-    GOTEMPLATE=2.3.0   && curl -sLo_ https://github.com/coveo/gotemplate/releases/download/v${GOTEMPLATE}/gotemplate_${GOTEMPLATE}${EXT} && unzip -p _ > ${EXE_FOLDER}/gotemplate && \
+RUN TERRAFORM=0.11.3   && curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM}/terraform_${TERRAFORM}_linux_amd64.zip && unzip -p _ > ${EXE_FOLDER}/terraform && \
+    TG=0.12.26-coveo.9 && curl -sLo_ https://github.com/coveo/terragrunt/releases/download/v${TG}/terragrunt_${TG}${EXT} && unzip -p _ > ${EXE_FOLDER}/terragrunt && \
+    GOTEMPLATE=2.3.1   && curl -sLo_ https://github.com/coveo/gotemplate/releases/download/v${GOTEMPLATE}/gotemplate_${GOTEMPLATE}${EXT} && unzip -p _ > ${EXE_FOLDER}/gotemplate && \
     chmod +x $EXE_FOLDER/* && rm _
