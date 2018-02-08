@@ -201,7 +201,6 @@ func getImage() string {
 
 	if debug {
 		printfDebug(os.Stderr, "%s\n", strings.Join(buildCmd.Args, " "))
-		printfDebug(os.Stderr, "%s", dockerFile)
 	}
 	buildCmd.Stderr = os.Stderr
 	buildCmd.Dir = config.ImageBuildFolder
