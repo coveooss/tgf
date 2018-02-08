@@ -60,7 +60,6 @@ func callDocker(args ...string) int {
 		"run", "-it",
 		"-v", fmt.Sprintf("%s%s:%s", convertDrive(currentDrive), rootFolder, filepath.ToSlash(filepath.Join("/", mountPoint, rootFolder))),
 		"-w", sourceFolder,
-		"--rm",
 	}
 	if !noHome {
 		currentUser := Must(user.Current()).(*user.User)
@@ -109,6 +108,12 @@ func callDocker(args ...string) int {
 	for _, do := range dockerOptions {
 		dockerArgs = append(dockerArgs, strings.Split(do, " ")...)
 	}
+
+	if !util.ListContainsElement(dockerArgs, "--name") {
+		// We do not remove the image after execution if a name has been provided
+		dockerArgs = append(dockerArgs, "--rm")
+	}
+
 	dockerArgs = append(dockerArgs, getEnviron(!noHome)...)
 	dockerArgs = append(dockerArgs, imageName)
 	dockerArgs = append(dockerArgs, command...)
@@ -167,21 +172,30 @@ func runCommands(commands []string) error {
 // Returns the image name to use
 // If docker-image-build option has been set, an image is dynamically built and the resulting image digest is returned
 func getImage() string {
-	if config.ImageBuild == "" {
+	if config.ImageBuild == "" && config.ImageBuildFolder == "" {
 		return config.GetImageName()
 	}
 
+	if config.ImageBuildFolder == "" {
+		config.ImageBuildFolder = "."
+	}
+
 	var dockerFile string
-	dockerFile += fmt.Sprintln("FROM", config.GetImageName())
-	dockerFile += fmt.Sprintln(config.ImageBuild)
+	if config.ImageBuild != "" {
+		out := Must(ioutil.TempFile(config.ImageBuildFolder, "DockerFile")).(*os.File)
+		Must(fmt.Fprintf(out, "FROM %s \n%s", config.GetImageName(), config.ImageBuild))
+		Must(out.Close())
+		defer os.Remove(out.Name())
+		dockerFile = out.Name()
+	}
 
-	tempDir := Must(ioutil.TempDir("", "tgf-docker")).(string)
-	PanicOnError(ioutil.WriteFile(fmt.Sprintf("%s/Dockerfile", tempDir), []byte(dockerFile), 0644))
-	defer os.RemoveAll(tempDir)
-
-	args := []string{"build", tempDir, "--quiet", "--force-rm"}
+	args := []string{"build", config.ImageBuildFolder, "--quiet", "--force-rm"}
 	if refresh {
 		args = append(args, "--pull")
+	}
+	if dockerFile != "" {
+		args = append(args, "--file")
+		args = append(args, dockerFile)
 	}
 	buildCmd := exec.Command("docker", args...)
 
@@ -190,6 +204,7 @@ func getImage() string {
 		printfDebug(os.Stderr, "%s", dockerFile)
 	}
 	buildCmd.Stderr = os.Stderr
+	buildCmd.Dir = config.ImageBuildFolder
 
 	return strings.TrimSpace(string(Must(buildCmd.Output()).([]byte)))
 }

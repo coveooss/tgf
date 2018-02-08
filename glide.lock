@@ -1,5 +1,5 @@
-hash: 96ced07ec1d31e0cf7231750d315960abc47ecdaf65fef8f7b535fa9363eede4
-updated: 2018-01-26T15:56:41.297776-05:00
+hash: d7929e2e1301f37dfad2b6dc423deeb0d3abe8363eaee4dac09b2bfb8a4b34ff
+updated: 2018-02-08T06:53:52.183943-05:00
 imports:
 - name: github.com/agext/levenshtein
   version: 5f10fee965225ac1eecdc234c09daf5cd9e7f7b6
@@ -22,7 +22,7 @@ imports:
 - name: github.com/armon/go-radix
   version: 1fca145dffbcaa8fe914309b1ec0cfc67500fe61
 - name: github.com/aws/aws-sdk-go
-  version: 094c4e4e03d9f1c2c7d25a17b5df5f2685ae922a
+  version: 586c9ba6027a527800564282bb843d7e6e7985c9
   subpackages:
   - aws
   - aws/awserr
@@ -61,7 +61,7 @@ imports:
 - name: github.com/blang/semver
   version: 2ee87856327ba09384cabd113bc6b5d174e9ec0f
 - name: github.com/coveo/gotemplate
-  version: 3b36d589a9a1b985de47e974c301214a17ec538a
+  version: 674094cb6bfe76930ad05d9082201d0fb0e82a7e
   subpackages:
   - errors
   - hcl
@@ -75,7 +75,7 @@ imports:
 - name: github.com/go-ini/ini
   version: 32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a
 - name: github.com/gruntwork-io/terragrunt
-  version: 9c5fc6d0d5dccbfb29a568e54862203201574b62
+  version: 3bd53f3a546f70c1059cee856d3ca602d08ed209
   repo: https://github.com/coveo/terragrunt.git
   subpackages:
   - aws_helper
@@ -107,7 +107,7 @@ imports:
   - json/scanner
   - json/token
 - name: github.com/hashicorp/hcl2
-  version: f87600a7d93ee66499e0566bc9ce0bb43e91a28a
+  version: 5ca9713bf06addcefc0a4e16f779e43a2c88570c
   subpackages:
   - gohcl
   - hcl
@@ -121,7 +121,7 @@ imports:
   - parser
   - scanner
 - name: github.com/hashicorp/terraform
-  version: a6008b8a48a749c7c167453b9cf55ffd572b9a5d
+  version: 3802b14260603f90c7a1faf55994dcc8933e2069
   subpackages:
   - config
   - config/hcl2shim
@@ -142,7 +142,7 @@ imports:
 - name: github.com/imdario/mergo
   version: 7fe0c75c13abdee74b09fcacef5ea1c6bba6a874
 - name: github.com/jmespath/go-jmespath
-  version: dd801d4f4ce7ac746e7e7b4489d2fa600b3b096b
+  version: c2b33e8439af944379acbdd9c3a5fe0bc44bd8a5
 - name: github.com/Masterminds/semver
   version: 59c29afe1a994eacb71c833025ca7acf874bb1da
 - name: github.com/Masterminds/sprig
@@ -166,7 +166,7 @@ imports:
 - name: github.com/mitchellh/hashstructure
   version: 2bca23e0e452137f789efbc8610126fd8b94f73b
 - name: github.com/mitchellh/mapstructure
-  version: b4575eea38cca1123ec2dc90c26529b5c5acfcff
+  version: a4e142e9c047c904fa2f1e144d9a84e6133024bc
 - name: github.com/mitchellh/reflectwalk
   version: 63d60e9d0dbc60cf9164e6510889b0db6683d98c
 - name: github.com/op/go-logging
@@ -196,7 +196,7 @@ imports:
   - cty/json
   - cty/set
 - name: golang.org/x/crypto
-  version: 0efb9460aaf800c6376acf625be2853bceac2e06
+  version: d9133f5469342136e669e85192a26056b587f503
   subpackages:
   - bcrypt
   - blowfish
@@ -210,7 +210,7 @@ imports:
   - pbkdf2
   - scrypt
 - name: golang.org/x/net
-  version: 0ed95abb35c445290478a5348a7b38bb154135fd
+  version: f5dfe339be1d06f81b22525fe34671ee7d2c8904
   subpackages:
   - html
   - html/atom
@@ -221,7 +221,7 @@ imports:
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: e19ae1496984b1c655b8044a65c0300a3c878dd3
+  version: 4e4a3210bb54bb31f6ab2cdca2edcc0b50c420c1
   subpackages:
   - secure/bidirule
   - transform

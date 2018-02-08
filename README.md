@@ -38,19 +38,19 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.16.0/tgf_1.16.0_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
+curl -sL https://github.com/coveo/tgf/releases/download/v1.16.1/tgf_1.16.1_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.16.0/tgf_1.16.0_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.16.1/tgf_1.16.1_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.16.0/tgf_1.16.0_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.16.1/tgf_1.16.1_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -90,6 +90,7 @@ Key | Description | Default value
 | docker-image-version | Identify the image version |
 | docker-image-tag | Identify the image tag (could specify specialized version such as k8s, full) | latest
 | docker-image-build | List of Dockerfile instructions to customize the specified docker image) |
+| docker-image-build-folder | Folder where the docker build command should be executed |
 | docker-refresh | Delay before checking if a newer version of the docker image is available | 1h (1 hour)
 | docker-options | Additional options to supply to the Docker command |
 | logging-level | Terragrunt logging level (only apply to Terragrunt entry point).<br>*Critical (0), Error (1), Warning (2), Notice (3), Info (4), Debug (5), Full (6)* | Notice
@@ -130,31 +131,26 @@ section | Description
 > tgf
 usage: tgf [<flags>]
 
-DESCRIPTION: TGF (terragrunt frontend) is a Docker frontend for terragrunt/terraform. It automatically maps your current folder, your HOME folder, your TEMP folder as well of most
-environment variables to the docker process. You can add -D to your command to get the exact docker command that is generated.
+DESCRIPTION: TGF (terragrunt frontend) is a Docker frontend for terragrunt/terraform. It automatically maps your current folder, your HOME folder, your TEMP folder as well of most environment variables to the docker process. You can add -D to your command to get the exact docker command that is generated.
 
-It then looks in your current folder and all its parents to find a file named '.tgf.config' to retrieve the default configuration. If not all configurable values are satisfied and you have an AWS configuration,
-it will then try to retrieve the missing elements from the AWS Parameter Store under the key '/default/tgf'.
+It then looks in your current folder and all its parents to find a file named '.tgf.config' to retrieve the default configuration. If not all configurable values are satisfied and you have an AWS configuration, it will then try to retrieve the missing elements from the AWS Parameter Store under the key '/default/tgf'.
 
-Configurable values are: docker-image, docker-image-version, docker-image-tag, docker-image-build, docker-refresh, docker-options, recommended-image-version, required-image-version, logging-level,
-entry-point, tgf-recommended-version.
+Configurable values are: docker-image, docker-image-version, docker-image-tag, docker-image-build, docker-image-build-folder, docker-refresh, docker-options, recommended-image-version, required-image-version, logging-level, entry-point, tgf-recommended-version.
 
 You can get the full documentation at https://github.com/coveo/tgf/blob/master/README.md and check for new version at https://github.com/coveo/tgf/releases/latest.
 
 Any docker image could be used, but TGF specialized images could be found at: https://hub.docker.com/r/coveo/tgf/tags.
 
-Terragrunt documentation could be found at https://github.com/coveo/terragrunt/blob/master/README.md (Coveo fork) or https://github.com/gruntwork-io/terragrunt/blob/master/README.md
-(Gruntwork.io original)
+Terragrunt documentation could be found at https://github.com/coveo/terragrunt/blob/master/README.md (Coveo fork) or https://github.com/gruntwork-io/terragrunt/blob/master/README.md (Gruntwork.io original)
 
 Terraform documentation could be found at https://www.terraform.io/docs/index.html.
 
-IMPORTANT: Most of the tgf command line arguments are in uppercase to avoid potential conflict with the underlying command. If any of the tgf arguments conflicts with an argument of the desired entry point, you
-must place that argument after -- to ensure that they are not interpreted by tgf and are passed to the entry point. Any non conflicting argument will be passed to the entry point wherever it is located on the
-invocation arguments.
+IMPORTANT: Most of the tgf command line arguments are in uppercase to avoid potential conflict with the underlying command. If any of the tgf arguments conflicts with an argument of the desired entry point, you must place that argument after -- to ensure that they are not interpreted by tgf and are passed to the entry point. Any non
+conflicting argument will be passed to the entry point wherever it is located on the invocation arguments.
 
   tgf ls -- -D   # Avoid -D to be interpretated by tgf as --debug-docker
 
-VERSION: 1.16.0
+VERSION: 1.16.1
 
 AUTHOR: Coveo
 
@@ -182,7 +178,7 @@ Example:
 
 ```bash
 > tgf --current-version
-tgf v1.16.0
+tgf v1.16.1
 ```
 
 Returns the current version of the tgf tool

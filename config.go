@@ -29,6 +29,7 @@ const (
 	dockerImageVersion         = "docker-image-version"
 	dockerImageTag             = "docker-image-tag"
 	dockerImageBuild           = "docker-image-build"
+	dockerImageBuildFolder     = "docker-image-build-folder"
 	dockerRefresh              = "docker-refresh"
 	dockerOptionsTag           = "docker-options"
 	loggingLevel               = "logging-level"
@@ -48,6 +49,7 @@ type TGFConfig struct {
 	ImageVersion            *string
 	ImageTag                *string
 	ImageBuild              string
+	ImageBuildFolder        string
 	LogLevel                string
 	EntryPoint              string
 	Refresh                 time.Duration
@@ -87,6 +89,7 @@ func (config TGFConfig) String() (result string) {
 	ifNotZero(dockerImage, config.Image)
 	ifNotZero(dockerImageVersion, config.ImageVersion)
 	ifNotZero(dockerImageTag, config.ImageTag)
+	ifNotZero(dockerImageBuildFolder, config.ImageBuildFolder)
 	if config.ImageBuild != "" {
 		lines := strings.Split(strings.TrimSpace(config.ImageBuild), "\n")
 		buildScript := lines[0]
@@ -163,6 +166,13 @@ func (config *TGFConfig) SetDefaultValues() {
 				}
 				sort.Strings(keys)
 				for _, key := range keys {
+					if key == dockerImageBuildFolder {
+						folder := fmt.Sprint(content[key])
+						// If the build folder is relative, we make it relative to the config file folder where it is declared
+						if !filepath.IsAbs(folder) {
+							content[key] = filepath.Join(filepath.Dir(configFile), folder)
+						}
+					}
 					config.SetValue(key, content[key])
 				}
 			default:
@@ -234,6 +244,10 @@ func (config *TGFConfig) SetValue(key string, value interface{}) {
 	case dockerImageBuild:
 		// We concatenate the various levels of docker build instructions
 		config.ImageBuild = strings.Join([]string{strings.TrimSpace(valueStr), strings.TrimSpace(config.ImageBuild)}, "\n")
+	case dockerImageBuildFolder:
+		if config.ImageBuildFolder == "" {
+			config.ImageBuildFolder = valueStr
+		}
 	case recommendedImageVersion:
 		if config.RecommendedImageVersion == "" {
 			config.RecommendedImageVersion = valueStr

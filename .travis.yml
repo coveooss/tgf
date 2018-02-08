@@ -27,10 +27,6 @@ script:
   fi
 - if [ ${TRAVIS_TAG::1} = v ];
   then
-    if [[ $TRAVIS_TAG =~ .*-.* ]];
-    then
-      cat .prerelease.yml >> .goreleaser.yml && set -- --skip-validate;
-    fi;
     curl -sL https://git.io/goreleaser | bash /dev/stdin $@;
   fi
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/fatih/color"
@@ -80,7 +81,7 @@ func main() {
 		"parameterStoreKey": parameterFolder,
 		"config":            configFile,
 		"options": color.GreenString(strings.Join([]string{
-			dockerImage, dockerImageVersion, dockerImageTag, dockerImageBuild, dockerRefresh, dockerOptionsTag,
+			dockerImage, dockerImageVersion, dockerImageTag, dockerImageBuild, dockerImageBuildFolder, dockerRefresh, dockerOptionsTag,
 			recommendedImageVersion, requiredImageVersion, loggingLevel, entryPoint, tgfVersion,
 		}, ", ")),
 		"readme":          link(gitSource + "/blob/master/README.md"),
@@ -182,7 +183,7 @@ func main() {
 	}
 
 	if *getAllVersions {
-		if config.EntryPoint != "terragrunt" {
+		if filepath.Base(config.EntryPoint) != "terragrunt" {
 			fmt.Fprintln(os.Stderr, errorString("--all-version works only with terragrunt as the entrypoint"))
 			os.Exit(1)
 		}
