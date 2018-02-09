@@ -15,7 +15,7 @@ RUN KUBE_VERSION=1.9.2 && curl -sLo_ https://storage.googleapis.com/kubernetes-r
 
 # Install helm (git is also required by helm)
 ENV HELM_HOME=/home/tgf
-RUN HELM_VERSION=2.8.0 && curl -s -L https://kubernetes-helm.storage.googleapis.com/helm-v${HELM_VERSION}-linux-amd64.tar.gz | tar xzv && mv ./linux-amd64/helm ${EXE_FOLDER}/helm && \
+RUN HELM_VERSION=2.8.1 && curl -s -L https://kubernetes-helm.storage.googleapis.com/helm-v${HELM_VERSION}-linux-amd64.tar.gz | tar xzv && mv ./linux-amd64/helm ${EXE_FOLDER}/helm && \
     mkdir -p $(helm home)/plugins && rm -rf ./linux-amd64
 
 # Install helm-template
