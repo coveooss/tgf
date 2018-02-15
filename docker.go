@@ -84,19 +84,22 @@ func callDocker(args ...string) int {
 
 	config.Environment["TGF_COMMAND"] = config.EntryPoint
 	config.Environment["TGF_VERSION"] = version
-	config.Environment["TGF_IMAGE"] = config.Image
 	config.Environment["TGF_ARGS"] = strings.Join(os.Args, " ")
 	config.Environment["TGF_LAUNCH_FOLDER"] = sourceFolder
-	if config.ImageVersion != nil {
-		config.Environment["TGF_IMAGE_VERSION"] = *config.ImageVersion
-		if version, err := semver.Make(*config.ImageVersion); err == nil {
-			config.Environment["TGF_MAJ_MIN"] = fmt.Sprintf("%d.%d", version.Major, version.Minor)
+	config.Environment["TGF_IMAGE_NAME"] = imageName // sha256 of image
+
+	if !strings.Contains(config.Image, "coveo/tgf") { // the tgf image injects its own image info
+		config.Environment["TGF_IMAGE"] = config.Image
+		if config.ImageVersion != nil {
+			config.Environment["TGF_IMAGE_VERSION"] = *config.ImageVersion
+			if version, err := semver.Make(*config.ImageVersion); err == nil {
+				config.Environment["TGF_IMAGE_MAJ_MIN"] = fmt.Sprintf("%d.%d", version.Major, version.Minor)
+			}
+		}
+		if config.ImageTag != nil {
+			config.Environment["TGF_IMAGE_TAG"] = *config.ImageTag
 		}
 	}
-	if config.ImageTag != nil {
-		config.Environment["TGF_IMAGE_TAG"] = *config.ImageTag
-	}
-	config.Environment["TGF_IMAGE_NAME"] = imageName
 
 	for key, val := range config.Environment {
 		os.Setenv(key, val)

@@ -15,6 +15,7 @@ do
     tag=${tag,,}
     [ -z ${tag} ] || tag=-${tag}
     travis_tag=${TRAVIS_TAG:6}
+    travis_maj_min=${travis_tag%.*}
     version=coveo/tgf:${travis_tag}${tag}
     latest=${tag:1}
     latest=coveo/tgf:${latest:-latest}
@@ -26,6 +27,7 @@ do
     # We replace the TRAVIS_TAG variable if any (case where the image is build from another image)
     # The result file is simply named Dockerfile
     cat $df | sed -e "s/\${TRAVIS_TAG}/$travis_tag/" > $dockerfile
+    cat $df | sed -e "s/\${TRAVIS_TAG_MAJ_MIN}/$travis_maj_min/" > $dockerfile
 
     docker build -f $dockerfile -t $version . && rm $dockerfile
     docker push $version
