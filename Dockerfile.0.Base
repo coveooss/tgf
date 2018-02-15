@@ -6,6 +6,11 @@ ARG EXT=_linux_64-bits.zip
 LABEL vendor="Coveo"
 LABEL maintainer "jgiroux@coveo.com"
 
+ENV TGF_IMAGE="coveo/tgf"
+ENV TGF_IMAGE_TAG="base"
+ENV TGF_IMAGE_VERSION="${TRAVIS_TAG}"
+ENV TGF_IMAGE_MAJ_MIN="${TRAVIS_TAG_MAJ_MIN}"
+
 RUN apk update && \
     apk add openssl ca-certificates libc6-compat curl rsync && \
     adduser -D tgf && \

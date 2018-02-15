@@ -6,6 +6,8 @@ ARG EXT=_linux_64-bits.zip
 LABEL vendor="Coveo"
 LABEL maintainer "jgiroux@coveo.com"
 
+ENV TGF_IMAGE_TAG=""
+
 # Install Shells
 RUN apk update && apk add bash zsh fish bash-completion
 
