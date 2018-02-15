@@ -88,7 +88,7 @@ func callDocker(args ...string) int {
 	config.Environment["TGF_LAUNCH_FOLDER"] = sourceFolder
 	config.Environment["TGF_IMAGE_NAME"] = imageName // sha256 of image
 
-	if !strings.Contains(config.Image, "tgf") { // the tgf image injects its own image info
+	if !strings.Contains(config.Image, "coveo/tgf") { // the tgf image injects its own image info
 		config.Environment["TGF_IMAGE"] = config.Image
 		if config.ImageVersion != nil {
 			config.Environment["TGF_IMAGE_VERSION"] = *config.ImageVersion
