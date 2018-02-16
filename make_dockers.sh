@@ -26,8 +26,7 @@ do
     dockerfile=dockerfile.temp
     # We replace the TRAVIS_TAG variable if any (case where the image is build from another image)
     # The result file is simply named Dockerfile
-    cat $df | sed -e "s/\${TRAVIS_TAG}/$travis_tag/" > $dockerfile
-    cat $df | sed -e "s/\${TRAVIS_TAG_MAJ_MIN}/$travis_maj_min/" > $dockerfile
+    cat $df | sed -e "s/\${TRAVIS_TAG}/$travis_tag/" | sed -e "s/\TGF_IMAGE_MAJ_MIN=/TGF_IMAGE_MAJ_MIN=$travis_maj_min/" > $dockerfile
 
     docker build -f $dockerfile -t $version . && rm $dockerfile
     docker push $version
