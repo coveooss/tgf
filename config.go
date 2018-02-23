@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -15,10 +14,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/blang/semver"
-	"github.com/coveo/gotemplate/hcl"
 	"github.com/coveo/gotemplate/utils"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -134,17 +131,9 @@ func (config *TGFConfig) SetDefaultValues() {
 		if debug {
 			printfDebug(os.Stderr, "# Reading configuration from %s\n", configFile)
 		}
-		fileContent := Must(ioutil.ReadFile(configFile)).([]byte)
-		errYAML := yaml.Unmarshal(fileContent, &content)
-		if errYAML != nil {
-			errHCL := hcl.Unmarshal(fileContent, &content)
-			if errHCL != nil {
-				fmt.Fprintln(os.Stderr, errorString("Error while loading configuration file %s\nConfiguration file must be valid YAML, JSON or HCL", configFile))
-				continue
-			}
-			content = hcl.Flatten(utils.MapKeyInterface2string(content).(map[string]interface{}))
-		} else {
-			content = utils.MapKeyInterface2string(content).(map[string]interface{})
+		if err := utils.LoadData(configFile, &content); err != nil {
+			fmt.Fprintln(os.Stderr, errorString("Error while loading configuration file %s\nConfiguration file must be valid YAML, JSON or HCL", configFile))
+			continue
 		}
 
 		extract := func(key string) (result interface{}) {
