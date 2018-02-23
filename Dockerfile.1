@@ -15,7 +15,7 @@ RUN apk update && apk add bash zsh fish bash-completion
 RUN apk add py2-pip python3 groff less tree && \
     pip install --upgrade pip && \
     pip install awscli mdv && \
-    pip3 install colorama jenkinsapi click && \
+    pip3 install colorama jenkinsapi click boto3 && \
     apk add jq zip nano vim git mercurial ruby ruby-rdoc ruby-irb && \
     gem install terraforming
 

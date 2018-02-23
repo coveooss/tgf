@@ -35,7 +35,7 @@ RUN apt-get update && \
     pip install --upgrade pip && \
     pip install awscli mdv && \
     pip3 install --upgrade pip && \
-    pip3 install colorama click deepdiff flatten_dict PyYAML
+    pip3 install colorama click deepdiff flatten_dict PyYAML boto3
 
 # Installing the AWS Powershell client
 RUN pwsh -c Install-Package AWSPowerShell.NetCore -Force > /dev/null
