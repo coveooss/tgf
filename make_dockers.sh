@@ -17,6 +17,7 @@ do
     travis_tag=${TRAVIS_TAG:6}
     travis_maj_min=${travis_tag%.*}
     version=coveo/tgf:${travis_tag}${tag}
+    version_mm=coveo/tgf:${travis_maj_min}${tag}
     latest=${tag:1}
     latest=coveo/tgf:${latest:-latest}
 
@@ -33,5 +34,6 @@ do
     if [ -n "$latest" ]
     then 
         docker tag $version $latest && docker push $latest
+        docker tag $version $version_mm && docker push $version_mm
     fi
 done
