@@ -62,7 +62,7 @@ imports:
 - name: github.com/blang/semver
   version: a088618caaf34f5392024fc3386143873033fbea
 - name: github.com/coveo/gotemplate
-  version: 539b197bd088fbfd09008ac5edebf363fb374e46
+  version: c46a09e8e7fb91ac1dedd4d473b21888ecfc7f6e
   subpackages:
   - errors
   - hcl

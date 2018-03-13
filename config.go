@@ -27,6 +27,7 @@ const (
 	dockerImageTag             = "docker-image-tag"
 	dockerImageBuild           = "docker-image-build"
 	dockerImageBuildFolder     = "docker-image-build-folder"
+	dockerImageBuildTag        = "docker-image-build-tag"
 	dockerRefresh              = "docker-refresh"
 	dockerOptionsTag           = "docker-options"
 	loggingLevel               = "logging-level"
@@ -45,8 +46,7 @@ type TGFConfig struct {
 	Image                   string
 	ImageVersion            *string
 	ImageTag                *string
-	ImageBuild              string
-	ImageBuildFolder        string
+	ImageBuild              []TGFConfigBuild
 	LogLevel                string
 	EntryPoint              string
 	Refresh                 time.Duration
@@ -61,10 +61,41 @@ type TGFConfig struct {
 	separator        string
 }
 
+// TGFConfigBuild contains an entry specifying how to customize the current docker image
+type TGFConfigBuild struct {
+	Instructions string
+	Folder       string
+	tag          string
+	source       string
+}
+
+func (cb TGFConfigBuild) empty() bool { return strings.TrimSpace(cb.Instructions+cb.Folder) == "" }
+
+// Dir returns the folder name relative to the source
+func (cb TGFConfigBuild) Dir() string {
+	if cb.Folder == "" {
+		return filepath.Dir(cb.source)
+	}
+	if filepath.IsAbs(cb.Folder) {
+		return cb.Folder
+	}
+	return Must(filepath.Abs(filepath.Join(filepath.Dir(cb.source), cb.Folder))).(string)
+}
+
+// Tag returns the tag name that should be added to the image
+func (cb TGFConfigBuild) Tag() string {
+	if cb.tag != "" {
+		return cb.tag
+	}
+	return filepath.Base(filepath.Dir(cb.source))
+}
+
 // InitConfig returns a properly initialized TGF configuration struct
 func InitConfig() *TGFConfig {
 	return &TGFConfig{Environment: make(map[string]string)}
 }
+
+func (config *TGFConfig) build() *TGFConfigBuild { return &config.ImageBuild[len(config.ImageBuild)-1] }
 
 func (config TGFConfig) String() (result string) {
 	ifNotZero := func(name string, value interface{}) {
@@ -86,16 +117,19 @@ func (config TGFConfig) String() (result string) {
 	ifNotZero(dockerImage, config.Image)
 	ifNotZero(dockerImageVersion, config.ImageVersion)
 	ifNotZero(dockerImageTag, config.ImageTag)
-	ifNotZero(dockerImageBuildFolder, config.ImageBuildFolder)
-	if config.ImageBuild != "" {
-		lines := strings.Split(strings.TrimSpace(config.ImageBuild), "\n")
-		buildScript := lines[0]
-		if len(lines) > 1 {
-			sep := "\n    "
-			buildScript = sep + strings.Join(lines, sep)
-		}
+	for _, ib := range config.ImageBuild {
+		ifNotZero(ib.Folder, ib.Folder)
+		ifNotZero(ib.Tag(), ib.Tag())
+		if ib.Instructions != "" {
+			lines := strings.Split(strings.TrimSpace(ib.Instructions), "\n")
+			buildScript := lines[0]
+			if len(lines) > 1 {
+				sep := "\n    "
+				buildScript = sep + strings.Join(lines, sep)
+			}
 
-		ifNotZero(dockerImageBuild, buildScript)
+			ifNotZero(dockerImageBuild, buildScript)
+		}
 	}
 	ifNotZero(dockerOptionsTag, config.DockerOptions)
 	ifNotZero(recommendedImageVersion, config.RecommendedImageVersion)
@@ -146,6 +180,7 @@ func (config *TGFConfig) SetDefaultValues() {
 			if content == nil {
 				return
 			}
+			config.ImageBuild = append(config.ImageBuild, TGFConfigBuild{source: configFile})
 			switch content := content.(type) {
 			case map[string]interface{}:
 				// We sort the keys to ensure that we alway process them in the same order
@@ -196,6 +231,7 @@ func (config *TGFConfig) SetDefaultValues() {
 			if debug {
 				printfDebug(os.Stderr, "# Reading configuration from AWS parameter store %s\n", parameterFolder)
 			}
+			config.ImageBuild = append(config.ImageBuild, TGFConfigBuild{source: "AWS/ParametersStore"})
 			for _, parameter := range Must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
 				config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
 			}
@@ -206,6 +242,16 @@ func (config *TGFConfig) SetDefaultValues() {
 	config.SetValue(dockerRefresh, "1h")
 	config.SetValue(loggingLevel, "notice")
 	config.SetValue(entryPoint, "terragrunt")
+
+	build := make([]TGFConfigBuild, 0, len(config.ImageBuild))
+	for i := len(config.ImageBuild) - 1; i >= 0; i-- {
+		ib := config.ImageBuild[i]
+		if ib.empty() {
+			continue
+		}
+		build = append(build, ib)
+	}
+	config.ImageBuild = build
 }
 
 // SetValue sets value of the key in the configuration only if it does not already have a value
@@ -231,12 +277,11 @@ func (config *TGFConfig) SetValue(key string, value interface{}) {
 	case dockerOptionsTag:
 		config.DockerOptions = append(config.DockerOptions, strings.Split(valueStr, " ")...)
 	case dockerImageBuild:
-		// We concatenate the various levels of docker build instructions
-		config.ImageBuild = strings.Join([]string{strings.TrimSpace(valueStr), strings.TrimSpace(config.ImageBuild)}, "\n")
+		config.build().Instructions = strings.TrimSpace(valueStr)
 	case dockerImageBuildFolder:
-		if config.ImageBuildFolder == "" {
-			config.ImageBuildFolder = valueStr
-		}
+		config.build().Folder = valueStr
+	case dockerImageBuildTag:
+		config.build().tag = valueStr
 	case recommendedImageVersion:
 		if config.RecommendedImageVersion == "" {
 			config.RecommendedImageVersion = valueStr
@@ -296,6 +341,7 @@ func (config *TGFConfig) SetValue(key string, value interface{}) {
 	}
 }
 
+// Validate ensure that the current version is compliant with the setting (mainly those in the parameter store1)
 func (config *TGFConfig) Validate() (errors []error) {
 	if config.RecommendedTGFVersion != "" {
 		if valid, err := CheckVersionRange(version, config.RecommendedTGFVersion); err != nil {
@@ -331,6 +377,7 @@ func (config *TGFConfig) Validate() (errors []error) {
 	return
 }
 
+// GetImageName returns the actual image name
 func (config *TGFConfig) GetImageName() string {
 	var suffix string
 	if config.ImageVersion != nil {

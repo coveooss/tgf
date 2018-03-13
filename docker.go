@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 	"path/filepath"
 	"runtime"
@@ -174,41 +175,71 @@ func runCommands(commands []string) error {
 
 // Returns the image name to use
 // If docker-image-build option has been set, an image is dynamically built and the resulting image digest is returned
-func getImage() string {
-	if config.ImageBuild == "" && config.ImageBuildFolder == "" {
-		return config.GetImageName()
+func getImage() (name string) {
+	name = config.GetImageName()
+
+	for i, ib := range config.ImageBuild {
+		var temp, folder, dockerFile string
+		var out *os.File
+		if ib.Folder == "" {
+			// There is no explicit folder, so we create a temporary folder to store the docker file
+			temp = Must(ioutil.TempDir("", "tgf-dockerbuild")).(string)
+			out = Must(os.Create(filepath.Join(temp, "Dockerfile"))).(*os.File)
+			folder = temp
+		} else {
+			if ib.Instructions != "" {
+				out = Must(ioutil.TempFile(ib.Dir(), "DockerFile")).(*os.File)
+				temp = out.Name()
+				dockerFile = temp
+			}
+			folder = ib.Dir()
+		}
+
+		if out != nil {
+			ib.Instructions = fmt.Sprintf("FROM %s\n%s\n", name, ib.Instructions)
+			Must(fmt.Fprintf(out, ib.Instructions))
+			Must(out.Close())
+		}
+
+		if temp != "" {
+			// A temporary file of folder has been created, we register functions to ensure proper cleanup
+			cleanup := func() { os.Remove(temp) }
+			defer cleanup()
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+			go func() {
+				<-c
+				fmt.Println("\nRemoving file", dockerFile)
+				cleanup()
+				panic(errorString("Execution interrupted by user: %v", c))
+			}()
+		}
+
+		args := []string{"build", ".", "--quiet", "--force-rm"}
+		if i == 0 && refresh {
+			args = append(args, "--pull")
+		}
+		if dockerFile != "" {
+			args = append(args, "--file")
+			args = append(args, filepath.Base(dockerFile))
+		}
+		name = name + "-" + ib.Tag()
+		args = append(args, "--tag", name)
+		buildCmd := exec.Command("docker", args...)
+
+		if debug {
+			printfDebug(os.Stderr, "%s\n", strings.Join(buildCmd.Args, " "))
+			if ib.Instructions != "" {
+				printfDebug(os.Stderr, "%s\n", ib.Instructions)
+			}
+		}
+		buildCmd.Stderr = os.Stderr
+		buildCmd.Dir = folder
+
+		Must(buildCmd.Output())
 	}
 
-	if config.ImageBuildFolder == "" {
-		config.ImageBuildFolder = "."
-	}
-
-	var dockerFile string
-	if config.ImageBuild != "" {
-		out := Must(ioutil.TempFile(config.ImageBuildFolder, "DockerFile")).(*os.File)
-		Must(fmt.Fprintf(out, "FROM %s \n%s", config.GetImageName(), config.ImageBuild))
-		Must(out.Close())
-		defer os.Remove(out.Name())
-		dockerFile = out.Name()
-	}
-
-	args := []string{"build", config.ImageBuildFolder, "--quiet", "--force-rm"}
-	if refresh {
-		args = append(args, "--pull")
-	}
-	if dockerFile != "" {
-		args = append(args, "--file")
-		args = append(args, dockerFile)
-	}
-	buildCmd := exec.Command("docker", args...)
-
-	if debug {
-		printfDebug(os.Stderr, "%s\n", strings.Join(buildCmd.Args, " "))
-	}
-	buildCmd.Stderr = os.Stderr
-	buildCmd.Dir = config.ImageBuildFolder
-
-	return strings.TrimSpace(string(Must(buildCmd.Output()).([]byte)))
+	return
 }
 
 func checkImage(image string) bool {

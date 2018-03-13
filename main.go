@@ -81,8 +81,9 @@ func main() {
 		"parameterStoreKey": parameterFolder,
 		"config":            configFile,
 		"options": color.GreenString(strings.Join([]string{
-			dockerImage, dockerImageVersion, dockerImageTag, dockerImageBuild, dockerImageBuildFolder, dockerRefresh, dockerOptionsTag,
-			recommendedImageVersion, requiredImageVersion, loggingLevel, entryPoint, tgfVersion,
+			dockerImage, dockerImageVersion, dockerImageTag, dockerImageBuild, dockerImageBuildFolder, dockerImageBuildTag,
+			dockerRefresh, dockerOptionsTag, recommendedImageVersion, requiredImageVersion, loggingLevel, entryPoint, tgfVersion,
+			environment, runBefore, runAfter,
 		}, ", ")),
 		"readme":          link(gitSource + "/blob/master/README.md"),
 		"latest":          link(gitSource + "/releases/latest"),
