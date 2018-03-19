@@ -1,0 +1,102 @@
+#! /usr/bin/env bash
+
+OPTS=$(getopt -o p:b:k: -l prefix:,bucket:,key: -- "$@") || (echo "Bad options" >&1; exit 1)
+eval set -- "$OPTS"
+while true
+do
+	case "$1" in
+	-p|--prefix) prefix=$(echo $2 | sed -r -e 's/[^A-Za-z_\-]/_/'); shift 2;;
+	-b|--bucket) bucket=$2; shift 2;;
+	-k|--key) key=$2; shift 2;;
+	--) shift; break;;
+	*) break;;
+	esac
+done
+
+if [ -n "$key" ]
+then
+	folder=$(dirname $key)
+	file="$(basename $key)"
+	target="s3://$bucket/$key"
+else
+	file=temporary
+fi
+
+tempdir=$(mktemp -d /tmp/outputs.XXXXXX)
+output=${tempdir}/output.json
+trap "rm -rf $tempdir" EXIT
+
+RETRY=3
+while true
+do
+	# We add a retry mechanism here because it may occurs that terraform output returns an error du to a latency
+	# and has its md5 desync between S3 and DynamoDB
+	# Also, terraform output -json render boolean and integer values as string, so we transform them back to native types
+	terraform output -json  2>&1 | sed -r -e 's/"(true|false)"/\1/g' -e 's/"value": "(\d{1,10})"/"value": \1/g' > ${output}
+	status=$?
+
+	# Check if there is no output in the current configuration
+	grep -q "The state file either has no outputs defined" ${output} && echo "{}" > ${output}
+	[ $status -eq 0 ] && break
+	
+	[ $RETRY -eq 0 ] && exit $status
+	printf "[WARNING] terraform output exit with $status (retry left $RETRY)"
+	cat ${output} | sed -E 's/^/[NOTICE] /g'
+	sleep 5
+	let RETRY-=1
+done
+
+if [ -z "$target" ]
+then
+	gotemplate -p '*.md'
+	cat ${file%.tf}.md
+	exit 0
+fi
+
+read -rd '' generate_tf <<-'EOF'
+@define ("code")
+	@foreach ($out := array(.outputs))
+		@if (!$out.Sensitive)
+			variable @prefix@$out.Name {
+				$format := iif($out.Type == "map", "{ %s }", "%s")
+				@with ($out.Description) description = "@.";
+				default = @printf($format, toHcl($out.Value))
+			}
+		@end if
+	@end foreach
+@end
+
+@-toPrettyHcl(data("code"))
+EOF
+
+read -rd '' generate_tfvars <<-'EOF'
+@define ("code")
+	@id(.project) @join(" ", String(.sub_project).FieldsID) {
+		@foreach ($out := array(.outputs))
+			@if (!$out.Sensitive)
+				$format := iif($out.Type == "map", "{ %s }", "%s")
+				@($out.Name) = @printf($format, toHcl($out.Value))
+			@end if
+		@end foreach
+	}
+@end
+
+@-toPrettyHcl(data("code"))
+EOF
+
+file=${file%.tf} outfolder=.tgf-outputs
+mkdir -p ${outfolder}
+outtf=${outfolder}/${file}.tf outmd=${outfolder}/${file}.md out=${outfolder}/${file}.tfvars
+terraform-docs md -O ${output} > ${outmd} &&
+terraform-docs hcl -oO ${output} | gotemplate -V- -Vprefix=$prefix "$generate_tf" > ${outtf} &&
+terraform-docs hcl -oO ${output} | gotemplate -V- -i_variables.tfvars "$generate_tfvars" > ${out} &&
+aws s3 cp ${outfolder} s3://${bucket}/${folder} --rec > /dev/null &&
+aws s3api put-object --bucket ${bucket} --key ${folder}/ > /dev/null
+status=$?
+if [ $status -eq 0 ]
+then
+	echo "[NOTICE] Outputs uploaded to ${target}"
+else
+	echo "[ERROR] Outputs have not been uploaded to ${target} (Error: $?)"
+fi
+exit $status

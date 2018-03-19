@@ -1,0 +1,40 @@
+#!/bin/bash
+
+function usage() {
+    cat >&2 << EOF
+usage: $(basename $0) options files...
+
+If no parameter is specified, the documentation of the current context will be displayed.
+
+files must match the name of the .md files in the current context.
+
+options are:
+    -h | --help     Print this help
+    -a | --all-doc  Print the content of all .md files in the current directory
+EOF
+    exit $1
+}
+
+OPTS=$(getopt -o ah -l all-doc,help -- "$@") || (echo "Bad options" >&1; exit 1)
+eval set -- "$OPTS"
+while true
+do
+    case "$1" in
+    -h|--help) usage 0;;
+    -a|--all-doc) allmd=1; shift;;
+    --) shift; break;;
+    *) break;;
+    esac
+done
+
+export LESSCHARSET=utf-8
+
+[ -n "$allmd" ] && set *.md
+
+if [ -n "$1" ]
+then
+    [ "$1" == "*.md" ] && echo "No documentation available" >&2 && exit 0
+    cat "$@" | mdv - -c 1000 | less -#10 -SR
+else
+    export-outputs | mdv - -c 1000 | less -#10 -SR
+fi

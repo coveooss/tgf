@@ -1,0 +1,75 @@
+@define("get_on_demand_price")
+#! /usr/bin/env python3
+import boto3
+import json
+import sys
+
+# TODO The only endpoints supported for this api are us-east-1 and ap-south-1, but we should be able to fallback to ap-south-1 if not available
+pricing_client = boto3.client("pricing", region_name="us-east-1")
+price_list = pricing_client.get_products(
+    ServiceCode="AmazonEC2",
+    Filters=[
+        {
+            "Type": "TERM_MATCH",
+            "Field": "InstanceType",
+            "Value": "@instance_type"  # gotemplate parameter
+        },
+        {
+            "Type": "TERM_MATCH",
+            "Field": "operatingSystem",
+            "Value": "@os"  # gotemplate parameter (Windows, Linux, RHEL, SUSE)
+        },
+        {
+            "Type": "TERM_MATCH",
+            "Field": "location",
+            "Value": "@template("get-region", dict("region", .region))"  # gotemplate parameter
+        },
+        {
+            "Type": "TERM_MATCH",
+            "Field": "preInstalledSw",
+            "Value": "NA"
+        },
+        {
+            "Type": "TERM_MATCH",
+            "Field": "licenseModel",
+            "Value": "No License required"
+        },
+        {
+            "Type": "TERM_MATCH",
+            "Field": "tenancy",
+            "Value": "Shared"
+        }
+    ],
+)["PriceList"]
+
+# Verify that the product exists.
+if not price_list:
+    print("No products in pricing list.", end="")
+    sys.exit(1)
+if len(price_list) > 1:
+    print(price_list)
+    print("More than one product in pricing list.", end="")
+    sys.exit(1)
+
+# Fetch the on-demand terms.
+on_demand_info = json.loads(price_list[0])["terms"]["OnDemand"]
+if len(on_demand_info) > 1:
+    print("More than one on-demand pricing in on-demand list.", end="")
+    sys.exit(1)
+on_demand_info = on_demand_info[next(iter(on_demand_info))]
+
+# Fetch the on-demand pricing terms.
+on_demand_info = on_demand_info["priceDimensions"]
+if len(on_demand_info) > 1:
+    print("More than one on-demand pricing in pricingDimensions list.", end="")
+    sys.exit(1)
+on_demand_info = on_demand_info[next(iter(on_demand_info))]
+
+# Fetch the actual pricing in dollars per hour.
+if on_demand_info["unit"] != "Hrs":
+    print("Unit is not dollars per hour.", end="")
+    sys.exit(1)
+print(on_demand_info["pricePerUnit"]["USD"], end="")
+@end define
+
+@func("OnDemandPrice", "exec", "get_on_demand_price", "region='us-east-1' os='Linux'", "[instance_type, region, os]")

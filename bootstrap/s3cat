@@ -1,0 +1,10 @@
+#!/bin/bash
+
+tmpfile=$(mktemp)
+
+function finish {
+  rm -f $tmpfile
+}
+trap finish EXIT
+
+aws s3 cp $* $tmpfile --quiet && cat $tmpfile

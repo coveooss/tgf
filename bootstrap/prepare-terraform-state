@@ -1,0 +1,108 @@
+#!/bin/bash
+
+
+function usage() {
+    cat >&2 << EOF
+usage: $(basename $0) <command files>
+
+Command file contains several lines with the following format:
+    <Command> <Resource> <Arg> <Other args>
+
+where:
+    Command = import | remove | move | taint | untaint | refresh-state
+    Resource = Address of the terraform resource (ex. aws_s3_bucket.bucket_name)
+    Arg = Argument of the command (depends of the command)
+       import: Id of the resource to import
+       move: Id of the target resource while Resource is the id of the source resource
+    Other args = Other arguments to pass directly to the terraform command
+
+See terraform documentation for further information about import, remove, move, taint and untaint:
+    https://www.terraform.io/docs/commands/index.html
+
+Anywhere in the command file, you can specify refresh-state to get a clean copy of the state file.
+
+Example of command file:
+    # is used to comment your file
+
+    # Remove the security group my_sg from the state file (note that the security group will still exist and will need to be manually removed)
+    remove                           aws_security_group.my_sg
+
+    # Mark the security group sg_to_regenerate to be regenerated at next apply
+    taint                            aws_security_group.sg_to_regenerate
+
+    # UnMark the security group sg_to_not_regenerate to revert a previous taint operation (should be done before the apply)
+    untaint                          aws_security_group.sg_to_not_regenerate
+
+    # Rename a resource
+    move                             aws_security_group.my_sg2  aws_security_group.new_name
+
+    # Refresh the state to get a fresh copy before analysing the followin commands
+    refresh-state
+
+    # Import an existing bucket (note that the defintion must exist in your terraform file otherwise, terraform will try to delete that resource)
+    import aws_s3_bucket.config      coveo-ndev-config
+
+    # Import an existing bucket, but using a different provider that the default one (useful to import bucket from another region)
+    import aws_s3_bucket.config_repl coveo-odev-config-repl-ndev -provider aws.replication
+EOF
+    exit $1
+}
+
+OPTS=$(getopt -o h -l help -- "$@") || (echo "Bad options" >&1; exit 1)
+eval set -- "$OPTS"
+while true
+do
+    case "$1" in
+    -h|--help) usage 0;;
+    --) shift; break;;
+    *) break;;
+    esac
+done
+[ -z "$1" ] && usage 1
+
+for file in $*
+do
+    [ ! -r $file ] && echo "$(basename $0) ignored since $file does not exist" >&2 && continue
+
+    tempFile=$(mktemp /tmp/terraform_resources.XXXXXX)
+    terraform state list > $tempFile
+    trap "rm $tempFile" EXIT
+
+    removed=()
+    status=0
+    while read -r Command Resource Arg OtherArgs
+    do
+        case $Command in
+        import)
+            grep -q $Resource $tempFile || terraform import -var-file=_variables.tfvars $OtherArgs $Resource $Arg || status+=$?
+            ;;
+        remove)
+            grep -q $Resource $tempFile && removed+=($Resource)
+            ;;
+        move)
+            grep -q $Arg $tempFile && terraform state mv $OtherArgs $Resource $Arg || status+=$?
+            ;;
+        taint)
+            terraform taint $Arg $OtherArgs $Resource || status+=$?
+            ;;
+        untaint)
+            terraform taint $Arg $OtherArgs $Resource || status+=$?
+            ;;
+        refresh-state)
+            terraform state list > $tempFile
+            ;;
+        *)  echo "Unknown command $Command"
+            status+=1
+            ;;
+        esac
+    done < <(cat $file | grep -Ev "^\s*((#|//).*)?$")
+done
+
+if [ ${#removed[@]} -gt 0 ]
+then
+    command="terraform state rm ${removed[@]}"
+    echo $command
+    $command
+fi
+
+exit $status
