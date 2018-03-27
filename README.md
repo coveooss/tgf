@@ -192,7 +192,7 @@ Returns the version of the default entry point (i.e. `Terragrunt`), the --versio
 to the desired entry point
 
 ```bash
-> tgf -e terraform -- --version
+> tgf -E terraform -- --version
 Terraform v0.9.11
 ```
 
