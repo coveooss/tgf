@@ -44,7 +44,7 @@ RUN pwsh -c Install-Package AWSPowerShell.NetCore -Force > /dev/null
 RUN apt-get -y install ruby && gem install terraforming
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
-RUN TERRAFORM=0.11.6     && curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM}/terraform_${TERRAFORM}_linux_amd64.zip && unzip -p _ > ${EXE_FOLDER}/terraform && \
+RUN TERRAFORM=0.11.7     && curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM}/terraform_${TERRAFORM}_linux_amd64.zip && unzip -p _ > ${EXE_FOLDER}/terraform && \
     TG=0.12.27-coveo.4   && curl -sLo_ https://github.com/coveo/terragrunt/releases/download/v${TG}/terragrunt_${TG}${EXT} && unzip -p _ > ${EXE_FOLDER}/terragrunt && \
     GOTEMPLATE=2.4.3     && curl -sLo_ https://github.com/coveo/gotemplate/releases/download/v${GOTEMPLATE}/gotemplate_${GOTEMPLATE}${EXT} && unzip -p _ > ${EXE_FOLDER}/gotemplate && \
     TF_LINT=0.5.4        && curl -sLo_ https://github.com/wata727/tflint/releases/download/v${TF_LINT}/tflint_linux_amd64.zip && unzip -p _ > ${EXE_FOLDER}/tflint && \

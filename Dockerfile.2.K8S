@@ -12,7 +12,7 @@ RUN apk add openssh git
 
 # Install kubectl
 ENV KUBECONFIG=/home/tgf/.kube/config
-RUN KUBE_VERSION=1.9.6 && curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && mv _ ${EXE_FOLDER}/kubectl && \
+RUN KUBE_VERSION=1.10.1 && curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && mv _ ${EXE_FOLDER}/kubectl && \
     mkdir -p /home/tgf/.kube && touch ${KUBECONFIG} && chmod 666 ${KUBECONFIG}
 
 # Install helm (git is also required by helm)
