@@ -1,4 +1,5 @@
 # TGF
+[![Build Status](https://travis-ci.org/coveo/tgf.svg?branch=master)](https://travis-ci.org/coveo/tgf)
 
 A **T**erra**g**runt **f**rontend that allow execution of Terragrunt/Terraform through Docker.
 
