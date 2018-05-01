@@ -18,12 +18,7 @@ RUN adduser tgf --gecos "" --disabled-password && \
 # Update apt-get
 RUN apt-get update && \
     apt-get -y install apt-utils bash-completion && \
-<<<<<<< Updated upstream:Dockerfile.3.Full
     apt-get -y install apt-transport-https software-properties-common && \
-=======
-    apt-get -y install apt-transport-https && \
-    apt-get -y install software-properties-common && \
->>>>>>> Stashed changes:disabled - Dockerfile.3.Full
     apt-get -y install curl wget ksh zsh fish git mercurial unzip vim-tiny nano jq tree
 
 # Install os-my-zsh
