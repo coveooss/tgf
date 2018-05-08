@@ -50,6 +50,7 @@ curl -sL https://github.com/coveo/tgf/releases/download/v1.16.2/tgf_1.16.2_linux
 On `Windows` with Powershell:
 
 ```powershell
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.16.2/tgf_1.16.2_windows_64-bits.zip -OutFile tgf.zip
 ```
 
