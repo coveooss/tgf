@@ -14,7 +14,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/blang/semver"
-	"github.com/coveo/gotemplate/utils"
+	"github.com/coveo/gotemplate/collections"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
 )
 
@@ -165,7 +165,7 @@ func (config *TGFConfig) SetDefaultValues() {
 		if debug {
 			printfDebug(os.Stderr, "# Reading configuration from %s\n", configFile)
 		}
-		if err := utils.LoadData(configFile, &content); err != nil {
+		if err := collections.LoadData(configFile, &content); err != nil {
 			fmt.Fprintln(os.Stderr, errorString("Error while loading configuration file %s\nConfiguration file must be valid YAML, JSON or HCL", configFile))
 			continue
 		}
