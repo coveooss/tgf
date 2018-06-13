@@ -15,6 +15,8 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/jsonmessage"
+	"github.com/docker/docker/pkg/term"
 	"github.com/fatih/color"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -85,14 +87,23 @@ func test() {
 	trace("Client & context created")
 
 	// Find image
+	image := "coveo/tgf:1.26.1-aws"
 	filters := filters.NewArgs()
-	filters.Add("reference", "coveo/tgf:1.26.0-aws")
+	filters.Add("reference", image)
 	images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters})
 	if err != nil {
 		panic(err)
 	}
 	if len(images) != 1 {
-		panic("Oupps!, not the right number of images")
+		fmt.Println("Loading missing image image")
+		reader, err := cli.ImagePull(ctx, image, types.ImagePullOptions{})
+		if err != nil {
+			panic(err)
+		}
+		defer reader.Close()
+		termFd, isTerm := term.GetFdInfo(os.Stderr)
+		jsonmessage.DisplayJSONMessagesStream(reader, os.Stderr, termFd, isTerm, nil)
+		images, _ = cli.ImageList(ctx, types.ImageListOptions{Filters: filters})
 	}
 	alpine := images[0]
 	trace("Image found", alpine.ID, alpine.Size)
@@ -104,51 +115,61 @@ func test() {
 	}
 	trace("Inspect image", inspect.ContainerConfig.Env)
 
-	// Pull image
-	reader, err := cli.ImagePull(ctx, "alpine", types.ImagePullOptions{})
-	if err != nil {
-		panic(err)
-	}
-	io.Copy(os.Stdout, reader)
-	reader.Close()
-	trace("Image pulled")
-
 	// Create container
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: "alpine",
-		Cmd:   []string{"cat"},
+		Image: image,
+		Cmd:   []string{"bash", "-c", "for i in {1..15}; do echo $i; sleep 1; done"},
+		Tty:   true,
 	}, nil, nil, "")
 	if err != nil {
 		panic(err)
 	}
-	trace("Container created", resp.ID)
+	trace("Container created: ", resp.ID)
 
 	// Start container
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		panic(err)
 	}
-	trace("Container started")
+
+	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true, Follow: true})
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		trace("Removing the container")
+		err = cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
+		if err != nil {
+			panic(err)
+		}
+		out.Close()
+	}()
+
+	go func() {
+		io.Copy(os.Stdout, out)
+	}()
 
 	// Exec command into a running container
 	exec, err := cli.ContainerExecCreate(ctx, resp.ID, types.ExecConfig{
-		Cmd: []string{"echo", "Hello"},
+		Cmd:          []string{"bash", "-c", "for i in {0..5}; do echo from exec: $i; sleep 2; done"},
+		Tty:          true,
+		AttachStdout: true,
+		AttachStderr: true,
 	})
 	if err != nil {
 		panic(err)
 	}
-	trace("Exec command created", exec.ID)
+	trace("Exec created: ", exec.ID)
 
-	hjr, err := cli.ContainerExecAttach(ctx, exec.ID, types.ExecStartCheck{Tty: true})
+	hjr, err := cli.ContainerExecAttach(ctx, exec.ID, types.ExecStartCheck{})
 	if err != nil {
 		panic(err)
 	}
-	trace("Exec command attached")
 
-	// err = cli.ContainerExecStart(ctx, exec.ID, types.ExecStartCheck{Tty: true})
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// trace("Exec command started")
+	io.Copy(os.Stdout, hjr.Reader)
+	defer func() {
+		hjr.Close()
+	}()
 
 	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
 	select {
@@ -160,17 +181,7 @@ func test() {
 	}
 	trace("Container no longer running")
 
-	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
-	if err != nil {
-		panic(err)
-	}
-	io.Copy(os.Stdout, out)
-	trace("Output of the container logs")
-
-	io.Copy(os.Stdout, hjr.Reader)
-	hjr.Close()
-	trace("Output of the exec command")
-
+	trace("List of the containers")
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
 		panic(err)
@@ -178,18 +189,11 @@ func test() {
 	for _, container := range containers {
 		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
 	}
-	trace("List of the containers")
-
-	err = cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
-	if err != nil {
-		panic(err)
-	}
-
-	os.Exit(0)
 }
 
 func main() {
 	test()
+	os.Exit(0)
 
 	// Handle eventual panic message
 	defer func() {
