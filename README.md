@@ -312,5 +312,5 @@ Docker images, you can use it to run any program in any Docker images. Your imag
 
 Build are automatically launched on tagging.
 
-Tags with format 0.00 automatically launch a Docker images build that are available through Docker Hub.
-Tags with format v0.00 automatically launch a new release on Github for the TGF executable.
+Tags with format image-0.0.0 automatically launch a Docker images build that are available through Docker Hub.
+Tags with format v0.0.0 automatically launch a new release on Github for the TGF executable.
