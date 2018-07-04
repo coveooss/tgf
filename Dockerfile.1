@@ -22,5 +22,5 @@ RUN apk add py2-pip python3 groff less tree && \
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
 RUN TF_LINT=0.7.0    && curl -sLo_ https://github.com/wata727/tflint/releases/download/v${TF_LINT}/tflint_linux_amd64.zip && unzip -p _ > ${EXE_FOLDER}/tflint && \
     TF_DOC=0.3.1     && curl -sLo_ https://github.com/coveo/terraform-docs/releases/download/v${TF_DOC}/terraform-docs_${TF_DOC}${EXT} && unzip -p _ > ${EXE_FOLDER}/terraform-docs && \
-    TF_QUANTUM=0.3.6 && curl -sLo_ https://github.com/coveo/terraform-provider-quantum/releases/download/v${TF_QUANTUM}/terraform-provider-quantum_${TF_QUANTUM}${EXT} && unzip -p _ > ${EXE_FOLDER}/terraform-provider-quantum && \
+    TF_QUANTUM=0.4.0 && curl -sLo_ https://github.com/coveo/terraform-provider-quantum/releases/download/v${TF_QUANTUM}/terraform-provider-quantum_${TF_QUANTUM}${EXT} && unzip -p _ > ${EXE_FOLDER}/terraform-provider-quantum && \
     chmod +x $EXE_FOLDER/* && rm _
