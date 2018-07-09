@@ -16,8 +16,7 @@ RUN apk add py2-pip python3 groff less tree && \
     pip install --upgrade pip && \
     pip install awscli mdv && \
     pip3 install colorama jenkinsapi click boto3 && \
-    apk add jq zip nano vim git mercurial ruby ruby-rdoc ruby-irb && \
-    gem install terraforming
+    apk add jq zip nano vim git mercurial
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
 RUN TF_LINT=0.7.0    && curl -sLo_ https://github.com/wata727/tflint/releases/download/v${TF_LINT}/tflint_linux_amd64.zip && unzip -p _ > ${EXE_FOLDER}/tflint && \
