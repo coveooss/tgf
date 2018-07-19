@@ -195,18 +195,16 @@ func (config *TGFConfig) SetDefaultValues() {
 		apply(content)
 	}
 
-	if awsConfigExist() {
-		// If we need to read the parameter store, we must init the session first to ensure that
-		// the credentials are only initialized once (avoiding asking multiple time the MFA)
-		if err := config.InitAWS(""); err != nil {
-			fmt.Fprintln(os.Stderr, errorString("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err))
-		} else {
-			if debug {
-				printfDebug(os.Stderr, "# Reading configuration from AWS parameter store %s\n", parameterFolder)
-			}
-			for _, parameter := range Must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
-				config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
-			}
+	// If we need to read the parameter store, we must init the session first to ensure that
+	// the credentials are only initialized once (avoiding asking multiple time the MFA)
+	if err := config.InitAWS(""); err != nil {
+		fmt.Fprintln(os.Stderr, errorString("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err))
+	} else {
+		if debug {
+			printfDebug(os.Stderr, "# Reading configuration from AWS parameter store %s\n", parameterFolder)
+		}
+		for _, parameter := range Must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
+			config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
 		}
 	}
 
@@ -412,20 +410,6 @@ func findConfigFiles(folder string) (result []string) {
 	}
 
 	return
-}
-
-// Check if there is an AWS configuration available
-func awsConfigExist() bool {
-	currentUser, err := user.Current()
-	if err != nil {
-		return false
-	}
-	awsFolder, err := os.Stat(filepath.Join(currentUser.HomeDir, ".aws"))
-	if err != nil {
-		return false
-	}
-
-	return awsFolder.IsDir()
 }
 
 // CheckVersionRange compare a version with a range of values
