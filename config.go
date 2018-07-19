@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/blang/semver"
 	"github.com/coveo/gotemplate/utils"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
@@ -109,9 +110,16 @@ func (config TGFConfig) String() (result string) {
 
 // InitAWS tries to open an AWS session and init AWS environment variable on success
 func (config *TGFConfig) InitAWS(profile string) error {
-	if _, err := aws_helper.InitAwsSession(profile); err != nil {
+	session, err := aws_helper.InitAwsSession(profile)
+	if err != nil {
 		return err
 	}
+
+	_, err = sts.New(session).GetCallerIdentity(&sts.GetCallerIdentityInput{})
+	if err != nil {
+		return err
+	}
+
 	for _, s := range os.Environ() {
 		if strings.HasPrefix(s, "AWS_") {
 			split := strings.SplitN(s, "=", 2)
@@ -408,10 +416,6 @@ func findConfigFiles(folder string) (result []string) {
 
 // Check if there is an AWS configuration available
 func awsConfigExist() bool {
-	if os.Getenv("AWS_PROFILE")+os.Getenv("AWS_ACCESS_KEY_ID")+os.Getenv("AWS_CONFIG_FILE") != "" {
-		return true
-	}
-
 	currentUser, err := user.Current()
 	if err != nil {
 		return false
