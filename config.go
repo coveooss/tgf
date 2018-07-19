@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
 	"reflect"
 	"regexp"
