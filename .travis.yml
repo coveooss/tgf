@@ -27,8 +27,9 @@ script:
   fi
 - if [ ${TRAVIS_TAG::1} = v ];
   then
-    curl -sL https://git.io/goreleaser | bash /dev/stdin $@;
+    curl -sL https://git.io/goreleaser | bash;
   fi
+  
 
 notifications:
   email: false
