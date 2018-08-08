@@ -356,7 +356,7 @@ func (config *TGFConfig) GetImageName() string {
 	return config.Image
 }
 
-// https://regex101.com/r/ZKt4OP/2/
+// https://regex101.com/r/ZKt4OP/3/
 var reVersion = regexp.MustCompile(`^(?P<image>.*?)(:((?P<version>\d+\.\d+(?:\.\d+){0,1})((?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
 
 func (config *TGFConfig) apply(key, value string) {
