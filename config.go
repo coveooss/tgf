@@ -357,7 +357,7 @@ func (config *TGFConfig) GetImageName() string {
 }
 
 // https://regex101.com/r/ZKt4OP/2/
-var reVersion = regexp.MustCompile(`^(?P<image>.*?)(:((?P<version>\d+\.\d+\.\d+)((?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+))?)?$`)
+var reVersion = regexp.MustCompile(`^(?P<image>.*?)(:((?P<version>\d+\.\d+(?:\.\d+){0,1})((?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
 
 func (config *TGFConfig) apply(key, value string) {
 	matches := reVersion.FindStringSubmatch(value)
@@ -414,6 +414,9 @@ func findConfigFiles(folder string) (result []string) {
 // CheckVersionRange compare a version with a range of values
 // Check https://github.com/blang/semver/blob/master/README.md for more information
 func CheckVersionRange(version, compare string) (bool, error) {
+	if strings.Count(version, ".") == 1 {
+		version = version + ".9999" // Patch is irrelevant if major and minor are OK
+	}
 	v, err := semver.Make(version)
 	if err != nil {
 		return false, err
