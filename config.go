@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/blang/semver"
 	"github.com/coveo/gotemplate/collections"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
@@ -143,9 +143,16 @@ func (config TGFConfig) String() (result string) {
 
 // InitAWS tries to open an AWS session and init AWS environment variable on success
 func (config *TGFConfig) InitAWS(profile string) error {
-	if _, err := aws_helper.InitAwsSession(profile); err != nil {
+	session, err := aws_helper.InitAwsSession(profile)
+	if err != nil {
 		return err
 	}
+
+	_, err = sts.New(session).GetCallerIdentity(&sts.GetCallerIdentityInput{})
+	if err != nil {
+		return err
+	}
+
 	for _, s := range os.Environ() {
 		if strings.HasPrefix(s, "AWS_") {
 			split := strings.SplitN(s, "=", 2)
@@ -222,19 +229,17 @@ func (config *TGFConfig) SetDefaultValues() {
 		apply(content)
 	}
 
-	if awsConfigExist() {
-		// If we need to read the parameter store, we must init the session first to ensure that
-		// the credentials are only initialized once (avoiding asking multiple time the MFA)
-		if err := config.InitAWS(""); err != nil {
-			fmt.Fprintln(os.Stderr, errorString("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err))
-		} else {
-			if debug {
-				printfDebug(os.Stderr, "# Reading configuration from AWS parameter store %s\n", parameterFolder)
-			}
-			config.ImageBuild = append(config.ImageBuild, TGFConfigBuild{source: "AWS/ParametersStore"})
-			for _, parameter := range Must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
-				config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
-			}
+	// If we need to read the parameter store, we must init the session first to ensure that
+	// the credentials are only initialized once (avoiding asking multiple time the MFA)
+	if err := config.InitAWS(""); err != nil {
+		fmt.Fprintln(os.Stderr, errorString("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err))
+	} else {
+		if debug {
+			printfDebug(os.Stderr, "# Reading configuration from AWS parameter store %s\n", parameterFolder)
+		}
+  	config.ImageBuild = append(config.ImageBuild, TGFConfigBuild{source: "AWS/ParametersStore"})
+	  for _, parameter := range Must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
+			config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
 		}
 	}
 
@@ -398,8 +403,8 @@ func (config *TGFConfig) GetImageName() string {
 	return config.Image
 }
 
-// https://regex101.com/r/ZKt4OP/2/
-var reVersion = regexp.MustCompile(`^(?P<image>.*?)(:((?P<version>\d+\.\d+\.\d+)((?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+))?)?$`)
+// https://regex101.com/r/ZKt4OP/3/
+var reVersion = regexp.MustCompile(`^(?P<image>.*?)(:((?P<version>\d+\.\d+(?:\.\d+){0,1})((?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
 
 func (config *TGFConfig) apply(key, value string) {
 	matches := reVersion.FindStringSubmatch(value)
@@ -453,27 +458,12 @@ func findConfigFiles(folder string) (result []string) {
 	return
 }
 
-// Check if there is an AWS configuration available
-func awsConfigExist() bool {
-	if os.Getenv("AWS_PROFILE")+os.Getenv("AWS_ACCESS_KEY_ID")+os.Getenv("AWS_CONFIG_FILE") != "" {
-		return true
-	}
-
-	currentUser, err := user.Current()
-	if err != nil {
-		return false
-	}
-	awsFolder, err := os.Stat(filepath.Join(currentUser.HomeDir, ".aws"))
-	if err != nil {
-		return false
-	}
-
-	return awsFolder.IsDir()
-}
-
 // CheckVersionRange compare a version with a range of values
 // Check https://github.com/blang/semver/blob/master/README.md for more information
 func CheckVersionRange(version, compare string) (bool, error) {
+	if strings.Count(version, ".") == 1 {
+		version = version + ".9999" // Patch is irrelevant if major and minor are OK
+	}
 	v, err := semver.Make(version)
 	if err != nil {
 		return false, err

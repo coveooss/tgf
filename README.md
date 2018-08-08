@@ -1,4 +1,5 @@
 # TGF
+[![Build Status](https://travis-ci.org/coveo/tgf.svg?branch=master)](https://travis-ci.org/coveo/tgf)
 
 A **T**erra**g**runt **f**rontend that allow execution of Terragrunt/Terraform through Docker.
 
@@ -38,19 +39,20 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.16.1/tgf_1.16.1_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
+curl -sL https://github.com/coveo/tgf/releases/download/v1.16.2/tgf_1.16.2_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.16.1/tgf_1.16.1_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.16.2/tgf_1.16.2_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.16.1/tgf_1.16.1_windows_64-bits.zip -OutFile tgf.zip
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.16.2/tgf_1.16.2_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -150,7 +152,7 @@ conflicting argument will be passed to the entry point wherever it is located on
 
   tgf ls -- -D   # Avoid -D to be interpretated by tgf as --debug-docker
 
-VERSION: 1.16.1
+VERSION: 1.16.2
 
 AUTHOR: Coveo
 
@@ -178,7 +180,7 @@ Example:
 
 ```bash
 > tgf --current-version
-tgf v1.16.1
+tgf v1.16.2
 ```
 
 Returns the current version of the tgf tool
@@ -192,7 +194,7 @@ Returns the version of the default entry point (i.e. `Terragrunt`), the --versio
 to the desired entry point
 
 ```bash
-> tgf -e terraform -- --version
+> tgf -E terraform -- --version
 Terraform v0.9.11
 ```
 
@@ -310,5 +312,5 @@ Docker images, you can use it to run any program in any Docker images. Your imag
 
 Build are automatically launched on tagging.
 
-Tags with format 0.00 automatically launch a Docker images build that are available through Docker Hub.
-Tags with format v0.00 automatically launch a new release on Github for the TGF executable.
+Tags with format image-0.0.0 automatically launch a Docker images build that are available through Docker Hub.
+Tags with format v0.0.0 automatically launch a new release on Github for the TGF executable.
