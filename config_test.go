@@ -15,6 +15,9 @@ func TestCheckVersionRange(t *testing.T) {
 	}{
 		{"Invalid version", args{"x", "y"}, false, true},
 		{"Valid", args{"1.20.0", ">=1.19.x"}, true, false},
+		{"Valid major minor", args{"1.19", ">=1.19.5"}, true, false},
+		{"Valid major minor 2", args{"1.19", ">=1.19.x"}, true, false},
+		{"Invalid major minor", args{"1.18", ">=1.19.x"}, false, false},
 		{"Out of range", args{"1.15.9-Beta.1", ">=1.19.x"}, false, false},
 		{"Same", args{"1.22.1", "=1.22.1"}, true, false},
 		{"Not same", args{"1.22.1", "=1.22.2"}, false, false},
