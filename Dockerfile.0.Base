@@ -19,6 +19,6 @@ RUN apk update && \
 
 # Update version here (do not move at the beginning of the file since it would slow down the docker build)
 RUN TERRAFORM=0.11.7   && curl -sLo_ https://releases.hashicorp.com/terraform/${TERRAFORM}/terraform_${TERRAFORM}_linux_amd64.zip && unzip -p _ > ${EXE_FOLDER}/terraform && \
-    TG=1.1.0 && curl -sLo_ https://github.com/coveo/terragrunt/releases/download/v${TG}/terragrunt_${TG}${EXT} && unzip -p _ > ${EXE_FOLDER}/terragrunt && \
+    TG=1.1.1 && curl -sLo_ https://github.com/coveo/terragrunt/releases/download/v${TG}/terragrunt_${TG}${EXT} && unzip -p _ > ${EXE_FOLDER}/terragrunt && \
     GOTEMPLATE=2.5.2   && curl -sLo_ https://github.com/coveo/gotemplate/releases/download/v${GOTEMPLATE}/gotemplate_${GOTEMPLATE}${EXT} && unzip -p _ > ${EXE_FOLDER}/gotemplate && \
     chmod +x $EXE_FOLDER/* && rm _
