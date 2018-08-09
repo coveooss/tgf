@@ -192,8 +192,8 @@ func test() {
 }
 
 func main() {
-	test()
-	os.Exit(0)
+	// test()
+	// os.Exit(0)
 
 	// Handle eventual panic message
 	defer func() {
