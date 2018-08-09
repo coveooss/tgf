@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"os/user"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -12,7 +14,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/ssm"
-	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/blang/semver"
 	"github.com/coveo/gotemplate/collections"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
@@ -143,12 +144,7 @@ func (config TGFConfig) String() (result string) {
 
 // InitAWS tries to open an AWS session and init AWS environment variable on success
 func (config *TGFConfig) InitAWS(profile string) error {
-	session, err := aws_helper.InitAwsSession(profile)
-	if err != nil {
-		return err
-	}
-
-	_, err = sts.New(session).GetCallerIdentity(&sts.GetCallerIdentityInput{})
+	_, err := aws_helper.InitAwsSession(profile)
 	if err != nil {
 		return err
 	}
@@ -229,17 +225,19 @@ func (config *TGFConfig) SetDefaultValues() {
 		apply(content)
 	}
 
-	// If we need to read the parameter store, we must init the session first to ensure that
-	// the credentials are only initialized once (avoiding asking multiple time the MFA)
-	if err := config.InitAWS(""); err != nil {
-		fmt.Fprintln(os.Stderr, errorString("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err))
-	} else {
-		if debug {
-			printfDebug(os.Stderr, "# Reading configuration from AWS parameter store %s\n", parameterFolder)
-		}
-  	config.ImageBuild = append(config.ImageBuild, TGFConfigBuild{source: "AWS/ParametersStore"})
-	  for _, parameter := range Must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
-			config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
+	if awsConfigExist() {
+		// If we need to read the parameter store, we must init the session first to ensure that
+		// the credentials are only initialized once (avoiding asking multiple time the MFA)
+		if err := config.InitAWS(""); err != nil {
+			fmt.Fprintln(os.Stderr, errorString("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err))
+		} else {
+			if debug {
+				printfDebug(os.Stderr, "# Reading configuration from AWS parameter store %s\n", parameterFolder)
+			}
+			config.ImageBuild = append(config.ImageBuild, TGFConfigBuild{source: "AWS/ParametersStore"})
+			for _, parameter := range Must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
+				config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
+			}
 		}
 	}
 
@@ -440,6 +438,33 @@ func (config *TGFConfig) apply(key, value string) {
 			}
 		}
 	}
+}
+
+// Check if there is an AWS configuration available.
+//
+// We call this function before trying to init an AWS session. This avoid trying to init a session in a non AWS context
+// and having to wait for metadata resolution or generating an error.
+func awsConfigExist() bool {
+	if os.Getenv("AWS_PROFILE")+os.Getenv("AWS_ACCESS_KEY_ID")+os.Getenv("AWS_CONFIG_FILE") != "" {
+		// If any AWS identification variable is defined, we consider that we are in an AWS environment.
+		return true
+	}
+
+	if _, err := exec.LookPath("aws"); err != nil {
+		// If aws program is installed, we also consider that we are  in an AWS environment.
+		return true
+	}
+
+	// Otherwise, we check if the current user has a folder named .aws defined under its home directory.
+	currentUser, err := user.Current()
+	if err != nil {
+		return false
+	}
+	awsFolder, err := os.Stat(filepath.Join(currentUser.HomeDir, ".aws"))
+	if err != nil {
+		return false
+	}
+	return awsFolder.IsDir()
 }
 
 // Return the list of configuration files found from the current working directory up to the root folder
