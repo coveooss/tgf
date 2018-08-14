@@ -12,7 +12,7 @@ RUN apk add openssh git
 
 # Install kubectl
 ENV KUBECONFIG=/home/tgf/.kube/config
-RUN KUBE_VERSION=1.10.6 && curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && mv _ ${EXE_FOLDER}/kubectl && \
+RUN KUBE_VERSION=1.11.2 && curl -sLo_ https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && mv _ ${EXE_FOLDER}/kubectl && \
     mkdir -p /home/tgf/.kube && touch ${KUBECONFIG} && chmod 666 ${KUBECONFIG}
 
 # Install helm (git is also required by helm)
@@ -24,5 +24,3 @@ RUN HELM_VERSION=2.9.1 && curl -s -L https://kubernetes-helm.storage.googleapis.
 RUN helm plugin install https://github.com/technosophos/helm-template && \
     pip3 install deepdiff flatten_dict PyYAML && \
     chmod +x $EXE_FOLDER/*
-
-
