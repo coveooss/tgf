@@ -403,7 +403,7 @@ func awsConfigExist() bool {
 		return true
 	}
 
-	if _, err := exec.LookPath("aws"); err != nil {
+	if _, err := exec.LookPath("aws"); err == nil {
 		// If aws program is installed, we also consider that we are  in an AWS environment.
 		return true
 	}
