@@ -4,15 +4,6 @@ go:
 
 sudo: required
 
-services:
-- docker
-
-before_install:
-- if [ ${TRAVIS_TAG::6} = image- ];
-  then
-    docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-  fi
-
 install:
 - if [ ${TRAVIS_TAG::1} = v ];
   then
@@ -21,15 +12,10 @@ install:
   fi
 
 script:
-- if [ ${TRAVIS_TAG::6} = image- ];
-  then
-    bash make_dockers.sh;
-  fi
 - if [ ${TRAVIS_TAG::1} = v ];
   then
     curl -sL https://git.io/goreleaser | bash;
   fi
   
-
 notifications:
   email: false

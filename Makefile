@@ -9,9 +9,3 @@ test:
 
 tgf: $(SOURCES)
 	go build ./...
-
-.PHONY: build
-build: terraform-provider-quantum
-
-docker:
-	bash make_dockers.sh
