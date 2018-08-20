@@ -23,7 +23,7 @@ By default, TGF is used as a frontend for [terragrunt](https://github.com/gruntw
 
 Using `TGF` ensure that all your users are using the same set of tools to run infrastructure configuration even if they are working on different environments (`linux`, `Microsoft Windows`, `Mac OSX`, etc).
 
-`Terraform` is very sensible to the version used and if one user update to a newer version, the state files will be marked with the latest version and
+`Terraform` is very sensitive to the version used and if one user update to a newer version, the state files will be marked with the latest version and
 all other user will have to update their `Terraform` version to the latest used one.
 
 Also, tools such as `AWS CLI` are updated on a regular basis and people don't tend to update their version regularly, resulting in many different version
