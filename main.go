@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -52,7 +53,7 @@ AUTHOR:	Coveo
 var (
 	config        = InitConfig()
 	dockerOptions []string
-	debug         bool
+	debugMode     bool
 	flushCache    bool
 	getImageName  bool
 	noHome        bool
@@ -72,6 +73,13 @@ func main() {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Fprintln(os.Stderr, errorString("%[1]v (%[1]T)", err))
+			debugMode := os.Getenv("TGF_DEBUG")
+			switch debugMode {
+			case "", "0", "false":
+				break
+			default:
+				debug.PrintStack()
+			}
 			os.Exit(1)
 		}
 	}()
@@ -107,7 +115,7 @@ func main() {
 	app.HelpFlag.Bool()
 	kingpin.CommandLine = app.Application
 
-	app.Switch("debug-docker", "Print the docker command issued", 'D').BoolVar(&debug)
+	app.Switch("debug-docker", "Print the docker command issued", 'D').BoolVar(&debugMode)
 	app.Switch("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache", 'F').BoolVar(&flushCache)
 	app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").BoolVar(&refresh)
 	app.Switch("get-image-name", "Just return the resulting image name (alias --gi)").BoolVar(&getImageName)
@@ -163,23 +171,7 @@ func main() {
 	config.SetValue(entryPoint, *defaultEntryPoint)
 	config.SetDefaultValues()
 
-	var fatalError bool
-	for _, err := range config.Validate() {
-		switch err := err.(type) {
-		case ConfigWarning:
-			fmt.Fprintln(os.Stderr, warningString("%v", err))
-		case VersionMistmatchError:
-			fmt.Fprintln(os.Stderr, errorString("%v", err))
-			if *imageVersion == "-" {
-				// We consider this as a fatal error only if the version has not been explicitly specified on the command line
-				fatalError = true
-			}
-		default:
-			fmt.Fprintln(os.Stderr, errorString("%v", err))
-			fatalError = true
-		}
-	}
-	if fatalError {
+	if !validateVersion(*imageVersion) {
 		os.Exit(1)
 	}
 
@@ -206,13 +198,40 @@ func main() {
 		config.LogLevel = *loggingLevel
 	}
 
-	if config.EntryPoint == "terragrunt" && unmanaged == nil && !debug && !getImageName {
+	if config.EntryPoint == "terragrunt" && unmanaged == nil && !debugMode && !getImageName {
 		title := color.New(color.FgYellow, color.Underline).SprintFunc()
 		fmt.Println(title("\nTGF Usage\n"))
 		app.Usage(nil)
 	}
 
+	if config.ImageVersion == nil {
+		actualVersion := GetActualImageVersion()
+		config.ImageVersion = &actualVersion
+		if !validateVersion(*imageVersion) {
+			os.Exit(2)
+		}
+	}
+
 	os.Exit(callDocker(unmanaged...))
+}
+
+func validateVersion(version string) bool {
+	for _, err := range config.Validate() {
+		switch err := err.(type) {
+		case ConfigWarning:
+			fmt.Fprintln(os.Stderr, warningString("%v", err))
+		case VersionMistmatchError:
+			fmt.Fprintln(os.Stderr, errorString("%v", err))
+			if version == "-" {
+				// We consider this as a fatal error only if the version has not been explicitly specified on the command line
+				return false
+			}
+		default:
+			fmt.Fprintln(os.Stderr, errorString("%v", err))
+			return false
+		}
+	}
+	return true
 }
 
 var warningString = color.New(color.FgYellow).SprintfFunc()

@@ -165,7 +165,7 @@ func (config *TGFConfig) InitAWS(profile string) error {
 func (config *TGFConfig) SetDefaultValues() {
 	for _, configFile := range findConfigFiles(Must(os.Getwd()).(string)) {
 		var content map[string]interface{}
-		if debug {
+		if debugMode {
 			printfDebug(os.Stderr, "# Reading configuration from %s\n", configFile)
 		}
 		if err := collections.LoadData(configFile, &content); err != nil {
@@ -231,7 +231,7 @@ func (config *TGFConfig) SetDefaultValues() {
 		if err := config.InitAWS(""); err != nil {
 			fmt.Fprintln(os.Stderr, errorString("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err))
 		} else {
-			if debug {
+			if debugMode {
 				printfDebug(os.Stderr, "# Reading configuration from AWS parameter store %s\n", parameterFolder)
 			}
 			config.ImageBuild = append(config.ImageBuild, TGFConfigBuild{source: "AWS/ParametersStore"})

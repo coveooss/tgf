@@ -113,7 +113,7 @@ func callDocker(args ...string) int {
 
 	for key, val := range config.Environment {
 		os.Setenv(key, val)
-		if debug {
+		if debugMode {
 			printfDebug(os.Stderr, "export %v=%v\n", key, val)
 		}
 	}
@@ -135,7 +135,7 @@ func callDocker(args ...string) int {
 	var stderr bytes.Buffer
 	dockerCmd.Stderr = &stderr
 
-	if debug {
+	if debugMode {
 		if len(config.Environment) > 0 {
 			fmt.Fprintln(os.Stderr)
 		}
@@ -186,6 +186,9 @@ func runCommands(commands []string) error {
 // If docker-image-build option has been set, an image is dynamically built and the resulting image digest is returned
 func getImage() (name string) {
 	name = config.GetImageName()
+	if !strings.Contains(name, ":") {
+		name += ":latest"
+	}
 
 	for i, ib := range config.ImageBuild {
 		var temp, folder, dockerFile string
@@ -225,7 +228,7 @@ func getImage() (name string) {
 		}
 
 		name = name + "-" + ib.Tag()
-		if refresh || getActualImageVersion(name) == "" {
+		if refresh || getActualImageVersionInternal(name) == "" {
 			args := []string{"build", ".", "--quiet", "--force-rm"}
 			if i == 0 && refresh {
 				args = append(args, "--pull")
@@ -238,7 +241,7 @@ func getImage() (name string) {
 			args = append(args, "--tag", name)
 			buildCmd := exec.Command("docker", args...)
 
-			if debug {
+			if debugMode {
 				printfDebug(os.Stderr, "%s\n", strings.Join(buildCmd.Args, " "))
 				if ib.Instructions != "" {
 					printfDebug(os.Stderr, "%s\n", ib.Instructions)
@@ -253,7 +256,12 @@ func getImage() (name string) {
 	return
 }
 
-func getActualImageVersion(imageName string) string {
+// GetActualImageVersion returns the real image version stored in the environment variable TGF_IMAGE_VERSION
+func GetActualImageVersion() string {
+	return getActualImageVersionInternal(getImage())
+}
+
+func getActualImageVersionInternal(imageName string) string {
 	// Create the context and the client
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.WithVersion(minimumDockerVersion))
