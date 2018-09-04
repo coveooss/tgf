@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -16,8 +17,16 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/coveo/gotemplate/utils"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
 	"github.com/fatih/color"
 	"github.com/gruntwork-io/terragrunt/util"
+)
+
+const (
+	minimumDockerVersion = "1.32" // Implemented in Docker v17.09.x
+	tgfImageVersion      = "TGF_IMAGE_VERSION"
 )
 
 func callDocker(args ...string) int {
@@ -92,7 +101,7 @@ func callDocker(args ...string) int {
 	if !strings.Contains(config.Image, "coveo/tgf") { // the tgf image injects its own image info
 		config.Environment["TGF_IMAGE"] = config.Image
 		if config.ImageVersion != nil {
-			config.Environment["TGF_IMAGE_VERSION"] = *config.ImageVersion
+			config.Environment[tgfImageVersion] = *config.ImageVersion
 			if version, err := semver.Make(*config.ImageVersion); err == nil {
 				config.Environment["TGF_IMAGE_MAJ_MIN"] = fmt.Sprintf("%d.%d", version.Major, version.Minor)
 			}
@@ -215,31 +224,64 @@ func getImage() (name string) {
 			}()
 		}
 
-		args := []string{"build", ".", "--quiet", "--force-rm"}
-		if i == 0 && refresh {
-			args = append(args, "--pull")
-		}
-		if dockerFile != "" {
-			args = append(args, "--file")
-			args = append(args, filepath.Base(dockerFile))
-		}
 		name = name + "-" + ib.Tag()
-		args = append(args, "--tag", name)
-		buildCmd := exec.Command("docker", args...)
-
-		if debug {
-			printfDebug(os.Stderr, "%s\n", strings.Join(buildCmd.Args, " "))
-			if ib.Instructions != "" {
-				printfDebug(os.Stderr, "%s\n", ib.Instructions)
+		if refresh || getActualImageVersion(name) == "" {
+			args := []string{"build", ".", "--quiet", "--force-rm"}
+			if i == 0 && refresh {
+				args = append(args, "--pull")
 			}
-		}
-		buildCmd.Stderr = os.Stderr
-		buildCmd.Dir = folder
+			if dockerFile != "" {
+				args = append(args, "--file")
+				args = append(args, filepath.Base(dockerFile))
+			}
 
-		Must(buildCmd.Output())
+			args = append(args, "--tag", name)
+			buildCmd := exec.Command("docker", args...)
+
+			if debug {
+				printfDebug(os.Stderr, "%s\n", strings.Join(buildCmd.Args, " "))
+				if ib.Instructions != "" {
+					printfDebug(os.Stderr, "%s\n", ib.Instructions)
+				}
+			}
+			buildCmd.Stderr = os.Stderr
+			buildCmd.Dir = folder
+			Must(buildCmd.Output())
+		}
 	}
 
 	return
+}
+
+func getActualImageVersion(imageName string) string {
+	// Create the context and the client
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.WithVersion(minimumDockerVersion))
+	if err != nil {
+		panic(err)
+	}
+
+	// Find image
+	filters := filters.NewArgs()
+	filters.Add("reference", imageName)
+	images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters})
+	if err != nil || len(images) != 1 {
+		return ""
+	}
+
+	// Print environment from image
+	inspect, _, err := cli.ImageInspectWithRaw(ctx, images[0].ID)
+	if err != nil {
+		panic(err)
+	}
+	for _, v := range inspect.ContainerConfig.Env {
+		values := strings.SplitN(v, "=", 2)
+		if values[0] == tgfImageVersion {
+			return values[1]
+		}
+	}
+	// We do not found an environment variable with the version in the images
+	return ""
 }
 
 func checkImage(image string) bool {
@@ -280,11 +322,6 @@ func getEnviron(noHome bool) (result []string) {
 			"_", "PWD", "OLDPWD", "TMPDIR",
 			"PROMPT", "SHELL", "SH", "ZSH", "HOME",
 			"LANG", "LC_CTYPE", "DISPLAY", "TERM":
-		case "LOGNAME", "USER":
-			if noHome {
-				continue
-			}
-			fallthrough
 		default:
 			result = append(result, "-e")
 			result = append(result, split[0])

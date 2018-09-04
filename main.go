@@ -2,27 +2,19 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"html/template"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/jsonmessage"
-	"github.com/docker/docker/pkg/term"
 	"github.com/fatih/color"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
-var version = "master"
+var version = "1.17.0"
 
 var description = `
 DESCRIPTION:
@@ -72,129 +64,10 @@ var (
 const tgfArgs = "TGF_ARGS"
 
 func trace(args ...interface{}) {
-	fmt.Println(time.Now().Format("15:04:05.999999"), fmt.Sprint(args...))
-}
-
-func test() {
-	trace("Start")
-
-	// Create the context and the client
-	ctx := context.Background()
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		panic(err)
-	}
-	trace("Client & context created")
-
-	// Find image
-	image := "coveo/tgf:1.26.1-aws"
-	filters := filters.NewArgs()
-	filters.Add("reference", image)
-	images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters})
-	if err != nil {
-		panic(err)
-	}
-	if len(images) != 1 {
-		fmt.Println("Loading missing image image")
-		reader, err := cli.ImagePull(ctx, image, types.ImagePullOptions{})
-		if err != nil {
-			panic(err)
-		}
-		defer reader.Close()
-		termFd, isTerm := term.GetFdInfo(os.Stderr)
-		jsonmessage.DisplayJSONMessagesStream(reader, os.Stderr, termFd, isTerm, nil)
-		images, _ = cli.ImageList(ctx, types.ImageListOptions{Filters: filters})
-	}
-	alpine := images[0]
-	trace("Image found", alpine.ID, alpine.Size)
-
-	// Print environment from image
-	inspect, _, err := cli.ImageInspectWithRaw(ctx, alpine.ID)
-	if err != nil {
-		panic(err)
-	}
-	trace("Inspect image", inspect.ContainerConfig.Env)
-
-	// Create container
-	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: image,
-		Cmd:   []string{"bash", "-c", "for i in {1..15}; do echo $i; sleep 1; done"},
-		Tty:   true,
-	}, nil, nil, "")
-	if err != nil {
-		panic(err)
-	}
-	trace("Container created: ", resp.ID)
-
-	// Start container
-	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		panic(err)
-	}
-
-	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true, Follow: true})
-	if err != nil {
-		panic(err)
-	}
-
-	defer func() {
-		trace("Removing the container")
-		err = cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{})
-		if err != nil {
-			panic(err)
-		}
-		out.Close()
-	}()
-
-	go func() {
-		io.Copy(os.Stdout, out)
-	}()
-
-	// Exec command into a running container
-	exec, err := cli.ContainerExecCreate(ctx, resp.ID, types.ExecConfig{
-		Cmd:          []string{"bash", "-c", "for i in {0..5}; do echo from exec: $i; sleep 2; done"},
-		Tty:          true,
-		AttachStdout: true,
-		AttachStderr: true,
-	})
-	if err != nil {
-		panic(err)
-	}
-	trace("Exec created: ", exec.ID)
-
-	hjr, err := cli.ContainerExecAttach(ctx, exec.ID, types.ExecStartCheck{})
-	if err != nil {
-		panic(err)
-	}
-
-	io.Copy(os.Stdout, hjr.Reader)
-	defer func() {
-		hjr.Close()
-	}()
-
-	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
-	select {
-	case err := <-errCh:
-		if err != nil {
-			panic(err)
-		}
-	case <-statusCh:
-	}
-	trace("Container no longer running")
-
-	trace("List of the containers")
-	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
-	if err != nil {
-		panic(err)
-	}
-	for _, container := range containers {
-		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
-	}
+	fmt.Print(time.Now().Format("15:04:05.999999"), " ", fmt.Sprintln(args...))
 }
 
 func main() {
-	// test()
-	// os.Exit(0)
-
 	// Handle eventual panic message
 	defer func() {
 		if err := recover(); err != nil {
@@ -324,8 +197,9 @@ func main() {
 		unmanaged = []string{"get-versions"}
 	}
 
-	if config.ImageVersion == nil && lastRefresh(config.GetImageName()) > config.Refresh || !checkImage(config.GetImageName()) || refresh {
-		refreshImage(config.GetImageName())
+	imageName := config.GetImageName()
+	if config.ImageVersion == nil && lastRefresh(imageName) > config.Refresh || !checkImage(imageName) || refresh {
+		refreshImage(imageName)
 	}
 
 	if *loggingLevel != "" {

@@ -1,5 +1,5 @@
 hash: f385734dda5759d8637ecbce7cae33aa5980b1c2e6f5df67a25da5cbe1b5fc18
-updated: 2018-08-14T17:16:00.673938-04:00
+updated: 2018-09-04T09:18:10.662139-04:00
 imports:
 - name: github.com/agext/levenshtein
   version: 5f10fee965225ac1eecdc234c09daf5cd9e7f7b6
@@ -24,7 +24,7 @@ imports:
 - name: github.com/armon/go-radix
   version: 7fddfc383310abc091d79a27f116d30cf0424032
 - name: github.com/aws/aws-sdk-go
-  version: f831d5a0822a1ad72420ab18c6269bca1ddaf490
+  version: 04abd557eeaab3cfdded45467eea00fc03db9cb9
   subpackages:
   - aws
   - aws/awserr
@@ -84,6 +84,43 @@ imports:
   - utils
   - xml
   - yaml
+- name: github.com/docker/distribution
+  version: 90705d2fb81dda1466be49bd958ed8a0dd9a6145
+  subpackages:
+  - digestset
+  - reference
+- name: github.com/docker/docker
+  version: 8af91768c78c8655d8cbbc817ab4d6f4a6a62ae4
+  subpackages:
+  - api
+  - api/types
+  - api/types/blkiodev
+  - api/types/container
+  - api/types/events
+  - api/types/filters
+  - api/types/image
+  - api/types/mount
+  - api/types/network
+  - api/types/registry
+  - api/types/strslice
+  - api/types/swarm
+  - api/types/swarm/runtime
+  - api/types/time
+  - api/types/versions
+  - api/types/volume
+  - client
+  - errdefs
+  - pkg/jsonmessage
+  - pkg/term
+  - pkg/term/windows
+- name: github.com/docker/go-connections
+  version: 97c2040d34dfae1d1b1275fa3a78dbdd2f41cf7e
+  subpackages:
+  - nat
+  - sockets
+  - tlsconfig
+- name: github.com/docker/go-units
+  version: 47565b4f722fb6ceae66b95f853feed578a4a51c
 - name: github.com/drhodes/goLorem
   version: ecccc744c2d953a1e13cbe5e5fc5d4cbc9b8daeb
 - name: github.com/fatih/color
@@ -92,6 +129,10 @@ imports:
   version: d98b870cc4e05f1545532a80e9909be8216095b6
 - name: github.com/go-ini/ini
   version: d58d458bec3cb5adec4b7ddb41131855eac0b33f
+- name: github.com/gogo/protobuf
+  version: 5669497fd64452f28d142899eeb1bfd7e8b26ac8
+  subpackages:
+  - proto
 - name: github.com/google/uuid
   version: 064e2069ce9c359c118179501254f67d7d37ba24
 - name: github.com/gruntwork-io/terragrunt
@@ -143,7 +184,7 @@ imports:
   - parser
   - scanner
 - name: github.com/hashicorp/terraform
-  version: 41e50bd32a8825a84535e353c3674af8ce799161
+  version: 6dfc4d748de9cda23835bc5704307ed45e839622
   subpackages:
   - config
   - config/hcl2shim
@@ -174,6 +215,8 @@ imports:
   version: efa589957cd060542a26d2dd7832fd6a6c6c3ade
 - name: github.com/mattn/go-isatty
   version: 6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c
+- name: github.com/Microsoft/go-winio
+  version: 97e4973ce50b2ff5f09635a57e2b88a037aae829
 - name: github.com/mitchellh/cli
   version: c48282d14eba4b0817ddef3f832ff8d13851aefd
 - name: github.com/mitchellh/copystructure
@@ -215,6 +258,8 @@ imports:
   version: da645544ed44df016359bd4c0e3dc60ee3a0da43
   subpackages:
   - diffmatchpatch
+- name: github.com/sirupsen/logrus
+  version: 78fa2915c1fa231f62e0438da493688c21ca678e
 - name: github.com/ulikunitz/xz
   version: 636d36a76670e6c700f22fd5f4588679ff2896c4
   subpackages:
@@ -254,6 +299,7 @@ imports:
   - html
   - html/atom
   - idna
+  - internal/socks
   - proxy
 - name: golang.org/x/sys
   version: 98c5dad5d1a0e8a73845ecc8897d0bd56586511d
