@@ -23,7 +23,7 @@ By default, TGF is used as a frontend for [terragrunt](https://github.com/gruntw
 
 Using `TGF` ensure that all your users are using the same set of tools to run infrastructure configuration even if they are working on different environments (`linux`, `Microsoft Windows`, `Mac OSX`, etc).
 
-`Terraform` is very sensible to the version used and if one user update to a newer version, the state files will be marked with the latest version and
+`Terraform` is very sensitive to the version used and if one user update to a newer version, the state files will be marked with the latest version and
 all other user will have to update their `Terraform` version to the latest used one.
 
 Also, tools such as `AWS CLI` are updated on a regular basis and people don't tend to update their version regularly, resulting in many different version
@@ -39,20 +39,20 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.16.2/tgf_1.16.2_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
+curl -sL https://github.com/coveo/tgf/releases/download/v1.16.6/tgf_1.16.6_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.16.2/tgf_1.16.2_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.16.6/tgf_1.16.6_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.16.2/tgf_1.16.2_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.16.6/tgf_1.16.6_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -152,7 +152,7 @@ conflicting argument will be passed to the entry point wherever it is located on
 
   tgf ls -- -D   # Avoid -D to be interpretated by tgf as --debug-docker
 
-VERSION: 1.16.2
+VERSION: 1.16.5
 
 AUTHOR: Coveo
 
@@ -180,7 +180,7 @@ Example:
 
 ```bash
 > tgf --current-version
-tgf v1.16.2
+tgf v1.16.5
 ```
 
 Returns the current version of the tgf tool
