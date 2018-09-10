@@ -25,11 +25,9 @@ import (
 )
 
 const (
-	minimumDockerVersion = "1.32" // Implemented in Docker v17.09.x
+	minimumDockerVersion = "1.25"
 	tgfImageVersion      = "TGF_IMAGE_VERSION"
 )
-
-type dockerClient = *client.Client
 
 func callDocker(args ...string) int {
 	command := append([]string{config.EntryPoint}, args...)
@@ -118,7 +116,7 @@ func callDocker(args ...string) int {
 
 	for key, val := range config.Environment {
 		os.Setenv(key, val)
-		DebugPrint("export %v=%v", key, val)
+		debugPrint("export %v=%v", key, val)
 	}
 
 	for _, do := range dockerOptions {
@@ -139,9 +137,9 @@ func callDocker(args ...string) int {
 	dockerCmd.Stderr = &stderr
 
 	if len(config.Environment) > 0 {
-		DebugPrint("")
+		debugPrint("")
 	}
-	DebugPrint("%s\n", strings.Join(dockerCmd.Args, " "))
+	debugPrint("%s\n", strings.Join(dockerCmd.Args, " "))
 
 	if err := runCommands(config.RunBefore); err != nil {
 		return -1
@@ -163,7 +161,7 @@ func callDocker(args ...string) int {
 	return dockerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 }
 
-func DebugPrint(format string, args ...interface{}) {
+func debugPrint(format string, args ...interface{}) {
 	if debugMode {
 		ErrPrintf(color.HiBlackString(format+"\n", args...))
 	}
@@ -246,9 +244,9 @@ func getImage() (name string) {
 			args = append(args, "--tag", name)
 			buildCmd := exec.Command("docker", args...)
 
-			DebugPrint("%s", strings.Join(buildCmd.Args, " "))
+			debugPrint("%s", strings.Join(buildCmd.Args, " "))
 			if ib.Instructions != "" {
-				DebugPrint("%s", ib.Instructions)
+				debugPrint("%s", ib.Instructions)
 			}
 			buildCmd.Stderr = os.Stderr
 			buildCmd.Dir = folder
@@ -261,37 +259,56 @@ func getImage() (name string) {
 }
 
 func prune(images ...string) {
-	pruneCmd := exec.Command("docker", "system", "prune", "-f")
-
-	if debugMode {
-		DebugPrint("%s", strings.Join(pruneCmd.Args, " "))
-	}
-	pruneCmd.Stderr = os.Stderr
-	must(pruneCmd.Output())
-	if len(images) == 0 {
-		return
-	}
-
-	ctx := context.Background()
-	cli := must(getDockerClient()).(dockerClient)
+	current := fmt.Sprintf(">=%s", GetActualImageVersion())
+	cli, ctx := getDockerClient()
 	for _, image := range images {
 		filters := filters.NewArgs()
 		filters.Add("reference", image)
 		if images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters}); err == nil {
 			for _, image := range images {
-				if len(image.RepoTags) == 0 {
-					fmt.Println("Oups", image.ID)
-					continue
+				actual := getActualImageVersionFromImageID(image.ID)
+				if actual == "" {
+					for _, tag := range image.RepoTags {
+						matches, _ := utils.MultiMatch(tag, reVersion)
+						if version := matches["version"]; version != "" {
+							if len(version) > len(actual) {
+								actual = version
+							}
+						}
+					}
 				}
-				fmt.Println(image.RepoTags)
-				matches := reVersion.FindStringSubmatch(image.RepoTags[0])
-				//if matches[2] !=
-
-				// vide = <none>
-				// plusieurs tag prendre le numéro de version et on purge le register
-				// utiliser semver
-				fmt.Println(len(matches), strings.Join(matches, ", "))
+				upToDate, err := CheckVersionRange(actual, current)
+				if err != nil {
+					ErrPrintln("Check version for %s vs%s: %v", actual, current, err)
+				} else if !upToDate {
+					for _, tag := range image.RepoTags {
+						deleteImage(tag)
+					}
+				}
 			}
+		}
+	}
+
+	pruneCmd := exec.Command("docker", "system", "prune", "-f")
+	if debugMode {
+		debugPrint("%s", strings.Join(pruneCmd.Args, " "))
+	}
+	pruneCmd.Stderr = os.Stderr
+	must(pruneCmd.Output())
+}
+
+func deleteImage(id string) {
+	cli, ctx := getDockerClient()
+	items, err := cli.ImageRemove(ctx, id, types.ImageRemoveOptions{})
+	if err != nil {
+		printErr((err.Error()))
+	}
+	for _, item := range items {
+		if item.Untagged != "" {
+			ErrPrintf("Untagged %s\n", item.Untagged)
+		}
+		if item.Deleted != "" {
+			ErrPrintf("Deleted %s\n", item.Deleted)
 		}
 	}
 }
@@ -301,13 +318,19 @@ func GetActualImageVersion() string {
 	return getActualImageVersionInternal(getImage())
 }
 
-func getDockerClient() (dockerClient, error) {
-	return client.NewClientWithOpts(client.WithVersion(minimumDockerVersion))
+func getDockerClient() (*client.Client, context.Context) {
+	if dockerClient == nil {
+		dockerClient = must(client.NewClientWithOpts(client.WithVersion(minimumDockerVersion))).(*client.Client)
+		dockerContext = context.Background()
+	}
+	return dockerClient, dockerContext
 }
 
+var dockerClient *client.Client
+var dockerContext context.Context
+
 func getActualImageVersionInternal(imageName string) string {
-	ctx := context.Background()
-	cli := must(getDockerClient()).(dockerClient)
+	cli, ctx := getDockerClient()
 	// Find image
 	filters := filters.NewArgs()
 	filters.Add("reference", imageName)
@@ -316,8 +339,12 @@ func getActualImageVersionInternal(imageName string) string {
 		return ""
 	}
 
-	// Print environment from image
-	inspect, _, err := cli.ImageInspectWithRaw(ctx, images[0].ID)
+	return getActualImageVersionFromImageID(images[0].ID)
+}
+
+func getActualImageVersionFromImageID(imageID string) string {
+	cli, ctx := getDockerClient()
+	inspect, _, err := cli.ImageInspectWithRaw(ctx, imageID)
 	if err != nil {
 		panic(err)
 	}

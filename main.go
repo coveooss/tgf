@@ -88,7 +88,7 @@ func main() {
 	// Handle eventual panic message
 	defer func() {
 		if err := recover(); err != nil {
-			ErrPrintln(errorString("%[1]v (%[1]T)", err))
+			printErr("%[1]v (%[1]T)", err)
 			if collections.String(os.Getenv(envDebug)).ParseBool() {
 				debug.PrintStack()
 			}
@@ -198,7 +198,7 @@ func main() {
 
 	if *getAllVersions {
 		if filepath.Base(config.EntryPoint) != "terragrunt" {
-			ErrPrintln(errorString("--all-version works only with terragrunt as the entrypoint"))
+			printErr(("--all-version works only with terragrunt as the entrypoint"))
 			os.Exit(1)
 		}
 		Println("TGF version", version)
@@ -240,20 +240,23 @@ func validateVersion(version string) bool {
 	for _, err := range config.Validate() {
 		switch err := err.(type) {
 		case ConfigWarning:
-			ErrPrintln(warningString("%v", err))
+			warning("%v", err)
 		case VersionMistmatchError:
-			ErrPrintln(errorString("%v", err))
+			printErr("%v", err)
 			if version == "-" {
 				// We consider this as a fatal error only if the version has not been explicitly specified on the command line
 				return false
 			}
 		default:
-			ErrPrintln(errorString("%v", err))
+			printErr("%v", err)
 			return false
 		}
 	}
 	return true
 }
+
+func printErr(format string, args ...interface{}) { ErrPrintln(errorString(format, args...)) }
+func warning(format string, args ...interface{})  { ErrPrintln(warningString(format, args...)) }
 
 var warningString = color.New(color.FgYellow).SprintfFunc()
 var errorString = color.New(color.FgRed).SprintfFunc()

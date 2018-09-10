@@ -165,9 +165,9 @@ func (config *TGFConfig) InitAWS(profile string) error {
 func (config *TGFConfig) SetDefaultValues() {
 	for _, configFile := range findConfigFiles(must(os.Getwd()).(string)) {
 		var content map[string]interface{}
-		DebugPrint("# Reading configuration from %s", configFile)
+		debugPrint("# Reading configuration from %s", configFile)
 		if err := collections.LoadData(configFile, &content); err != nil {
-			ErrPrintln(errorString("Error while loading configuration file %s\nConfiguration file must be valid YAML, JSON or HCL", configFile))
+			printErr("Error while loading configuration file %s\nConfiguration file must be valid YAML, JSON or HCL", configFile)
 			continue
 		}
 
@@ -201,7 +201,7 @@ func (config *TGFConfig) SetDefaultValues() {
 					config.SetValue(key, content[key])
 				}
 			default:
-				ErrPrintln(errorString("Invalid configuration format in file %s (%T)", configFile, content))
+				printErr("Invalid configuration format in file %s (%T)", configFile, content)
 			}
 		}
 
@@ -227,9 +227,9 @@ func (config *TGFConfig) SetDefaultValues() {
 		// If we need to read the parameter store, we must init the session first to ensure that
 		// the credentials are only initialized once (avoiding asking multiple time the MFA)
 		if err := config.InitAWS(""); err != nil {
-			ErrPrintln(errorString("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err))
+			printErr("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err)
 		} else {
-			DebugPrint("# Reading configuration from AWS parameter store %s", parameterFolder)
+			debugPrint("# Reading configuration from AWS parameter store %s", parameterFolder)
 			config.ImageBuild = append(config.ImageBuild, TGFConfigBuild{source: "AWS/ParametersStore"})
 			for _, parameter := range must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
 				config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
@@ -260,17 +260,17 @@ func (config *TGFConfig) SetValue(key string, value interface{}) {
 	switch key {
 	case dockerImage:
 		if strings.Contains(valueStr, ":") && config.Image == "" {
-			ErrPrintln(warningString("Parameter %s should not contains the version: %s", key, valueStr))
+			warning("Parameter %s should not contains the version: %s", key, valueStr)
 		}
 		config.apply(key, valueStr)
 	case dockerImageVersion:
 		if strings.ContainsAny(valueStr, ":-") && config.ImageVersion == nil {
-			ErrPrintln(warningString("Parameter %s should not contains the image name nor the specialized version: %s", key, valueStr))
+			warning("Parameter %s should not contains the image name nor the specialized version: %s", key, valueStr)
 		}
 		config.apply(key, ":"+valueStr)
 	case dockerImageTag:
 		if strings.ContainsAny(valueStr, ":") && config.ImageTag == nil {
-			ErrPrintln(warningString("Parameter %s should not contains the image name: %s", key, valueStr))
+			warning("Parameter %s should not contains the image name: %s", key, valueStr)
 		}
 		config.apply(key, ":"+valueStr)
 	case dockerOptionsTag:
@@ -314,7 +314,7 @@ func (config *TGFConfig) SetValue(key string, value interface{}) {
 				}
 			}
 		default:
-			ErrPrintln(warningString("Environment must be a map of key/value %T", value))
+			warning("Environment must be a map of key/value %T", value)
 		}
 	case runBefore, runAfter:
 		list := &config.RunBefore
@@ -334,9 +334,9 @@ func (config *TGFConfig) SetValue(key string, value interface{}) {
 			}
 		}
 	case deprecatedRecommendedImage:
-		ErrPrintln(warningString("Config key %s is deprecated (%s ignored)", key, valueStr))
+		warning("Config key %s is deprecated (%s ignored)", key, valueStr)
 	default:
-		ErrPrintln(errorString("Unknown parameter %s = %s", key, value))
+		printErr("Unknown parameter %s = %s", key, value)
 	}
 }
 
