@@ -259,30 +259,32 @@ func getImage() (name string) {
 }
 
 func prune(images ...string) {
-	current := fmt.Sprintf(">=%s", GetActualImageVersion())
-	cli, ctx := getDockerClient()
-	for _, image := range images {
-		filters := filters.NewArgs()
-		filters.Add("reference", image)
-		if images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters}); err == nil {
-			for _, image := range images {
-				actual := getActualImageVersionFromImageID(image.ID)
-				if actual == "" {
-					for _, tag := range image.RepoTags {
-						matches, _ := utils.MultiMatch(tag, reVersion)
-						if version := matches["version"]; version != "" {
-							if len(version) > len(actual) {
-								actual = version
+	if len(images) > 0 {
+		current := fmt.Sprintf(">=%s", GetActualImageVersion())
+		cli, ctx := getDockerClient()
+		for _, image := range images {
+			filters := filters.NewArgs()
+			filters.Add("reference", image)
+			if images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters}); err == nil {
+				for _, image := range images {
+					actual := getActualImageVersionFromImageID(image.ID)
+					if actual == "" {
+						for _, tag := range image.RepoTags {
+							matches, _ := utils.MultiMatch(tag, reVersion)
+							if version := matches["version"]; version != "" {
+								if len(version) > len(actual) {
+									actual = version
+								}
 							}
 						}
 					}
-				}
-				upToDate, err := CheckVersionRange(actual, current)
-				if err != nil {
-					ErrPrintln("Check version for %s vs%s: %v", actual, current, err)
-				} else if !upToDate {
-					for _, tag := range image.RepoTags {
-						deleteImage(tag)
+					upToDate, err := CheckVersionRange(actual, current)
+					if err != nil {
+						ErrPrintln("Check version for %s vs%s: %v", actual, current, err)
+					} else if !upToDate {
+						for _, tag := range image.RepoTags {
+							deleteImage(tag)
+						}
 					}
 				}
 			}

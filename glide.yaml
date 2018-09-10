@@ -6,4 +6,4 @@ import:
 - package: github.com/gruntwork-io/terragrunt
   repo: https://github.com/coveo/terragrunt.git
 - package: github.com/coveo/gotemplate
-  version: 703e16db1734052dfdc37270c62b742830fbf89d
+  version: ^2.6.0
