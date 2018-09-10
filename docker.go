@@ -264,16 +264,16 @@ func prune(images ...string) {
 	pruneCmd := exec.Command("docker", "system", "prune", "-f")
 
 	if debugMode {
-		printfDebug(os.Stderr, "%s\n", strings.Join(pruneCmd.Args, " "))
+		DebugPrint("%s", strings.Join(pruneCmd.Args, " "))
 	}
 	pruneCmd.Stderr = os.Stderr
-	Must(pruneCmd.Output())
+	must(pruneCmd.Output())
 	if len(images) == 0 {
 		return
 	}
 
 	ctx := context.Background()
-	cli := Must(getDockerClient()).(dockerClient)
+	cli := must(getDockerClient()).(dockerClient)
 	for _, image := range images {
 		filters := filters.NewArgs()
 		filters.Add("reference", image)
@@ -285,11 +285,11 @@ func prune(images ...string) {
 				}
 				fmt.Println(image.RepoTags)
 				matches := reVersion.FindStringSubmatch(image.RepoTags[0])
-				if matches[2] !=
+				//if matches[2] !=
 
-				vide = <none>
-				plusieurs tag prendre le numéro de version et on purge le register
-				utiliser semver
+				// vide = <none>
+				// plusieurs tag prendre le numéro de version et on purge le register
+				// utiliser semver
 				fmt.Println(len(matches), strings.Join(matches, ", "))
 			}
 		}
@@ -307,7 +307,7 @@ func getDockerClient() (dockerClient, error) {
 
 func getActualImageVersionInternal(imageName string) string {
 	ctx := context.Background()
-	cli := Must(getDockerClient).(dockerClient)
+	cli := must(getDockerClient()).(dockerClient)
 	// Find image
 	filters := filters.NewArgs()
 	filters.Add("reference", imageName)
