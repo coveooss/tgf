@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strings"
-	"time"
 
 	"github.com/fatih/color"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -63,10 +62,6 @@ var (
 )
 
 const tgfArgs = "TGF_ARGS"
-
-func trace(args ...interface{}) {
-	fmt.Print(time.Now().Format("15:04:05.999999"), " ", fmt.Sprintln(args...))
-}
 
 func main() {
 	// Handle eventual panic message

@@ -88,6 +88,9 @@ func callDocker(args ...string) int {
 		temp := filepath.ToSlash(filepath.Join(Must(filepath.EvalSymlinks(os.TempDir())).(string), "tgf-cache"))
 		tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
 		tempFolder := strings.TrimPrefix(temp, tempDrive)
+		if runtime.GOOS == "windows" {
+			os.Mkdir(temp, 0755)
+		}
 		dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:/var/tgf", convertDrive(tempDrive), tempFolder))
 		config.Environment["TERRAGRUNT_CACHE"] = "/var/tgf"
 	}
