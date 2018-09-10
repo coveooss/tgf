@@ -397,8 +397,8 @@ func (config *TGFConfig) GetImageName() string {
 	return config.Image
 }
 
-// https://regex101.com/r/ZKt4OP/3/
-var reVersion = regexp.MustCompile(`^(?P<image>.*?)(:((?P<version>\d+\.\d+(?:\.\d+){0,1})((?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
+// https://regex101.com/r/ZKt4OP/5
+var reVersion = regexp.MustCompile(`^(?P<image>.*?)(?::(?:(?P<version>\d+\.\d+(?:\.\d+){0,1})(?:(?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
 
 func (config *TGFConfig) apply(key, value string) {
 	matches := reVersion.FindStringSubmatch(value)

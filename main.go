@@ -142,6 +142,7 @@ func main() {
 	var (
 		getAllVersions    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
 		getCurrentVersion = app.Switch("current-version", "Get current version information (alias --cv)").Bool()
+		pruneImages       = app.Switch("prune", "Remove all previous versions of the targeted image").Bool()
 		defaultEntryPoint = app.Argument("entrypoint", "Override the entry point for docker", 'E').PlaceHolder("terragrunt").String()
 		image             = app.Argument("image", "Use the specified image instead of the default one").PlaceHolder("coveo/tgf").String()
 		imageVersion      = app.Argument("image-version", "Use a different version of docker image instead of the default one (alias --iv)").PlaceHolder("version").Default("-").String()
@@ -211,6 +212,11 @@ func main() {
 
 	if *loggingLevel != "" {
 		config.LogLevel = *loggingLevel
+	}
+
+	if *pruneImages {
+		prune(config.Image)
+		os.Exit(0)
 	}
 
 	if config.EntryPoint == "terragrunt" && unmanaged == nil && !debugMode && !getImageName {

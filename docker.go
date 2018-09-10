@@ -29,6 +29,8 @@ const (
 	tgfImageVersion      = "TGF_IMAGE_VERSION"
 )
 
+type dockerClient = *client.Client
+
 func callDocker(args ...string) int {
 	command := append([]string{config.EntryPoint}, args...)
 
@@ -251,10 +253,47 @@ func getImage() (name string) {
 			buildCmd.Stderr = os.Stderr
 			buildCmd.Dir = folder
 			must(buildCmd.Output())
+			prune()
 		}
 	}
 
 	return
+}
+
+func prune(images ...string) {
+	pruneCmd := exec.Command("docker", "system", "prune", "-f")
+
+	if debugMode {
+		printfDebug(os.Stderr, "%s\n", strings.Join(pruneCmd.Args, " "))
+	}
+	pruneCmd.Stderr = os.Stderr
+	Must(pruneCmd.Output())
+	if len(images) == 0 {
+		return
+	}
+
+	ctx := context.Background()
+	cli := Must(getDockerClient()).(dockerClient)
+	for _, image := range images {
+		filters := filters.NewArgs()
+		filters.Add("reference", image)
+		if images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters}); err == nil {
+			for _, image := range images {
+				if len(image.RepoTags) == 0 {
+					fmt.Println("Oups", image.ID)
+					continue
+				}
+				fmt.Println(image.RepoTags)
+				matches := reVersion.FindStringSubmatch(image.RepoTags[0])
+				if matches[2] !=
+
+				vide = <none>
+				plusieurs tag prendre le numéro de version et on purge le register
+				utiliser semver
+				fmt.Println(len(matches), strings.Join(matches, ", "))
+			}
+		}
+	}
 }
 
 // GetActualImageVersion returns the real image version stored in the environment variable TGF_IMAGE_VERSION
@@ -262,14 +301,13 @@ func GetActualImageVersion() string {
 	return getActualImageVersionInternal(getImage())
 }
 
-func getActualImageVersionInternal(imageName string) string {
-	// Create the context and the client
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.WithVersion(minimumDockerVersion))
-	if err != nil {
-		panic(err)
-	}
+func getDockerClient() (dockerClient, error) {
+	return client.NewClientWithOpts(client.WithVersion(minimumDockerVersion))
+}
 
+func getActualImageVersionInternal(imageName string) string {
+	ctx := context.Background()
+	cli := Must(getDockerClient).(dockerClient)
 	// Find image
 	filters := filters.NewArgs()
 	filters.Add("reference", imageName)
