@@ -1,5 +1,5 @@
-hash: f385734dda5759d8637ecbce7cae33aa5980b1c2e6f5df67a25da5cbe1b5fc18
-updated: 2018-09-04T09:18:10.662139-04:00
+hash: 58c4bb0c50d4e04e22f1253b39e6f70f7439f299668df8e20fde04e7f58f6d22
+updated: 2018-09-10T09:16:06.1347686-04:00
 imports:
 - name: github.com/agext/levenshtein
   version: 5f10fee965225ac1eecdc234c09daf5cd9e7f7b6
@@ -14,17 +14,17 @@ imports:
 - name: github.com/aokoli/goutils
   version: 3391d3790d23d03408670993e957e8f408993c34
 - name: github.com/apparentlymart/go-cidr
-  version: 2bd8b58cf4275aeb086ade613de226773e29e853
+  version: b1115bf8e14a60131a196f908223e4506b0ddc35
   subpackages:
   - cidr
 - name: github.com/apparentlymart/go-textseg
-  version: b836f5c4d331d1945a2fead7188db25432d73b69
+  version: fb01f485ebef760e5ee06d55e1b07534dda2d295
   subpackages:
   - textseg
 - name: github.com/armon/go-radix
-  version: 7fddfc383310abc091d79a27f116d30cf0424032
+  version: 1a2de0c21c94309923825da3df33a4381872c795
 - name: github.com/aws/aws-sdk-go
-  version: 04abd557eeaab3cfdded45467eea00fc03db9cb9
+  version: 56018901efd0b8084af1fb83b7e2604aba53f143
   subpackages:
   - aws
   - aws/awserr
@@ -60,10 +60,6 @@ imports:
   - service/s3
   - service/ssm
   - service/sts
-- name: github.com/Azure/go-ansiterm
-  version: d6e3b3328b783f23731bc4d058875b0371ff8109
-  subpackages:
-  - winterm
 - name: github.com/bgentry/go-netrc
   version: 9fd32a8b3d3d3f9d43c341bfe098430e07609480
   subpackages:
@@ -73,7 +69,7 @@ imports:
 - name: github.com/blang/semver
   version: 3c1074078d32d767e08ab2c8564867292da86926
 - name: github.com/coveo/gotemplate
-  version: 40ed0a800cccab9868456b03b30bc1914bfc3b12
+  version: 703e16db1734052dfdc37270c62b742830fbf89d
   subpackages:
   - collections
   - collections/implementation
@@ -85,12 +81,12 @@ imports:
   - xml
   - yaml
 - name: github.com/docker/distribution
-  version: 90705d2fb81dda1466be49bd958ed8a0dd9a6145
+  version: 642075f42c027b8a05b7d06f4f132939eb9ed902
   subpackages:
   - digestset
   - reference
 - name: github.com/docker/docker
-  version: 8af91768c78c8655d8cbbc817ab4d6f4a6a62ae4
+  version: 77faf158f5265711dbcbff0ffb855eed2e3b6ccd
   subpackages:
   - api
   - api/types
@@ -110,9 +106,6 @@ imports:
   - api/types/volume
   - client
   - errdefs
-  - pkg/jsonmessage
-  - pkg/term
-  - pkg/term/windows
 - name: github.com/docker/go-connections
   version: 97c2040d34dfae1d1b1275fa3a78dbdd2f41cf7e
   subpackages:
@@ -128,7 +121,7 @@ imports:
 - name: github.com/go-errors/errors
   version: d98b870cc4e05f1545532a80e9909be8216095b6
 - name: github.com/go-ini/ini
-  version: d58d458bec3cb5adec4b7ddb41131855eac0b33f
+  version: 5cf292cae48347c2490ac1a58fe36735fb78df7e
 - name: github.com/gogo/protobuf
   version: 5669497fd64452f28d142899eeb1bfd7e8b26ac8
   subpackages:
@@ -136,30 +129,30 @@ imports:
 - name: github.com/google/uuid
   version: 064e2069ce9c359c118179501254f67d7d37ba24
 - name: github.com/gruntwork-io/terragrunt
-  version: fe4af2d1ec00067d8e473a2ddfb969db3bc85017
+  version: 4b80d12c1d4bdf00867deda90083e82f8673f1eb
   repo: https://github.com/coveo/terragrunt.git
   subpackages:
   - aws_helper
   - errors
   - util
 - name: github.com/hashicorp/errwrap
-  version: d6c0cd88035724dd42e0f335ae30161c20575ecc
+  version: 8a6fb523712970c966eefc6b39ed2c5e74880354
 - name: github.com/hashicorp/go-cleanhttp
-  version: d5fe4b57a186c716b0e00b8c301cbd9b4182694d
+  version: e8ab9daed8d1ddd2d3c4efba338fe2eeae2e4f18
 - name: github.com/hashicorp/go-getter
   version: 4bda8fa99001c61db3cad96b421d4c12a81f256d
   subpackages:
   - helper/url
 - name: github.com/hashicorp/go-multierror
-  version: 3d5d8f294aa03d8e98859feac328afbdf1ae0703
+  version: 886a7fbe3eb1c874d46f623bfa70af45f425b3d1
 - name: github.com/hashicorp/go-safetemp
-  version: b1a1dbde6fdc11e3ae79efd9039009e22d4ae240
+  version: c9a55de4fe06c920a71964b53cfe3dd293a3c743
 - name: github.com/hashicorp/go-uuid
-  version: 27454136f0364f2d44b1276c552d69105cf8c498
+  version: de160f5c59f693fed329e73e291bb751fe4ea4dc
 - name: github.com/hashicorp/go-version
-  version: 270f2f71b1ee587f3b609f00f422b76a6b28f348
+  version: b5a281d3160aa11950a6182bd9a9dc2cb1e02d50
 - name: github.com/hashicorp/hcl
-  version: ef8a98b0bbce4a65b5aa4c368430a80ddc533168
+  version: 65a6292f0157eff210d03ed1bf6c59b190b8b906
   subpackages:
   - hcl/ast
   - hcl/parser
@@ -170,7 +163,7 @@ imports:
   - json/scanner
   - json/token
 - name: github.com/hashicorp/hcl2
-  version: c79a9bd509c8897b83598ec971ae4db54eab4e85
+  version: 864f97c8ab203ef9f72a47f231e7d10e52a33ce7
   subpackages:
   - gohcl
   - hcl
@@ -202,7 +195,7 @@ imports:
   - tfdiags
   - version
 - name: github.com/huandu/xstrings
-  version: 7bb0250b58e5c15670406e6f93ffda43281305b1
+  version: 8bbcf2f9ccb55755e748b7644164cd4bdce94c1d
 - name: github.com/imdario/mergo
   version: 7fe0c75c13abdee74b09fcacef5ea1c6bba6a874
 - name: github.com/jmespath/go-jmespath
@@ -214,29 +207,28 @@ imports:
 - name: github.com/mattn/go-colorable
   version: efa589957cd060542a26d2dd7832fd6a6c6c3ade
 - name: github.com/mattn/go-isatty
-  version: 6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c
+  version: 3fb116b820352b7f0c281308a4d6250c22d94e27
 - name: github.com/Microsoft/go-winio
   version: 97e4973ce50b2ff5f09635a57e2b88a037aae829
 - name: github.com/mitchellh/cli
-  version: c48282d14eba4b0817ddef3f832ff8d13851aefd
+  version: 3d22a244be8aa6fb16ac24af0e195c08b7d973aa
 - name: github.com/mitchellh/copystructure
-  version: d23ffcb85de31694d6ccaa23ccb4a03e55c1303f
+  version: 9a1b6f44e8da0e0e374624fb0a825a231b00c537
 - name: github.com/mitchellh/go-homedir
-  version: 58046073cbffe2f25d425fe1331102f55cf719de
+  version: ae18d6b8b3205b561c79e8e5f69bff09736185f4
 - name: github.com/mitchellh/go-testing-interface
-  version: a61a99592b77c9ba629d254a693acffaeb4b7e28
+  version: 6d0b8010fcc857872e42fc6c931227569016843c
 - name: github.com/mitchellh/go-wordwrap
-  version: ad45545899c7b13c020ea92b2072220eefad42b8
+  version: 9e67c67572bc5dd02aef930e2b0ae3c02a4b5a5c
 - name: github.com/mitchellh/hashstructure
-  version: 2bca23e0e452137f789efbc8610126fd8b94f73b
+  version: a38c50148365edc8df43c1580c48fb2b3a1e9cd7
 - name: github.com/mitchellh/mapstructure
-  version: f15292f7a699fcc1a38a80977f80a046874ba8ac
+  version: fa473d140ef3c6adf42d6b391fe76707f1f243c8
 - name: github.com/mitchellh/reflectwalk
-  version: 63d60e9d0dbc60cf9164e6510889b0db6683d98c
-- name: github.com/Nvveen/Gotty
-  version: cd527374f1e5bff4938207604a14f2e38a9cf512
+  version: eecee6c969c02c8cc2ae48e1e269843ae8590796
 - name: github.com/op/go-logging
-  version: 970db520ece77730c7e4724c61121037378659d9
+  version: c6b9702d88ba878b81c49272d3fc470593698733
+  repo: https://github.com/shenwei356/go-logging.git
 - name: github.com/opencontainers/go-digest
   version: c9281466c8b2f606084ac71339773efd177436e7
 - name: github.com/opencontainers/image-spec
@@ -247,7 +239,7 @@ imports:
 - name: github.com/pkg/errors
   version: 816c9085562cd7ee03e7f8188a1cfd942858cded
 - name: github.com/posener/complete
-  version: e037c22b2fcfa85e74495388f03892ed194bba76
+  version: 0d98d7ee195f007b3453c002780ed80c76e7c806
   subpackages:
   - cmd
   - cmd/install
@@ -258,8 +250,6 @@ imports:
   version: da645544ed44df016359bd4c0e3dc60ee3a0da43
   subpackages:
   - diffmatchpatch
-- name: github.com/sirupsen/logrus
-  version: 78fa2915c1fa231f62e0438da493688c21ca678e
 - name: github.com/ulikunitz/xz
   version: 636d36a76670e6c700f22fd5f4588679ff2896c4
   subpackages:
@@ -267,7 +257,7 @@ imports:
   - internal/xlog
   - lzma
 - name: github.com/zclconf/go-cty
-  version: 02bd58e97b5759d478019c5a6333edbfdfed16a0
+  version: 12ca9334a95ffdef66da89903a0aae9865f5ac4e
   subpackages:
   - cty
   - cty/convert
@@ -277,7 +267,7 @@ imports:
   - cty/json
   - cty/set
 - name: golang.org/x/crypto
-  version: de0752318171da717af4ce24d0a2e8626afaeb11
+  version: 0709b304e793a5edb4a2c0145f281ecdc20838a4
   subpackages:
   - bcrypt
   - blowfish
@@ -292,7 +282,7 @@ imports:
   - scrypt
   - ssh/terminal
 - name: golang.org/x/net
-  version: c39426892332e1bb5ec0a434a079bf82f5d30c54
+  version: 161cd47e91fd58ac17490ef4d742dc98bb4cf60e
   subpackages:
   - context
   - context/ctxhttp
@@ -302,12 +292,12 @@ imports:
   - internal/socks
   - proxy
 - name: golang.org/x/sys
-  version: 98c5dad5d1a0e8a73845ecc8897d0bd56586511d
+  version: d0be0721c37eeb5299f245a996a483160fc36940
   subpackages:
   - unix
   - windows
 - name: golang.org/x/text
-  version: 6e3c4e7365ddcc329f090f96e4348398f6310088
+  version: 4ae1256249243a4eb350a9a372e126557f2aa346
   subpackages:
   - secure/bidirule
   - transform

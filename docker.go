@@ -57,11 +57,11 @@ func callDocker(args ...string) int {
 	imageName := getImage()
 
 	if getImageName {
-		fmt.Println(imageName)
+		Println(imageName)
 		return 0
 	}
 
-	cwd := filepath.ToSlash(Must(filepath.EvalSymlinks(Must(os.Getwd()).(string))).(string))
+	cwd := filepath.ToSlash(must(filepath.EvalSymlinks(must(os.Getwd()).(string))).(string))
 	currentDrive := fmt.Sprintf("%s/", filepath.VolumeName(cwd))
 	sourceFolder := filepath.ToSlash(filepath.Join("/", mountPoint, strings.TrimPrefix(cwd, currentDrive)))
 	rootFolder := strings.Split(strings.TrimPrefix(cwd, currentDrive), "/")[0]
@@ -72,7 +72,7 @@ func callDocker(args ...string) int {
 		"-w", sourceFolder,
 	}
 	if !noHome {
-		currentUser := Must(user.Current()).(*user.User)
+		currentUser := must(user.Current()).(*user.User)
 		home := filepath.ToSlash(currentUser.HomeDir)
 		homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
 
@@ -85,7 +85,7 @@ func callDocker(args ...string) int {
 	}
 
 	if !noTemp {
-		temp := filepath.ToSlash(filepath.Join(Must(filepath.EvalSymlinks(os.TempDir())).(string), "tgf-cache"))
+		temp := filepath.ToSlash(filepath.Join(must(filepath.EvalSymlinks(os.TempDir())).(string), "tgf-cache"))
 		tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
 		tempFolder := strings.TrimPrefix(temp, tempDrive)
 		if runtime.GOOS == "windows" {
@@ -116,9 +116,7 @@ func callDocker(args ...string) int {
 
 	for key, val := range config.Environment {
 		os.Setenv(key, val)
-		if debugMode {
-			printfDebug(os.Stderr, "export %v=%v\n", key, val)
-		}
+		DebugPrint("export %v=%v", key, val)
 	}
 
 	for _, do := range dockerOptions {
@@ -138,34 +136,36 @@ func callDocker(args ...string) int {
 	var stderr bytes.Buffer
 	dockerCmd.Stderr = &stderr
 
-	if debugMode {
-		if len(config.Environment) > 0 {
-			fmt.Fprintln(os.Stderr)
-		}
-		printfDebug(os.Stderr, "%s\n\n", strings.Join(dockerCmd.Args, " "))
+	if len(config.Environment) > 0 {
+		DebugPrint("")
 	}
+	DebugPrint("%s\n", strings.Join(dockerCmd.Args, " "))
 
 	if err := runCommands(config.RunBefore); err != nil {
 		return -1
 	}
 	if err := dockerCmd.Run(); err != nil {
 		if stderr.Len() > 0 {
-			fmt.Fprintf(os.Stderr, errorString(stderr.String()))
-			fmt.Fprintf(os.Stderr, "\n%s %s\n", dockerCmd.Args[0], strings.Join(dockerArgs, " "))
+			ErrPrintf(errorString(stderr.String()))
+			ErrPrintf("\n%s %s\n", dockerCmd.Args[0], strings.Join(dockerArgs, " "))
 
 			if runtime.GOOS == "windows" {
-				fmt.Fprintln(os.Stderr, windowsMessage)
+				ErrPrintln(windowsMessage)
 			}
 		}
 	}
 	if err := runCommands(config.RunAfter); err != nil {
-		fmt.Fprintf(os.Stderr, errorString("%v", err))
+		ErrPrintf(errorString("%v", err))
 	}
 
 	return dockerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 }
 
-var printfDebug = color.New(color.FgWhite, color.Faint).FprintfFunc()
+func DebugPrint(format string, args ...interface{}) {
+	if debugMode {
+		ErrPrintf(color.HiBlackString(format+"\n", args...))
+	}
+}
 
 func runCommands(commands []string) error {
 	sort.Sort(sort.Reverse(sort.StringSlice(commands)))
@@ -198,12 +198,12 @@ func getImage() (name string) {
 		var out *os.File
 		if ib.Folder == "" {
 			// There is no explicit folder, so we create a temporary folder to store the docker file
-			temp = Must(ioutil.TempDir("", "tgf-dockerbuild")).(string)
-			out = Must(os.Create(filepath.Join(temp, "Dockerfile"))).(*os.File)
+			temp = must(ioutil.TempDir("", "tgf-dockerbuild")).(string)
+			out = must(os.Create(filepath.Join(temp, "Dockerfile"))).(*os.File)
 			folder = temp
 		} else {
 			if ib.Instructions != "" {
-				out = Must(ioutil.TempFile(ib.Dir(), "DockerFile")).(*os.File)
+				out = must(ioutil.TempFile(ib.Dir(), "DockerFile")).(*os.File)
 				temp = out.Name()
 				dockerFile = temp
 			}
@@ -212,8 +212,8 @@ func getImage() (name string) {
 
 		if out != nil {
 			ib.Instructions = fmt.Sprintf("FROM %s\n%s\n", name, ib.Instructions)
-			Must(fmt.Fprintf(out, ib.Instructions))
-			Must(out.Close())
+			must(fmt.Fprintf(out, ib.Instructions))
+			must(out.Close())
 		}
 
 		if temp != "" {
@@ -224,7 +224,7 @@ func getImage() (name string) {
 			signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 			go func() {
 				<-c
-				fmt.Println("\nRemoving file", dockerFile)
+				Println("\nRemoving file", dockerFile)
 				cleanup()
 				panic(errorString("Execution interrupted by user: %v", c))
 			}()
@@ -244,15 +244,13 @@ func getImage() (name string) {
 			args = append(args, "--tag", name)
 			buildCmd := exec.Command("docker", args...)
 
-			if debugMode {
-				printfDebug(os.Stderr, "%s\n", strings.Join(buildCmd.Args, " "))
-				if ib.Instructions != "" {
-					printfDebug(os.Stderr, "%s\n", ib.Instructions)
-				}
+			DebugPrint("%s", strings.Join(buildCmd.Args, " "))
+			if ib.Instructions != "" {
+				DebugPrint("%s", ib.Instructions)
 			}
 			buildCmd.Stderr = os.Stderr
 			buildCmd.Dir = folder
-			Must(buildCmd.Output())
+			must(buildCmd.Output())
 		}
 	}
 
@@ -304,13 +302,12 @@ func checkImage(image string) bool {
 }
 
 func refreshImage(image string) {
-	fmt.Fprintf(os.Stderr, "Checking if there is a newer version of docker image %v\n", image)
+	ErrPrintf("Checking if there is a newer version of docker image %v\n", image)
 	dockerUpdateCmd := exec.Command("docker", "pull", image)
 	dockerUpdateCmd.Stdout, dockerUpdateCmd.Stderr = os.Stderr, os.Stderr
-	err := dockerUpdateCmd.Run()
-	PanicOnError(err)
+	must(dockerUpdateCmd.Run())
 	touchImageRefresh(image)
-	fmt.Fprintln(os.Stderr)
+	ErrPrintln()
 }
 
 func getEnviron(noHome bool) (result []string) {

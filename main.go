@@ -2,13 +2,15 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
 
+	"github.com/coveo/gotemplate/collections"
+	"github.com/coveo/gotemplate/errors"
+	"github.com/coveo/gotemplate/utils"
 	"github.com/fatih/color"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -42,7 +44,10 @@ If any of the tgf arguments conflicts with an argument of the desired entry poin
 after -- to ensure that they are not interpreted by tgf and are passed to the entry point. Any non conflicting
 argument will be passed to the entry point wherever it is located on the invocation arguments.
 
-	tgf ls -- -D   # Avoid -D to be interpretated by tgf as --debug-docker
+	tgf ls -- -D   # Avoid -D to be interpreted by tgf as --debug-docker
+
+It is also possible to specify additional arguments through environment variable {{ .envArgs }} or enable debugging
+mode through {{ .envDebug }}.
 
 VERSION: {{ .version }}
 
@@ -61,18 +66,30 @@ var (
 	mountPoint    string
 )
 
-const tgfArgs = "TGF_ARGS"
+var must = errors.Must
+
+// Aliases to print functions to ensure usage of the color output
+var (
+	Print      = utils.ColorPrint
+	Printf     = utils.ColorPrintf
+	Println    = utils.ColorPrintln
+	ErrPrintf  = utils.ColorErrorPrintf
+	ErrPrintln = utils.ColorErrorPrintln
+	ErrPrint   = utils.ColorErrorPrint
+)
+
+// Environment variables
+const (
+	envArgs  = "TGF_ARGS"
+	envDebug = "TGF_DEBUG"
+)
 
 func main() {
 	// Handle eventual panic message
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Fprintln(os.Stderr, errorString("%[1]v (%[1]T)", err))
-			debugMode := os.Getenv("TGF_DEBUG")
-			switch debugMode {
-			case "", "0", "false":
-				break
-			default:
+			ErrPrintln(errorString("%[1]v (%[1]T)", err))
+			if collections.String(os.Getenv(envDebug)).ParseBool() {
 				debug.PrintStack()
 			}
 			os.Exit(1)
@@ -101,9 +118,12 @@ func main() {
 		"tgfImages":       link("https://hub.docker.com/r/coveo/tgf/tags"),
 		"terragrunt":      bold("t") + "erra" + bold("g") + "runt " + bold("f") + "rontend",
 		"version":         version,
+		"envArgs":         envArgs,
+		"envDebug":        envDebug,
 	})
 
 	var app = NewApplication(kingpin.New(os.Args[0], descriptionBuffer.String()))
+	app.UsageWriter(color.Output)
 	app.Author("Coveo")
 	app.HelpFlag = app.HelpFlag.Hidden()
 	app.HelpFlag = app.Switch("tgf-help", "Show context-sensitive help (also try --help-man).", 'H')
@@ -121,7 +141,7 @@ func main() {
 
 	var (
 		getAllVersions    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
-		getCurrentVersion = app.Switch("current-version", "Get current version infomation (alias --cv)").Bool()
+		getCurrentVersion = app.Switch("current-version", "Get current version information (alias --cv)").Bool()
 		defaultEntryPoint = app.Argument("entrypoint", "Override the entry point for docker", 'E').PlaceHolder("terragrunt").String()
 		image             = app.Argument("image", "Use the specified image instead of the default one").PlaceHolder("coveo/tgf").String()
 		imageVersion      = app.Argument("image-version", "Use a different version of docker image instead of the default one (alias --iv)").PlaceHolder("version").Default("-").String()
@@ -141,15 +161,15 @@ func main() {
 	app.Argument("mp", "alias for mount-point").Hidden().StringVar(&mountPoint)
 
 	// Split up the managed parameters from the unmanaged ones
-	if extraArgs, ok := os.LookupEnv(tgfArgs); ok {
+	if extraArgs, ok := os.LookupEnv(envArgs); ok {
 		os.Args = append(os.Args, strings.Split(extraArgs, " ")...)
 	}
 	managed, unmanaged := app.SplitManaged(os.Args)
-	Must(app.Parse(managed))
+	must(app.Parse(managed))
 
 	// If AWS profile is supplied, we freeze the current session
 	if *awsProfile != "" {
-		Must(config.InitAWS(*awsProfile))
+		must(config.InitAWS(*awsProfile))
 	}
 
 	if *image != "" {
@@ -171,16 +191,16 @@ func main() {
 	}
 
 	if *getCurrentVersion {
-		fmt.Printf("tgf v%s\n", version)
+		Printf("tgf v%s\n", version)
 		os.Exit(0)
 	}
 
 	if *getAllVersions {
 		if filepath.Base(config.EntryPoint) != "terragrunt" {
-			fmt.Fprintln(os.Stderr, errorString("--all-version works only with terragrunt as the entrypoint"))
+			ErrPrintln(errorString("--all-version works only with terragrunt as the entrypoint"))
 			os.Exit(1)
 		}
-		fmt.Println("TGF version", version)
+		Println("TGF version", version)
 		unmanaged = []string{"get-versions"}
 	}
 
@@ -195,7 +215,7 @@ func main() {
 
 	if config.EntryPoint == "terragrunt" && unmanaged == nil && !debugMode && !getImageName {
 		title := color.New(color.FgYellow, color.Underline).SprintFunc()
-		fmt.Println(title("\nTGF Usage\n"))
+		ErrPrintln(title("\nTGF Usage\n"))
 		app.Usage(nil)
 	}
 
@@ -214,15 +234,15 @@ func validateVersion(version string) bool {
 	for _, err := range config.Validate() {
 		switch err := err.(type) {
 		case ConfigWarning:
-			fmt.Fprintln(os.Stderr, warningString("%v", err))
+			ErrPrintln(warningString("%v", err))
 		case VersionMistmatchError:
-			fmt.Fprintln(os.Stderr, errorString("%v", err))
+			ErrPrintln(errorString("%v", err))
 			if version == "-" {
 				// We consider this as a fatal error only if the version has not been explicitly specified on the command line
 				return false
 			}
 		default:
-			fmt.Fprintln(os.Stderr, errorString("%v", err))
+			ErrPrintln(errorString("%v", err))
 			return false
 		}
 	}
