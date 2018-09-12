@@ -259,9 +259,9 @@ func getImage() (name string) {
 }
 
 func prune(images ...string) {
+	cli, ctx := getDockerClient()
 	if len(images) > 0 {
 		current := fmt.Sprintf(">=%s", GetActualImageVersion())
-		cli, ctx := getDockerClient()
 		for _, image := range images {
 			filters := filters.NewArgs()
 			filters.Add("reference", image)
@@ -291,19 +291,17 @@ func prune(images ...string) {
 		}
 	}
 
-	pruneCmd := exec.Command("docker", "system", "prune", "-f")
-	if debugMode {
-		debugPrint("%s", strings.Join(pruneCmd.Args, " "))
-	}
-	pruneCmd.Stderr = os.Stderr
-	must(pruneCmd.Output())
+	danglingFilters := filters.NewArgs()
+	danglingFilters.Add("dangling", "true")
+	must(cli.ImagesPrune(ctx, danglingFilters))
+	must(cli.ContainersPrune(ctx, filters.Args{}))
 }
 
 func deleteImage(id string) {
 	cli, ctx := getDockerClient()
 	items, err := cli.ImageRemove(ctx, id, types.ImageRemoveOptions{})
 	if err != nil {
-		printErr((err.Error()))
+		printError((err.Error()))
 	}
 	for _, item := range items {
 		if item.Untagged != "" {

@@ -99,7 +99,7 @@ func InitConfig() *TGFConfig {
 func (config *TGFConfig) build() *TGFConfigBuild { return &config.ImageBuild[len(config.ImageBuild)-1] }
 
 func (config TGFConfig) String() (result string) {
-	ifNotZero := func(name string, value interface{}) {
+	addIfNotEmpty := func(name string, value interface{}) {
 		if reflect.DeepEqual(value, reflect.Zero(reflect.TypeOf(value)).Interface()) {
 			return
 		}
@@ -115,12 +115,12 @@ func (config TGFConfig) String() (result string) {
 		result += fmt.Sprintf("%s: %v\n", name, value)
 	}
 
-	ifNotZero(dockerImage, config.Image)
-	ifNotZero(dockerImageVersion, config.ImageVersion)
-	ifNotZero(dockerImageTag, config.ImageTag)
+	addIfNotEmpty(dockerImage, config.Image)
+	addIfNotEmpty(dockerImageVersion, config.ImageVersion)
+	addIfNotEmpty(dockerImageTag, config.ImageTag)
 	for _, ib := range config.ImageBuild {
-		ifNotZero(ib.Folder, ib.Folder)
-		ifNotZero(ib.Tag(), ib.Tag())
+		addIfNotEmpty(dockerImageBuildFolder, ib.Folder)
+		addIfNotEmpty(dockerImageBuildTag, ib.Tag())
 		if ib.Instructions != "" {
 			lines := strings.Split(strings.TrimSpace(ib.Instructions), "\n")
 			buildScript := lines[0]
@@ -129,16 +129,16 @@ func (config TGFConfig) String() (result string) {
 				buildScript = sep + strings.Join(lines, sep)
 			}
 
-			ifNotZero(dockerImageBuild, buildScript)
+			addIfNotEmpty(dockerImageBuild, buildScript)
 		}
 	}
-	ifNotZero(dockerOptionsTag, config.DockerOptions)
-	ifNotZero(recommendedImageVersion, config.RecommendedImageVersion)
-	ifNotZero(requiredImageVersion, config.RequiredVersionRange)
-	ifNotZero(dockerRefresh, config.Refresh)
-	ifNotZero(loggingLevel, config.LogLevel)
-	ifNotZero(entryPoint, config.EntryPoint)
-	ifNotZero(tgfVersion, config.RecommendedTGFVersion)
+	addIfNotEmpty(dockerOptionsTag, config.DockerOptions)
+	addIfNotEmpty(recommendedImageVersion, config.RecommendedImageVersion)
+	addIfNotEmpty(requiredImageVersion, config.RequiredVersionRange)
+	addIfNotEmpty(dockerRefresh, config.Refresh)
+	addIfNotEmpty(loggingLevel, config.LogLevel)
+	addIfNotEmpty(entryPoint, config.EntryPoint)
+	addIfNotEmpty(tgfVersion, config.RecommendedTGFVersion)
 	return
 }
 
@@ -167,7 +167,7 @@ func (config *TGFConfig) SetDefaultValues() {
 		var content map[string]interface{}
 		debugPrint("# Reading configuration from %s", configFile)
 		if err := collections.LoadData(configFile, &content); err != nil {
-			printErr("Error while loading configuration file %s\nConfiguration file must be valid YAML, JSON or HCL", configFile)
+			printError("Error while loading configuration file %s\nConfiguration file must be valid YAML, JSON or HCL", configFile)
 			continue
 		}
 
@@ -201,7 +201,7 @@ func (config *TGFConfig) SetDefaultValues() {
 					config.SetValue(key, content[key])
 				}
 			default:
-				printErr("Invalid configuration format in file %s (%T)", configFile, content)
+				printError("Invalid configuration format in file %s (%T)", configFile, content)
 			}
 		}
 
@@ -227,7 +227,7 @@ func (config *TGFConfig) SetDefaultValues() {
 		// If we need to read the parameter store, we must init the session first to ensure that
 		// the credentials are only initialized once (avoiding asking multiple time the MFA)
 		if err := config.InitAWS(""); err != nil {
-			printErr("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err)
+			printError("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err)
 		} else {
 			debugPrint("# Reading configuration from AWS parameter store %s", parameterFolder)
 			config.ImageBuild = append(config.ImageBuild, TGFConfigBuild{source: "AWS/ParametersStore"})
@@ -260,17 +260,17 @@ func (config *TGFConfig) SetValue(key string, value interface{}) {
 	switch key {
 	case dockerImage:
 		if strings.Contains(valueStr, ":") && config.Image == "" {
-			warning("Parameter %s should not contains the version: %s", key, valueStr)
+			printWarning("Parameter %s should not contains the version: %s", key, valueStr)
 		}
 		config.apply(key, valueStr)
 	case dockerImageVersion:
 		if strings.ContainsAny(valueStr, ":-") && config.ImageVersion == nil {
-			warning("Parameter %s should not contains the image name nor the specialized version: %s", key, valueStr)
+			printWarning("Parameter %s should not contains the image name nor the specialized version: %s", key, valueStr)
 		}
 		config.apply(key, ":"+valueStr)
 	case dockerImageTag:
 		if strings.ContainsAny(valueStr, ":") && config.ImageTag == nil {
-			warning("Parameter %s should not contains the image name: %s", key, valueStr)
+			printWarning("Parameter %s should not contains the image name: %s", key, valueStr)
 		}
 		config.apply(key, ":"+valueStr)
 	case dockerOptionsTag:
@@ -314,7 +314,7 @@ func (config *TGFConfig) SetValue(key string, value interface{}) {
 				}
 			}
 		default:
-			warning("Environment must be a map of key/value %T", value)
+			printWarning("Environment must be a map of key/value %T", value)
 		}
 	case runBefore, runAfter:
 		list := &config.RunBefore
@@ -334,9 +334,9 @@ func (config *TGFConfig) SetValue(key string, value interface{}) {
 			}
 		}
 	case deprecatedRecommendedImage:
-		warning("Config key %s is deprecated (%s ignored)", key, valueStr)
+		printWarning("Config key %s is deprecated (%s ignored)", key, valueStr)
 	default:
-		printErr("Unknown parameter %s = %s", key, value)
+		printError("Unknown parameter %s = %s", key, value)
 	}
 }
 
