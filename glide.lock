@@ -1,5 +1,5 @@
 hash: b80cebdfbed7b8242179a9eeda00528e9b75f39764eb2b074b11e612ae93f639
-updated: 2018-09-10T21:14:58.743208-04:00
+updated: 2018-09-12T15:26:56.394145-04:00
 imports:
 - name: github.com/agext/levenshtein
   version: 5f10fee965225ac1eecdc234c09daf5cd9e7f7b6
@@ -24,7 +24,7 @@ imports:
 - name: github.com/armon/go-radix
   version: 7fddfc383310abc091d79a27f116d30cf0424032
 - name: github.com/aws/aws-sdk-go
-  version: 71a2a92b0063297b055b6f5a014d441c142da2ce
+  version: 1186f7e6f000ce13edff71ed5ecc8b0e27ba38d7
   subpackages:
   - aws
   - aws/awserr
@@ -81,12 +81,12 @@ imports:
   - xml
   - yaml
 - name: github.com/docker/distribution
-  version: 642075f42c027b8a05b7d06f4f132939eb9ed902
+  version: a5c2fdc5b87bb6a142cf89f7406ffe25374affb5
   subpackages:
   - digestset
   - reference
 - name: github.com/docker/docker
-  version: 77faf158f5265711dbcbff0ffb855eed2e3b6ccd
+  version: 112b7dfd57f1f70346eb8ac41a4960d013c8fce0
   subpackages:
   - api
   - api/types
@@ -129,7 +129,7 @@ imports:
 - name: github.com/google/uuid
   version: 064e2069ce9c359c118179501254f67d7d37ba24
 - name: github.com/gruntwork-io/terragrunt
-  version: 4b80d12c1d4bdf00867deda90083e82f8673f1eb
+  version: dd295293330fef501939dba517c351a2a3af45f5
   repo: https://github.com/coveo/terragrunt.git
   subpackages:
   - aws_helper
@@ -237,7 +237,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/pkg/errors
-  version: 816c9085562cd7ee03e7f8188a1cfd942858cded
+  version: c059e472caf75dbe73903f6521a20abac245b17f
 - name: github.com/posener/complete
   version: e037c22b2fcfa85e74495388f03892ed194bba76
   subpackages:
