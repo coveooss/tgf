@@ -167,6 +167,7 @@ Flags:
       --no-temp                  Disable the mapping of the temp directory (alias --nt)
       --mount-point=MOUNT-POINT  Specify a mount point for the current folder --mp)
       --docker-arg=<opt> ...     Supply extra argument to Docker (alias --da)
+      --ignore-user-config       Ignore all tgf.user.config files (alias --iuc)      
       --all-versions             Get versions of TGF & all others underlying utilities (alias --av)
       --current-version          Get current version information (alias --cv)
       --prune                    Remove all previous versions of the targeted image

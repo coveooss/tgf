@@ -55,15 +55,16 @@ AUTHOR:	Coveo
 `
 
 var (
-	config        = InitConfig()
-	dockerOptions []string
-	debugMode     bool
-	flushCache    bool
-	getImageName  bool
-	noHome        bool
-	noTemp        bool
-	refresh       bool
-	mountPoint    string
+	config            = InitConfig()
+	dockerOptions     []string
+	debugMode         bool
+	flushCache        bool
+	getImageName      bool
+	noHome            bool
+	noTemp            bool
+	refresh           bool
+	disableUserConfig bool
+	mountPoint        string
 )
 
 var must = errors.Must
@@ -138,6 +139,7 @@ func main() {
 	app.Switch("no-temp", "Disable the mapping of the temp directory (alias --nt)").BoolVar(&noTemp)
 	app.Argument("mount-point", "Specify a mount point for the current folder --mp)").StringVar(&mountPoint)
 	app.Argument("docker-arg", "Supply extra argument to Docker (alias --da)").PlaceHolder("<opt>").StringsVar(&dockerOptions)
+	app.Argument("ignore-user-config", "Ignore all tgf.user.config files (alias --iuc)").BoolVar(&disableUserConfig)
 
 	var (
 		getAllVersions    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
@@ -160,6 +162,8 @@ func main() {
 	app.Argument("da", "alias for docker-arg").Hidden().StringsVar(&dockerOptions)
 	app.Argument("iv", "alias for image-version").Default("-").Hidden().StringVar(imageVersion)
 	app.Argument("mp", "alias for mount-point").Hidden().StringVar(&mountPoint)
+	app.Argument("iu", "alias for ignore-user-config").Hidden().BoolVar(&disableUserConfig)
+	app.Argument("iuc", "alias for ignore-user-config").Hidden().BoolVar(&disableUserConfig)
 
 	// Split up the managed parameters from the unmanaged ones
 	if extraArgs, ok := os.LookupEnv(envArgs); ok {

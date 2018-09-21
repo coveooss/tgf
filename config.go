@@ -465,7 +465,11 @@ func awsConfigExist() bool {
 
 // Return the list of configuration files found from the current working directory up to the root folder
 func findConfigFiles(folder string) (result []string) {
-	for _, file := range []string{userConfigFile, configFile} {
+	configFiles := []string{userConfigFile, configFile}
+	if disableUserConfig {
+		configFiles = []string{configFile}
+	}
+	for _, file := range configFiles {
 		file = filepath.Join(folder, file)
 		if _, err := os.Stat(file); !os.IsNotExist(err) {
 			result = append(result, file)
