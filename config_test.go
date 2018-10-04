@@ -1,8 +1,17 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"math/rand"
+	"os"
+	"testing"
+)
 
 func TestCheckVersionRange(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		version string
 		compare string
@@ -37,4 +46,30 @@ func TestCheckVersionRange(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSetConfigDefaultValues(t *testing.T) {
+	t.Parallel()
+
+	tempDir, _ := ioutil.TempDir("", "TestGetConfig")
+	os.Chdir(tempDir)
+	testTgfConfigFile := fmt.Sprintf("%s/.tgf.config", tempDir)
+	testTgfUserConfigFile := fmt.Sprintf("%s/tgf.user.config", tempDir)
+	testSSMParameterFolder := fmt.Sprintf("/test/tgf%v", rand.Int())
+	testSecretsManagerSecret := fmt.Sprintf("test-tgf-config%v", rand.Int())
+
+	tgfConfig := []byte("docker-image: coveo/stuff\n")
+	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
+
+	userTgfConfig := []byte(`docker-image: coveo/overwritten
+docker-image-tag: test`)
+	ioutil.WriteFile(testTgfUserConfigFile, userTgfConfig, 0644)
+
+	config := &TGFConfig{ssmParameterFolder: testSSMParameterFolder, secretsManagerSecret: testSecretsManagerSecret}
+	config.SetDefaultValues()
+
+	assert.Equal(t, "coveo/stuff", config.Image)
+	assert.Equal(t, "test", *config.ImageTag)
+	assert.Nil(t, config.ImageVersion)
+	os.RemoveAll(tempDir)
 }

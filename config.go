@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	ssmParameterFolder   = "/default/tgf"
-	secretsManagerSecret = "tgf-config"
-	configFile           = ".tgf.config"
-	userConfigFile       = "tgf.user.config"
+	defaultSSMParameterFolder  = "/default/tgf"
+	defautSecretsManagerSecret = "tgf-config"
+	configFile                 = ".tgf.config"
+	userConfigFile             = "tgf.user.config"
 )
 
 // TGFConfig contains the resulting configuration that will be applied
@@ -35,13 +35,13 @@ type TGFConfig struct {
 	ImageVersion *string `yaml:"docker-image-version,omitempty" json:"docker-image-version,omitempty"`
 	ImageTag     *string `yaml:"docker-image-tag,omitempty" json:"docker-image-tag,omitempty"`
 
-	// Old build config
+	// Build config
 	ImageBuild       string `yaml:"docker-image-build,omitempty" json:"docker-image-build,omitempty"`
 	ImageBuildFolder string `yaml:"docker-image-build-folder,omitempty" json:"docker-image-build-folder,omitempty"`
 	ImageBuildTag    string `yaml:"docker-image-build-tag,omitempty" json:"docker-image-build-tag,omitempty"`
 
-	// New build config
-	ImageBuildConfigs []TGFConfigBuild `yaml:"build-config,omitempty" json:"build-config,omitempty"`
+	// List of config built from previous build configs
+	ImageBuildConfigs []*TGFConfigBuild
 
 	LogLevel                string            `yaml:"logging-level,omitempty" json:"logging-level,omitempty"`
 	EntryPoint              string            `yaml:"entry-point,omitempty" json:"entry-point,omitempty"`
@@ -54,14 +54,16 @@ type TGFConfig struct {
 	RunBefore               []string          `yaml:"run-before,omitempty" json:"run-before,omitempty"`
 	RunAfter                []string          `yaml:"run-after,omitempty" json:"run-after,omitempty"`
 
-	separator string
+	separator            string
+	ssmParameterFolder   string
+	secretsManagerSecret string
 }
 
 // TGFConfigBuild contains an entry specifying how to customize the current docker image
 type TGFConfigBuild struct {
-	Instructions string `yaml:"instructions,omitempty" json:"instructions,omitempty"`
-	Folder       string `yaml:"folder,omitempty" json:"folder,omitempty"`
-	Tag          string `yaml:"tag,omitempty" json:"tag,omitempty"`
+	Instructions string
+	Folder       string
+	Tag          string
 	source       string
 }
 
@@ -76,7 +78,7 @@ func (cb TGFConfigBuild) Dir() string {
 	return must(filepath.Abs(filepath.Join(filepath.Dir(cb.source), cb.Folder))).(string)
 }
 
-// Tag returns the tag name that should be added to the image
+// GetTag returns the tag name that should be added to the image
 func (cb TGFConfigBuild) GetTag() string {
 	if cb.Tag != "" {
 		return cb.Tag
@@ -87,11 +89,14 @@ func (cb TGFConfigBuild) GetTag() string {
 // InitConfig returns a properly initialized TGF configuration struct
 func InitConfig() *TGFConfig {
 	return &TGFConfig{Image: "coveo/tgf",
-		Refresh:     1 * time.Hour,
-		EntryPoint:  "terragrunt",
-		LogLevel:    "notice",
-		Environment: make(map[string]string),
-		separator:   "-",
+		Refresh:              1 * time.Hour,
+		EntryPoint:           "terragrunt",
+		LogLevel:             "notice",
+		Environment:          make(map[string]string),
+		ImageBuildConfigs:    []*TGFConfigBuild{},
+		separator:            "-",
+		ssmParameterFolder:   defaultSSMParameterFolder,
+		secretsManagerSecret: defautSecretsManagerSecret,
 	}
 }
 
@@ -122,19 +127,6 @@ func (config *TGFConfig) InitAWS(profile string) error {
 	return nil
 }
 
-func (config *TGFConfig) GetBuildConfigs() []TGFConfigBuild {
-	configs := []TGFConfigBuild{}
-	if config.ImageBuild != "" {
-		configs = append(configs, TGFConfigBuild{
-			Folder:       config.ImageBuildFolder,
-			Instructions: config.ImageBuild,
-			Tag:          config.ImageBuildTag,
-		})
-	}
-	configs = append(configs, config.ImageBuildConfigs...)
-	return configs
-}
-
 // SetDefaultValues sets the uninitialized values from the config files and the parameter store
 // Priorities (Higher overwrites lower values):
 // 1. SSM Parameter Config
@@ -143,35 +135,40 @@ func (config *TGFConfig) GetBuildConfigs() []TGFConfigBuild {
 // 4. .tgf.config
 func (config *TGFConfig) SetDefaultValues() {
 	type configData struct {
-		Name string
-		Data string
+		Name        string
+		Data        string
+		BuiltConfig *TGFConfig
 	}
-	configsData := []configData{}
+	configsData := []*configData{}
 
+	// Fetch SecretsManager or SSM configs
 	if awsConfigExist() {
 		awsSession := session.Must(session.NewSessionWithOptions(session.Options{
 			SharedConfigState: session.SharedConfigEnable,
 		}))
 		svc := secretsmanager.New(awsSession)
 		input := &secretsmanager.GetSecretValueInput{
-			SecretId: aws.String(secretsManagerSecret),
+			SecretId: aws.String(config.secretsManagerSecret),
 		}
 		result, err := svc.GetSecretValue(input)
 		if err == nil && *result.SecretString != "" && *result.SecretString != "{}" {
-			configsData = append(configsData, configData{Name: "SecretsManager", Data: *result.SecretString})
+			configsData = append(configsData, &configData{Name: "AWS/SecretsManager", Data: *result.SecretString})
 		} else {
 			debugPrint("Failed to fetch from secrets manager %v\n", err)
 			// Unable to fetch secrets manager, trying SSM
-			parameters := must(aws_helper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter)
+			parameters := must(aws_helper.GetSSMParametersByPath(config.ssmParameterFolder, "")).([]*ssm.Parameter)
 			ssmConfig := ""
 			for _, parameter := range parameters {
-				key := strings.TrimLeft(strings.Replace(*parameter.Name, ssmParameterFolder, "", 1), "/")
+				key := strings.TrimLeft(strings.Replace(*parameter.Name, config.ssmParameterFolder, "", 1), "/")
 				ssmConfig += fmt.Sprintf("%s: \"%s\"\n", key, *parameter.Value)
 			}
-			configsData = append(configsData, configData{Name: "SSM", Data: ssmConfig})
+			if ssmConfig != "" {
+				configsData = append(configsData, &configData{Name: "AWS/ParametersStore", Data: ssmConfig})
+			}
 		}
 	}
 
+	// Fetch file configs
 	for _, configFile := range findConfigFiles(must(os.Getwd()).(string)) {
 		debugPrint("# Reading configuration from %s\n", configFile)
 		bytes, err := ioutil.ReadFile(configFile)
@@ -180,11 +177,30 @@ func (config *TGFConfig) SetDefaultValues() {
 			fmt.Fprintln(os.Stderr, errorString("Error while loading configuration file %s\n%v", configFile, err))
 			continue
 		}
-		configsData = append(configsData, configData{Name: configFile, Data: string(bytes)})
+		configsData = append(configsData, &configData{Name: configFile, Data: string(bytes)})
 	}
+
+	// Parse/Unmarshal configs
 	for _, configData := range configsData {
+		configData.BuiltConfig = &TGFConfig{}
 		if err := collections.ConvertData(configData.Data, &config); err != nil {
 			fmt.Fprintln(os.Stderr, errorString("Error while loading configuration from %s\nConfiguration file must be valid YAML, JSON or HCL\n%v", configData.Name, err))
+		}
+		collections.ConvertData(configData.Data, &configData.BuiltConfig)
+	}
+
+	// Special case for image build configs, we must build a list of build instructions from all configs
+	config.ImageBuild = ""
+	config.ImageBuildFolder = ""
+	config.ImageBuildTag = ""
+	for _, configData := range configsData {
+		if configData.BuiltConfig.ImageBuild != "" {
+			config.ImageBuildConfigs = append(config.ImageBuildConfigs, &TGFConfigBuild{
+				Instructions: configData.BuiltConfig.ImageBuild,
+				Folder:       configData.BuiltConfig.ImageBuildFolder,
+				Tag:          configData.BuiltConfig.ImageBuildTag,
+				source:       configData.Name,
+			})
 		}
 	}
 

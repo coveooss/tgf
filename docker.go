@@ -193,7 +193,7 @@ func getImage() (name string) {
 		name += ":latest"
 	}
 
-	for i, ib := range config.GetBuildConfigs() {
+	for i, ib := range config.ImageBuildConfigs {
 		var temp, folder, dockerFile string
 		var out *os.File
 		if ib.Folder == "" {

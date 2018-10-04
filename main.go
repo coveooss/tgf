@@ -104,7 +104,7 @@ func main() {
 	bold := color.New(color.Bold).SprintfFunc()
 
 	descriptionTemplate.Execute(&descriptionBuffer, map[string]interface{}{
-		"parameterStoreKey": ssmParameterFolder,
+		"parameterStoreKey": defaultSSMParameterFolder,
 		"config":            configFile,
 		"options":           color.GreenString(strings.Join(GetTgfConfigFields(), ", ")),
 		"readme":            link(gitSource + "/blob/master/README.md"),
@@ -115,8 +115,8 @@ func main() {
 		"tgfImages":         link("https://hub.docker.com/r/coveo/tgf/tags"),
 		"terragrunt":        bold("t") + "erra" + bold("g") + "runt " + bold("f") + "rontend",
 		"version":           version,
-		"envArgs":         envArgs,
-		"envDebug":        envDebug,
+		"envArgs":           envArgs,
+		"envDebug":          envDebug,
 	})
 
 	var app = NewApplication(kingpin.New(os.Args[0], descriptionBuffer.String()))
