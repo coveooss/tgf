@@ -2,10 +2,12 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 	"path/filepath"
 	"runtime"
@@ -15,8 +17,16 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/coveo/gotemplate/utils"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/client"
 	"github.com/fatih/color"
 	"github.com/gruntwork-io/terragrunt/util"
+)
+
+const (
+	minimumDockerVersion = "1.25"
+	tgfImageVersion      = "TGF_IMAGE_VERSION"
 )
 
 func callDocker(args ...string) int {
@@ -47,11 +57,11 @@ func callDocker(args ...string) int {
 	imageName := getImage()
 
 	if getImageName {
-		fmt.Println(imageName)
+		Println(imageName)
 		return 0
 	}
 
-	cwd := filepath.ToSlash(Must(filepath.EvalSymlinks(Must(os.Getwd()).(string))).(string))
+	cwd := filepath.ToSlash(must(filepath.EvalSymlinks(must(os.Getwd()).(string))).(string))
 	currentDrive := fmt.Sprintf("%s/", filepath.VolumeName(cwd))
 	sourceFolder := filepath.ToSlash(filepath.Join("/", mountPoint, strings.TrimPrefix(cwd, currentDrive)))
 	rootFolder := strings.Split(strings.TrimPrefix(cwd, currentDrive), "/")[0]
@@ -62,7 +72,7 @@ func callDocker(args ...string) int {
 		"-w", sourceFolder,
 	}
 	if !noHome {
-		currentUser := Must(user.Current()).(*user.User)
+		currentUser := must(user.Current()).(*user.User)
 		home := filepath.ToSlash(currentUser.HomeDir)
 		homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
 
@@ -75,9 +85,12 @@ func callDocker(args ...string) int {
 	}
 
 	if !noTemp {
-		temp := filepath.ToSlash(filepath.Join(Must(filepath.EvalSymlinks(os.TempDir())).(string), "tgf-cache"))
+		temp := filepath.ToSlash(filepath.Join(must(filepath.EvalSymlinks(os.TempDir())).(string), "tgf-cache"))
 		tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
 		tempFolder := strings.TrimPrefix(temp, tempDrive)
+		if runtime.GOOS == "windows" {
+			os.Mkdir(temp, 0755)
+		}
 		dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:/var/tgf", convertDrive(tempDrive), tempFolder))
 		config.Environment["TERRAGRUNT_CACHE"] = "/var/tgf"
 	}
@@ -91,7 +104,7 @@ func callDocker(args ...string) int {
 	if !strings.Contains(config.Image, "coveo/tgf") { // the tgf image injects its own image info
 		config.Environment["TGF_IMAGE"] = config.Image
 		if config.ImageVersion != nil {
-			config.Environment["TGF_IMAGE_VERSION"] = *config.ImageVersion
+			config.Environment[tgfImageVersion] = *config.ImageVersion
 			if version, err := semver.Make(*config.ImageVersion); err == nil {
 				config.Environment["TGF_IMAGE_MAJ_MIN"] = fmt.Sprintf("%d.%d", version.Major, version.Minor)
 			}
@@ -103,9 +116,7 @@ func callDocker(args ...string) int {
 
 	for key, val := range config.Environment {
 		os.Setenv(key, val)
-		if debug {
-			printfDebug(os.Stderr, "export %v=%v\n", key, val)
-		}
+		debugPrint("export %v=%v", key, val)
 	}
 
 	for _, do := range dockerOptions {
@@ -125,34 +136,36 @@ func callDocker(args ...string) int {
 	var stderr bytes.Buffer
 	dockerCmd.Stderr = &stderr
 
-	if debug {
-		if len(config.Environment) > 0 {
-			fmt.Fprintln(os.Stderr)
-		}
-		printfDebug(os.Stderr, "%s\n\n", strings.Join(dockerCmd.Args, " "))
+	if len(config.Environment) > 0 {
+		debugPrint("")
 	}
+	debugPrint("%s\n", strings.Join(dockerCmd.Args, " "))
 
 	if err := runCommands(config.RunBefore); err != nil {
 		return -1
 	}
 	if err := dockerCmd.Run(); err != nil {
 		if stderr.Len() > 0 {
-			fmt.Fprintf(os.Stderr, errorString(stderr.String()))
-			fmt.Fprintf(os.Stderr, "\n%s %s\n", dockerCmd.Args[0], strings.Join(dockerArgs, " "))
+			ErrPrintf(errorString(stderr.String()))
+			ErrPrintf("\n%s %s\n", dockerCmd.Args[0], strings.Join(dockerArgs, " "))
 
 			if runtime.GOOS == "windows" {
-				fmt.Fprintln(os.Stderr, windowsMessage)
+				ErrPrintln(windowsMessage)
 			}
 		}
 	}
 	if err := runCommands(config.RunAfter); err != nil {
-		fmt.Fprintf(os.Stderr, errorString("%v", err))
+		ErrPrintf(errorString("%v", err))
 	}
 
 	return dockerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 }
 
-var printfDebug = color.New(color.FgWhite, color.Faint).FprintfFunc()
+func debugPrint(format string, args ...interface{}) {
+	if debugMode {
+		ErrPrintf(color.HiBlackString(format+"\n", args...))
+	}
+}
 
 func runCommands(commands []string) error {
 	sort.Sort(sort.Reverse(sort.StringSlice(commands)))
@@ -174,41 +187,175 @@ func runCommands(commands []string) error {
 
 // Returns the image name to use
 // If docker-image-build option has been set, an image is dynamically built and the resulting image digest is returned
-func getImage() string {
-	if config.ImageBuild == "" && config.ImageBuildFolder == "" {
-		return config.GetImageName()
+func getImage() (name string) {
+	name = config.GetImageName()
+	if !strings.Contains(name, ":") {
+		name += ":latest"
 	}
 
-	if config.ImageBuildFolder == "" {
-		config.ImageBuildFolder = "."
+	for i, ib := range config.GetBuildConfigs() {
+		var temp, folder, dockerFile string
+		var out *os.File
+		if ib.Folder == "" {
+			// There is no explicit folder, so we create a temporary folder to store the docker file
+			temp = must(ioutil.TempDir("", "tgf-dockerbuild")).(string)
+			out = must(os.Create(filepath.Join(temp, "Dockerfile"))).(*os.File)
+			folder = temp
+		} else {
+			if ib.Instructions != "" {
+				out = must(ioutil.TempFile(ib.Dir(), "DockerFile")).(*os.File)
+				temp = out.Name()
+				dockerFile = temp
+			}
+			folder = ib.Dir()
+		}
+
+		if out != nil {
+			ib.Instructions = fmt.Sprintf("FROM %s\n%s\n", name, ib.Instructions)
+			must(fmt.Fprintf(out, ib.Instructions))
+			must(out.Close())
+		}
+
+		if temp != "" {
+			// A temporary file of folder has been created, we register functions to ensure proper cleanup
+			cleanup := func() { os.Remove(temp) }
+			defer cleanup()
+			c := make(chan os.Signal, 1)
+			signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+			go func() {
+				<-c
+				Println("\nRemoving file", dockerFile)
+				cleanup()
+				panic(errorString("Execution interrupted by user: %v", c))
+			}()
+		}
+
+		name = name + "-" + ib.GetTag()
+		if refresh || getActualImageVersionInternal(name) == "" {
+			args := []string{"build", ".", "--quiet", "--force-rm"}
+			if i == 0 && refresh {
+				args = append(args, "--pull")
+			}
+			if dockerFile != "" {
+				args = append(args, "--file")
+				args = append(args, filepath.Base(dockerFile))
+			}
+
+			args = append(args, "--tag", name)
+			buildCmd := exec.Command("docker", args...)
+
+			debugPrint("%s", strings.Join(buildCmd.Args, " "))
+			if ib.Instructions != "" {
+				debugPrint("%s", ib.Instructions)
+			}
+			buildCmd.Stderr = os.Stderr
+			buildCmd.Dir = folder
+			must(buildCmd.Output())
+			prune()
+		}
 	}
 
-	var dockerFile string
-	if config.ImageBuild != "" {
-		out := Must(ioutil.TempFile(config.ImageBuildFolder, "DockerFile")).(*os.File)
-		Must(fmt.Fprintf(out, "FROM %s \n%s", config.GetImageName(), config.ImageBuild))
-		Must(out.Close())
-		defer os.Remove(out.Name())
-		dockerFile = out.Name()
+	return
+}
+
+func prune(images ...string) {
+	cli, ctx := getDockerClient()
+	if len(images) > 0 {
+		current := fmt.Sprintf(">=%s", GetActualImageVersion())
+		for _, image := range images {
+			filters := filters.NewArgs()
+			filters.Add("reference", image)
+			if images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters}); err == nil {
+				for _, image := range images {
+					actual := getActualImageVersionFromImageID(image.ID)
+					if actual == "" {
+						for _, tag := range image.RepoTags {
+							matches, _ := utils.MultiMatch(tag, reVersion)
+							if version := matches["version"]; version != "" {
+								if len(version) > len(actual) {
+									actual = version
+								}
+							}
+						}
+					}
+					upToDate, err := CheckVersionRange(actual, current)
+					if err != nil {
+						ErrPrintln("Check version for %s vs%s: %v", actual, current, err)
+					} else if !upToDate {
+						for _, tag := range image.RepoTags {
+							deleteImage(tag)
+						}
+					}
+				}
+			}
+		}
 	}
 
-	args := []string{"build", config.ImageBuildFolder, "--quiet", "--force-rm"}
-	if refresh {
-		args = append(args, "--pull")
-	}
-	if dockerFile != "" {
-		args = append(args, "--file")
-		args = append(args, dockerFile)
-	}
-	buildCmd := exec.Command("docker", args...)
+	danglingFilters := filters.NewArgs()
+	danglingFilters.Add("dangling", "true")
+	must(cli.ImagesPrune(ctx, danglingFilters))
+	must(cli.ContainersPrune(ctx, filters.Args{}))
+}
 
-	if debug {
-		printfDebug(os.Stderr, "%s\n", strings.Join(buildCmd.Args, " "))
+func deleteImage(id string) {
+	cli, ctx := getDockerClient()
+	items, err := cli.ImageRemove(ctx, id, types.ImageRemoveOptions{})
+	if err != nil {
+		printError((err.Error()))
 	}
-	buildCmd.Stderr = os.Stderr
-	buildCmd.Dir = config.ImageBuildFolder
+	for _, item := range items {
+		if item.Untagged != "" {
+			ErrPrintf("Untagged %s\n", item.Untagged)
+		}
+		if item.Deleted != "" {
+			ErrPrintf("Deleted %s\n", item.Deleted)
+		}
+	}
+}
 
-	return strings.TrimSpace(string(Must(buildCmd.Output()).([]byte)))
+// GetActualImageVersion returns the real image version stored in the environment variable TGF_IMAGE_VERSION
+func GetActualImageVersion() string {
+	return getActualImageVersionInternal(getImage())
+}
+
+func getDockerClient() (*client.Client, context.Context) {
+	if dockerClient == nil {
+		dockerClient = must(client.NewClientWithOpts(client.WithVersion(minimumDockerVersion))).(*client.Client)
+		dockerContext = context.Background()
+	}
+	return dockerClient, dockerContext
+}
+
+var dockerClient *client.Client
+var dockerContext context.Context
+
+func getActualImageVersionInternal(imageName string) string {
+	cli, ctx := getDockerClient()
+	// Find image
+	filters := filters.NewArgs()
+	filters.Add("reference", imageName)
+	images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters})
+	if err != nil || len(images) != 1 {
+		return ""
+	}
+
+	return getActualImageVersionFromImageID(images[0].ID)
+}
+
+func getActualImageVersionFromImageID(imageID string) string {
+	cli, ctx := getDockerClient()
+	inspect, _, err := cli.ImageInspectWithRaw(ctx, imageID)
+	if err != nil {
+		panic(err)
+	}
+	for _, v := range inspect.ContainerConfig.Env {
+		values := strings.SplitN(v, "=", 2)
+		if values[0] == tgfImageVersion {
+			return values[1]
+		}
+	}
+	// We do not found an environment variable with the version in the images
+	return ""
 }
 
 func checkImage(image string) bool {
@@ -220,13 +367,12 @@ func checkImage(image string) bool {
 }
 
 func refreshImage(image string) {
-	fmt.Fprintf(os.Stderr, "Checking if there is a newer version of docker image %v\n", image)
+	ErrPrintf("Checking if there is a newer version of docker image %v\n", image)
 	dockerUpdateCmd := exec.Command("docker", "pull", image)
 	dockerUpdateCmd.Stdout, dockerUpdateCmd.Stderr = os.Stderr, os.Stderr
-	err := dockerUpdateCmd.Run()
-	PanicOnError(err)
+	must(dockerUpdateCmd.Run())
 	touchImageRefresh(image)
-	fmt.Fprintln(os.Stderr)
+	ErrPrintln()
 }
 
 func getEnviron(noHome bool) (result []string) {
@@ -249,11 +395,6 @@ func getEnviron(noHome bool) (result []string) {
 			"_", "PWD", "OLDPWD", "TMPDIR",
 			"PROMPT", "SHELL", "SH", "ZSH", "HOME",
 			"LANG", "LC_CTYPE", "DISPLAY", "TERM":
-		case "LOGNAME", "USER":
-			if noHome {
-				continue
-			}
-			fallthrough
 		default:
 			result = append(result, "-e")
 			result = append(result, split[0])

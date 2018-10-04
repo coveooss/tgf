@@ -31,11 +31,18 @@ const (
 
 // TGFConfig contains the resulting configuration that will be applied
 type TGFConfig struct {
-	Image                   string            `yaml:"docker-image,omitempty" json:"docker-image,omitempty"`
-	ImageVersion            *string           `yaml:"docker-image-version,omitempty" json:"docker-image-version,omitempty"`
-	ImageTag                *string           `yaml:"docker-image-tag,omitempty" json:"docker-image-tag,omitempty"`
-	ImageBuild              string            `yaml:"docker-image-build,omitempty" json:"docker-image-build,omitempty"`
-	ImageBuildFolder        string            `yaml:"docker-image-build-folder,omitempty" json:"docker-image-build-folder,omitempty"`
+	Image        string  `yaml:"docker-image,omitempty" json:"docker-image,omitempty"`
+	ImageVersion *string `yaml:"docker-image-version,omitempty" json:"docker-image-version,omitempty"`
+	ImageTag     *string `yaml:"docker-image-tag,omitempty" json:"docker-image-tag,omitempty"`
+
+	// Old build config
+	ImageBuild       string `yaml:"docker-image-build,omitempty" json:"docker-image-build,omitempty"`
+	ImageBuildFolder string `yaml:"docker-image-build-folder,omitempty" json:"docker-image-build-folder,omitempty"`
+	ImageBuildTag    string `yaml:"docker-image-build-tag,omitempty" json:"docker-image-build-tag,omitempty"`
+
+	// New build config
+	ImageBuildConfigs []TGFConfigBuild `yaml:"build-config,omitempty" json:"build-config,omitempty"`
+
 	LogLevel                string            `yaml:"logging-level,omitempty" json:"logging-level,omitempty"`
 	EntryPoint              string            `yaml:"entry-point,omitempty" json:"entry-point,omitempty"`
 	Refresh                 time.Duration     `yaml:"docker-refresh,omitempty" json:"docker-refresh,omitempty"`
@@ -48,6 +55,33 @@ type TGFConfig struct {
 	RunAfter                []string          `yaml:"run-after,omitempty" json:"run-after,omitempty"`
 
 	separator string
+}
+
+// TGFConfigBuild contains an entry specifying how to customize the current docker image
+type TGFConfigBuild struct {
+	Instructions string `yaml:"instructions,omitempty" json:"instructions,omitempty"`
+	Folder       string `yaml:"folder,omitempty" json:"folder,omitempty"`
+	Tag          string `yaml:"tag,omitempty" json:"tag,omitempty"`
+	source       string
+}
+
+// Dir returns the folder name relative to the source
+func (cb TGFConfigBuild) Dir() string {
+	if cb.Folder == "" {
+		return filepath.Dir(cb.source)
+	}
+	if filepath.IsAbs(cb.Folder) {
+		return cb.Folder
+	}
+	return must(filepath.Abs(filepath.Join(filepath.Dir(cb.source), cb.Folder))).(string)
+}
+
+// Tag returns the tag name that should be added to the image
+func (cb TGFConfigBuild) GetTag() string {
+	if cb.Tag != "" {
+		return cb.Tag
+	}
+	return filepath.Base(filepath.Dir(cb.source))
 }
 
 // InitConfig returns a properly initialized TGF configuration struct
@@ -88,11 +122,24 @@ func (config *TGFConfig) InitAWS(profile string) error {
 	return nil
 }
 
+func (config *TGFConfig) GetBuildConfigs() []TGFConfigBuild {
+	configs := []TGFConfigBuild{}
+	if config.ImageBuild != "" {
+		configs = append(configs, TGFConfigBuild{
+			Folder:       config.ImageBuildFolder,
+			Instructions: config.ImageBuild,
+			Tag:          config.ImageBuildTag,
+		})
+	}
+	configs = append(configs, config.ImageBuildConfigs...)
+	return configs
+}
+
 // SetDefaultValues sets the uninitialized values from the config files and the parameter store
 // Priorities (Higher overwrites lower values):
 // 1. SSM Parameter Config
 // 2. Secrets Manager Config (If exists, will not check SSM)
-// 3. .tgf.user.config
+// 3. tgf.user.config
 // 4. .tgf.config
 func (config *TGFConfig) SetDefaultValues() {
 	type configData struct {
@@ -110,12 +157,12 @@ func (config *TGFConfig) SetDefaultValues() {
 			SecretId: aws.String(secretsManagerSecret),
 		}
 		result, err := svc.GetSecretValue(input)
-		if err == nil && *result.SecretString != "" {
+		if err == nil && *result.SecretString != "" && *result.SecretString != "{}" {
 			configsData = append(configsData, configData{Name: "SecretsManager", Data: *result.SecretString})
 		} else {
-			printfDebug(os.Stderr, "Failed to fetch from secrets manager %v\n", err)
+			debugPrint("Failed to fetch from secrets manager %v\n", err)
 			// Unable to fetch secrets manager, trying SSM
-			parameters := Must(aws_helper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter)
+			parameters := must(aws_helper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter)
 			ssmConfig := ""
 			for _, parameter := range parameters {
 				key := strings.TrimLeft(strings.Replace(*parameter.Name, ssmParameterFolder, "", 1), "/")
@@ -125,10 +172,8 @@ func (config *TGFConfig) SetDefaultValues() {
 		}
 	}
 
-	for _, configFile := range findConfigFiles(Must(os.Getwd()).(string)) {
-		if debug {
-			printfDebug(os.Stderr, "# Reading configuration from %s\n", configFile)
-		}
+	for _, configFile := range findConfigFiles(must(os.Getwd()).(string)) {
+		debugPrint("# Reading configuration from %s\n", configFile)
 		bytes, err := ioutil.ReadFile(configFile)
 
 		if err != nil {
@@ -145,6 +190,7 @@ func (config *TGFConfig) SetDefaultValues() {
 
 }
 
+// Validate ensure that the current version is compliant with the setting (mainly those in the parameter store1)
 func (config *TGFConfig) Validate() (errors []error) {
 	if strings.Contains(config.Image, ":") {
 		errors = append(errors, ConfigWarning(fmt.Sprintf("Image should not contain the version: %s", config.Image)))
@@ -184,6 +230,7 @@ func (config *TGFConfig) Validate() (errors []error) {
 	return
 }
 
+// GetImageName returns the actual image name
 func (config *TGFConfig) GetImageName() string {
 	var suffix string
 	if config.ImageVersion != nil {
@@ -201,8 +248,8 @@ func (config *TGFConfig) GetImageName() string {
 	return config.Image
 }
 
-// https://regex101.com/r/ZKt4OP/3/
-var reVersion = regexp.MustCompile(`^(?P<image>.*?)(:((?P<version>\d+\.\d+(?:\.\d+){0,1})((?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
+// https://regex101.com/r/ZKt4OP/5
+var reVersion = regexp.MustCompile(`^(?P<image>.*?)(?::(?:(?P<version>\d+\.\d+(?:\.\d+){0,1})(?:(?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
 
 // Check if there is an AWS configuration available.
 //
@@ -233,7 +280,11 @@ func awsConfigExist() bool {
 
 // Return the list of configuration files found from the current working directory up to the root folder
 func findConfigFiles(folder string) (result []string) {
-	for _, file := range []string{userConfigFile, configFile} {
+	configFiles := []string{userConfigFile, configFile}
+	if disableUserConfig {
+		configFiles = []string{configFile}
+	}
+	for _, file := range configFiles {
 		file = filepath.Join(folder, file)
 		if _, err := os.Stat(file); !os.IsNotExist(err) {
 			result = append(result, file)

@@ -4,23 +4,20 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"regexp"
 	"time"
 
 	"github.com/gruntwork-io/terragrunt/util"
 )
 
 func getTouchFilename(image string) string {
-	usr, err := user.Current()
-	PanicOnError(err)
+	usr := must(user.Current()).(*user.User)
 	return filepath.Join(usr.HomeDir, ".tgf", util.EncodeBase64Sha1(image))
 }
 
 func getLastRefresh(image string) time.Time {
 	filename := getTouchFilename(image)
 	if util.FileExists(filename) {
-		info, err := os.Stat(filename)
-		PanicOnError(err)
+		info := must(os.Stat(filename)).(os.FileInfo)
 		return info.ModTime()
 	}
 	return time.Time{}
@@ -33,10 +30,9 @@ func touchImageRefresh(image string) {
 	}
 
 	if util.FileExists(filename) {
-		Must(os.Chtimes(filename, time.Now(), time.Now()))
+		must(os.Chtimes(filename, time.Now(), time.Now()))
 	} else {
-		fp, err := os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0644)
-		PanicOnError(err)
+		fp := must(os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0644)).(*os.File)
 		fp.Close()
 	}
 }
@@ -44,11 +40,3 @@ func touchImageRefresh(image string) {
 func lastRefresh(image string) time.Duration {
 	return time.Since(getLastRefresh(image))
 }
-
-// By default, versionned images do not need to be refreshed since they should never
-// been overwritten with a different version without being tagged with a new version.
-func isVersionedImage(image string) bool {
-	return versionRegex.MatchString(image)
-}
-
-var versionRegex = regexp.MustCompile(`[vV]?\d+\.\d+`)
