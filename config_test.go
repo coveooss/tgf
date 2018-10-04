@@ -104,10 +104,7 @@ docker-image-build-folder: my-folder`)
 
 func writeSSMConfig(parameterFolder, parameterKey, parameterValue string) {
 	fullParameterKey := fmt.Sprintf("%s/%s", parameterFolder, parameterKey)
-	awsSession := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
-	svc := ssm.New(awsSession)
+	client := getSSMClient()
 
 	putParameterInput := &ssm.PutParameterInput{
 		Name:      aws.String(fullParameterKey),
@@ -116,25 +113,29 @@ func writeSSMConfig(parameterFolder, parameterKey, parameterValue string) {
 		Type:      aws.String(ssm.ParameterTypeString),
 	}
 
-	if _, err := svc.PutParameter(putParameterInput); err != nil {
+	if _, err := client.PutParameter(putParameterInput); err != nil {
 		panic(err)
 	}
 }
 
 func deleteSSMConfig(parameterFolder, parameterKey string) {
 	fullParameterKey := fmt.Sprintf("%s/%s", parameterFolder, parameterKey)
-	awsSession := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
-	svc := ssm.New(awsSession)
+	client := getSSMClient()
 
 	deleteParameterInput := &ssm.DeleteParameterInput{
 		Name: aws.String(fullParameterKey),
 	}
 
-	if _, err := svc.DeleteParameter(deleteParameterInput); err != nil {
+	if _, err := client.DeleteParameter(deleteParameterInput); err != nil {
 		panic(err)
 	}
+}
+
+func getSSMClient() *ssm.SSM {
+	awsSession := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+	return ssm.New(awsSession, &aws.Config{Region: aws.String("us-east-1")})
 }
 
 func randInt() int {
