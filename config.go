@@ -2,14 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/secretsmanager"
-	"github.com/aws/aws-sdk-go/service/ssm"
-	"github.com/blang/semver"
-	"github.com/coveo/gotemplate/collections"
-	"github.com/gruntwork-io/terragrunt/aws_helper"
-	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -19,6 +11,15 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/secretsmanager"
+	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/blang/semver"
+	"github.com/coveo/gotemplate/collections"
+	"github.com/gruntwork-io/terragrunt/aws_helper"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
