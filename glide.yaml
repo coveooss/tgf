@@ -5,5 +5,5 @@ owners:
 import:
 - package: github.com/gruntwork-io/terragrunt
   repo: https://github.com/coveo/terragrunt.git
-- package: github.com/go-errors/errors
-- package: github.com/op/go-logging
+- package: github.com/coveo/gotemplate
+  version: ^2.6.0

@@ -11,16 +11,14 @@ import (
 )
 
 func getTouchFilename(image string) string {
-	usr, err := user.Current()
-	PanicOnError(err)
+	usr := must(user.Current()).(*user.User)
 	return filepath.Join(usr.HomeDir, ".tgf", util.EncodeBase64Sha1(image))
 }
 
 func getLastRefresh(image string) time.Time {
 	filename := getTouchFilename(image)
 	if util.FileExists(filename) {
-		info, err := os.Stat(filename)
-		PanicOnError(err)
+		info := must(os.Stat(filename)).(os.FileInfo)
 		return info.ModTime()
 	}
 	return time.Time{}
@@ -33,10 +31,9 @@ func touchImageRefresh(image string) {
 	}
 
 	if util.FileExists(filename) {
-		Must(os.Chtimes(filename, time.Now(), time.Now()))
+		must(os.Chtimes(filename, time.Now(), time.Now()))
 	} else {
-		fp, err := os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0644)
-		PanicOnError(err)
+		fp := must(os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0644)).(*os.File)
 		fp.Close()
 	}
 }
