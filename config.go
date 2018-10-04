@@ -23,10 +23,10 @@ import (
 )
 
 const (
-	defaultSSMParameterFolder  = "/default/tgf"
-	defautSecretsManagerSecret = "tgf-config"
-	configFile                 = ".tgf.config"
-	userConfigFile             = "tgf.user.config"
+	defaultSSMParameterFolder   = "/default/tgf"
+	defaultSecretsManagerSecret = "tgf-config"
+	configFile                  = ".tgf.config"
+	userConfigFile              = "tgf.user.config"
 )
 
 // TGFConfig contains the resulting configuration that will be applied
@@ -50,7 +50,7 @@ type TGFConfig struct {
 	RecommendedImageVersion string            `yaml:"recommended-image-version,omitempty" json:"recommended-image-version,omitempty"`
 	RequiredVersionRange    string            `yaml:"required-image-version,omitempty" json:"required-image-version,omitempty"`
 	RecommendedTGFVersion   string            `yaml:"tgf-recommended-version,omitempty" json:"tgf-recommended-version,omitempty"`
-	Environment             map[string]string `yaml:"environment,omitempty" json:"environmente,omitempty"`
+	Environment             map[string]string `yaml:"environment,omitempty" json:"environment,omitempty"`
 	RunBefore               []string          `yaml:"run-before,omitempty" json:"run-before,omitempty"`
 	RunAfter                []string          `yaml:"run-after,omitempty" json:"run-after,omitempty"`
 
@@ -96,7 +96,7 @@ func InitConfig() *TGFConfig {
 		ImageBuildConfigs:    []*TGFConfigBuild{},
 		separator:            "-",
 		ssmParameterFolder:   defaultSSMParameterFolder,
-		secretsManagerSecret: defautSecretsManagerSecret,
+		secretsManagerSecret: defaultSecretsManagerSecret,
 	}
 }
 
@@ -314,7 +314,7 @@ func findConfigFiles(folder string) (result []string) {
 	return
 }
 
-func GetTgfConfigFields() []string {
+func getTgfConfigFields() []string {
 	fields := []string{}
 	classType := reflect.ValueOf(TGFConfig{}).Type()
 	for i := 0; i < classType.NumField(); i++ {

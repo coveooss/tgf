@@ -16,7 +16,7 @@ import (
 )
 
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
-var version = "1.17.0"
+var version = "1.18.0"
 
 var description = `
 DESCRIPTION:
@@ -106,7 +106,7 @@ func main() {
 	descriptionTemplate.Execute(&descriptionBuffer, map[string]interface{}{
 		"parameterStoreKey": defaultSSMParameterFolder,
 		"config":            configFile,
-		"options":           color.GreenString(strings.Join(GetTgfConfigFields(), ", ")),
+		"options":           color.GreenString(strings.Join(getTgfConfigFields(), ", ")),
 		"readme":            link(gitSource + "/blob/master/README.md"),
 		"latest":            link(gitSource + "/releases/latest"),
 		"terragruntCoveo":   link("https://github.com/coveo/terragrunt/blob/master/README.md"),
@@ -140,7 +140,7 @@ func main() {
 	var (
 		getAllVersions    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
 		pruneImages       = app.Switch("prune", "Remove all previous versions of the targeted image").Bool()
-		getCurrentVersion = app.Switch("current-version", "Get current version infomation (alias --cv)").Bool()
+		getCurrentVersion = app.Switch("current-version", "Get current version information (alias --cv)").Bool()
 		entrypoint        = app.Argument("entrypoint", "Override the entry point for docker", 'E').PlaceHolder("terragrunt").String()
 		image             = app.Argument("image", "Use the specified image instead of the default one").PlaceHolder("coveo/tgf").String()
 		imageVersion      = app.Argument("image-version", "Use a different version of docker image instead of the default one (alias --iv)").PlaceHolder("version").Default("-").String()
