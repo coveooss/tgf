@@ -1,5 +1,5 @@
-hash: b80cebdfbed7b8242179a9eeda00528e9b75f39764eb2b074b11e612ae93f639
-updated: 2018-09-21T13:51:37.207215-04:00
+hash: 8b3e49f2466eaf67644a055f0e9926d76a386fa12174e89537f0a5a1d5a68276
+updated: 2018-10-04T14:05:43.86966174-04:00
 imports:
 - name: github.com/agext/levenshtein
   version: 5f10fee965225ac1eecdc234c09daf5cd9e7f7b6
@@ -24,7 +24,7 @@ imports:
 - name: github.com/armon/go-radix
   version: 1a2de0c21c94309923825da3df33a4381872c795
 - name: github.com/aws/aws-sdk-go
-  version: a93d31c26045c00c52f58dda4dcad02a3e622534
+  version: cfcda8304585604aabf1f7f8f7ce67b55029d0ca
   subpackages:
   - aws
   - aws/awserr
@@ -58,6 +58,7 @@ imports:
   - private/protocol/restxml
   - private/protocol/xml/xmlutil
   - service/s3
+  - service/secretsmanager
   - service/ssm
   - service/sts
 - name: github.com/bgentry/go-netrc
@@ -177,7 +178,7 @@ imports:
   - parser
   - scanner
 - name: github.com/hashicorp/terraform
-  version: 6dfc4d748de9cda23835bc5704307ed45e839622
+  version: 07da549a1d20bf1db1a5f841835aa28b1576b4d3
   subpackages:
   - config
   - config/hcl2shim
@@ -250,6 +251,10 @@ imports:
   version: da645544ed44df016359bd4c0e3dc60ee3a0da43
   subpackages:
   - diffmatchpatch
+- name: github.com/stretchr/testify
+  version: f35b8ab0b5a2cef36673838d662e249dd9c94686
+  subpackages:
+  - assert
 - name: github.com/ulikunitz/xz
   version: 636d36a76670e6c700f22fd5f4588679ff2896c4
   subpackages:
@@ -307,4 +312,12 @@ imports:
   version: 947dcec5ba9c011838740e680966fd7087a71d0d
 - name: gopkg.in/yaml.v2
   version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
-testImports: []
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 782f4967f2dc4564575ca782fe2d04090b5faca8
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
