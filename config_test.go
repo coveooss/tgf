@@ -2,11 +2,16 @@ package main
 
 import (
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"path"
 	"testing"
+	"time"
 )
 
 func TestCheckVersionRange(t *testing.T) {
@@ -53,23 +58,87 @@ func TestSetConfigDefaultValues(t *testing.T) {
 
 	tempDir, _ := ioutil.TempDir("", "TestGetConfig")
 	os.Chdir(tempDir)
+	defer os.RemoveAll(tempDir)
+
 	testTgfConfigFile := fmt.Sprintf("%s/.tgf.config", tempDir)
 	testTgfUserConfigFile := fmt.Sprintf("%s/tgf.user.config", tempDir)
-	testSSMParameterFolder := fmt.Sprintf("/test/tgf%v", rand.Int())
-	testSecretsManagerSecret := fmt.Sprintf("test-tgf-config%v", rand.Int())
+	testSSMParameterFolder := fmt.Sprintf("/test/tgf-%v", randInt())
+	testSecretsManagerSecret := fmt.Sprintf("test-tgf-config-%v", randInt())
 
-	tgfConfig := []byte("docker-image: coveo/stuff\n")
-	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
+	writeSSMConfig(testSSMParameterFolder, "docker-image-build", "RUN ls test")
+	writeSSMConfig(testSSMParameterFolder, "docker-image-build-folder", "/abspath/my-folder")
+	defer deleteSSMConfig(testSSMParameterFolder, "docker-image-build")
+	defer deleteSSMConfig(testSSMParameterFolder, "docker-image-build-folder")
 
 	userTgfConfig := []byte(`docker-image: coveo/overwritten
 docker-image-tag: test`)
 	ioutil.WriteFile(testTgfUserConfigFile, userTgfConfig, 0644)
 
+	tgfConfig := []byte(`docker-image: coveo/stuff
+docker-image-build: RUN ls test2
+docker-image-build-tag: hello
+docker-image-build-folder: my-folder`)
+	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
+
 	config := &TGFConfig{ssmParameterFolder: testSSMParameterFolder, secretsManagerSecret: testSecretsManagerSecret}
 	config.SetDefaultValues()
+
+	assert.Len(t, config.ImageBuildConfigs, 2)
+
+	assert.Equal(t, "AWS/ParametersStore", config.ImageBuildConfigs[0].source)
+	assert.Equal(t, "RUN ls test", config.ImageBuildConfigs[0].Instructions)
+	assert.Equal(t, "/abspath/my-folder", config.ImageBuildConfigs[0].Folder)
+	assert.Equal(t, "/abspath/my-folder", config.ImageBuildConfigs[0].Dir())
+	assert.Equal(t, "AWS", config.ImageBuildConfigs[0].GetTag())
+
+	assert.Equal(t, path.Join(tempDir, ".tgf.config"), config.ImageBuildConfigs[1].source)
+	assert.Equal(t, "RUN ls test2", config.ImageBuildConfigs[1].Instructions)
+	assert.Equal(t, "my-folder", config.ImageBuildConfigs[1].Folder)
+	assert.Equal(t, path.Join(tempDir, "my-folder"), config.ImageBuildConfigs[1].Dir())
+	assert.Equal(t, "hello", config.ImageBuildConfigs[1].GetTag())
 
 	assert.Equal(t, "coveo/stuff", config.Image)
 	assert.Equal(t, "test", *config.ImageTag)
 	assert.Nil(t, config.ImageVersion)
-	os.RemoveAll(tempDir)
+}
+
+func writeSSMConfig(parameterFolder, parameterKey, parameterValue string) {
+	fullParameterKey := fmt.Sprintf("%s/%s", parameterFolder, parameterKey)
+	awsSession := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+	svc := ssm.New(awsSession)
+
+	putParameterInput := &ssm.PutParameterInput{
+		Name:      aws.String(fullParameterKey),
+		Value:     aws.String(parameterValue),
+		Overwrite: aws.Bool(true),
+		Type:      aws.String(ssm.ParameterTypeString),
+	}
+
+	if _, err := svc.PutParameter(putParameterInput); err != nil {
+		panic(err)
+	}
+}
+
+func deleteSSMConfig(parameterFolder, parameterKey string) {
+	fullParameterKey := fmt.Sprintf("%s/%s", parameterFolder, parameterKey)
+	awsSession := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+	svc := ssm.New(awsSession)
+
+	deleteParameterInput := &ssm.DeleteParameterInput{
+		Name: aws.String(fullParameterKey),
+	}
+
+	if _, err := svc.DeleteParameter(deleteParameterInput); err != nil {
+		panic(err)
+	}
+}
+
+func randInt() int {
+	source := rand.NewSource(time.Now().UnixNano())
+	random := rand.New(source)
+	return random.Int()
 }
