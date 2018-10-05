@@ -141,6 +141,7 @@ func main() {
 		getAllVersions    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
 		pruneImages       = app.Switch("prune", "Remove all previous versions of the targeted image").Bool()
 		getCurrentVersion = app.Switch("current-version", "Get current version information (alias --cv)").Bool()
+		withDockerMount   = app.Switch("with-docker-mount", "Mounts the docker socket to the image so the host's docker api is usable (alias --wd)").Bool()
 		entrypoint        = app.Argument("entrypoint", "Override the entry point for docker", 'E').PlaceHolder("terragrunt").String()
 		image             = app.Argument("image", "Use the specified image instead of the default one").PlaceHolder("coveo/tgf").String()
 		imageVersion      = app.Argument("image-version", "Use a different version of docker image instead of the default one (alias --iv)").PlaceHolder("version").Default("-").String()
@@ -155,6 +156,7 @@ func main() {
 	app.Switch("nt", "alias for no-temp").Hidden().BoolVar(&noTemp)
 	app.Switch("cv", "alias for current-version").Hidden().BoolVar(getCurrentVersion)
 	app.Switch("av", "alias for all-versions").Hidden().BoolVar(getAllVersions)
+	app.Switch("wd", "alias for with-docker").Hidden().BoolVar(withDockerMount)
 	app.Argument("da", "alias for docker-arg").Hidden().StringsVar(&dockerOptions)
 	app.Argument("iv", "alias for image-version").Default("-").Hidden().StringVar(imageVersion)
 	app.Argument("mp", "alias for mount-point").Hidden().StringVar(&mountPoint)
@@ -234,7 +236,7 @@ func main() {
 		}
 	}
 
-	os.Exit(callDocker(unmanaged...))
+	os.Exit(callDocker(*withDockerMount, unmanaged...))
 }
 
 func validateVersion(version string) bool {
