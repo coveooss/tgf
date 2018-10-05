@@ -270,7 +270,7 @@ func prune(images ...string) {
 					actual := getActualImageVersionFromImageID(image.ID)
 					if actual == "" {
 						for _, tag := range image.RepoTags {
-							matches, _ := utils.MultiMatch(tag, reVersion)
+							matches, _ := utils.MultiMatch(tag, reImage)
 							if version := matches["version"]; version != "" {
 								if len(version) > len(actual) {
 									actual = version

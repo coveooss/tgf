@@ -206,17 +206,25 @@ func (config *TGFConfig) SetDefaultValues() {
 
 }
 
+var reVersion = regexp.MustCompile(`(?P<version>\d+\.\d+(?:\.\d+){0,1})`)
+
+// https://regex101.com/r/ZKt4OP/5
+var reImage = regexp.MustCompile(`^(?P<image>.*?)(?::(?:` + reVersion.String() + `(?:(?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
+
 // Validate ensure that the current version is compliant with the setting (mainly those in the parameter store1)
 func (config *TGFConfig) Validate() (errors []error) {
 	if strings.Contains(config.Image, ":") {
 		errors = append(errors, ConfigWarning(fmt.Sprintf("Image should not contain the version: %s", config.Image)))
 	}
+
 	if config.ImageVersion != nil && strings.ContainsAny(*config.ImageVersion, ":-") {
 		errors = append(errors, ConfigWarning(fmt.Sprintf("Image version parameter should not contain the image name nor the specialized version: %s", *config.ImageVersion)))
 	}
+
 	if config.ImageTag != nil && strings.ContainsAny(*config.ImageTag, ":") {
 		errors = append(errors, ConfigWarning(fmt.Sprintf("Image tag parameter should not contain the image name: %s", *config.ImageTag)))
 	}
+
 	if config.RecommendedTGFVersion != "" {
 		if valid, err := CheckVersionRange(version, config.RecommendedTGFVersion); err != nil {
 			errors = append(errors, fmt.Errorf("Unable to check recommended tgf version %s vs %s: %v", version, config.RecommendedTGFVersion, err))
@@ -225,7 +233,7 @@ func (config *TGFConfig) Validate() (errors []error) {
 		}
 	}
 
-	if config.RequiredVersionRange != "" && config.ImageVersion != nil && *config.ImageVersion != "" {
+	if config.RequiredVersionRange != "" && config.ImageVersion != nil && *config.ImageVersion != "" && reVersion.MatchString(*config.ImageVersion) {
 		if valid, err := CheckVersionRange(*config.ImageVersion, config.RequiredVersionRange); err != nil {
 			errors = append(errors, fmt.Errorf("Unable to check recommended image version %s vs %s: %v", *config.ImageVersion, config.RequiredVersionRange, err))
 			return
@@ -235,7 +243,7 @@ func (config *TGFConfig) Validate() (errors []error) {
 		}
 	}
 
-	if config.RecommendedImageVersion != "" && config.ImageVersion != nil && *config.ImageVersion != "" {
+	if config.RecommendedImageVersion != "" && config.ImageVersion != nil && *config.ImageVersion != "" && reVersion.MatchString(*config.ImageVersion) {
 		if valid, err := CheckVersionRange(*config.ImageVersion, config.RecommendedImageVersion); err != nil {
 			errors = append(errors, fmt.Errorf("Unable to check recommended image version %s vs %s: %v", *config.ImageVersion, config.RecommendedImageVersion, err))
 		} else if !valid {
@@ -252,7 +260,8 @@ func (config *TGFConfig) GetImageName() string {
 	if config.ImageVersion != nil {
 		suffix += *config.ImageVersion
 	}
-	if config.ImageTag != nil {
+	shouldAddTag := config.ImageVersion == nil || *config.ImageVersion == "" || reVersion.MatchString(*config.ImageVersion)
+	if config.ImageTag != nil && shouldAddTag {
 		if suffix != "" && *config.ImageTag != "" {
 			suffix += config.separator
 		}
@@ -263,9 +272,6 @@ func (config *TGFConfig) GetImageName() string {
 	}
 	return config.Image
 }
-
-// https://regex101.com/r/ZKt4OP/5
-var reVersion = regexp.MustCompile(`^(?P<image>.*?)(?::(?:(?P<version>\d+\.\d+(?:\.\d+){0,1})(?:(?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
 
 // Check if there is an AWS configuration available.
 //
