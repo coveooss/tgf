@@ -2,75 +2,70 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
 	"reflect"
 	"regexp"
-	"runtime"
-	"sort"
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/blang/semver"
 	"github.com/coveo/gotemplate/collections"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
-	parameterFolder            = "/default/tgf"
-	configFile                 = ".tgf.config"
-	userConfigFile             = "tgf.user.config"
-	dockerImage                = "docker-image"
-	dockerImageVersion         = "docker-image-version"
-	dockerImageTag             = "docker-image-tag"
-	dockerImageBuild           = "docker-image-build"
-	dockerImageBuildFolder     = "docker-image-build-folder"
-	dockerImageBuildTag        = "docker-image-build-tag"
-	dockerRefresh              = "docker-refresh"
-	dockerOptionsTag           = "docker-options"
-	loggingLevel               = "logging-level"
-	entryPoint                 = "entry-point"
-	tgfVersion                 = "tgf-recommended-version"
-	recommendedImageVersion    = "recommended-image-version"
-	requiredImageVersion       = "required-image-version"
-	deprecatedRecommendedImage = "recommended-image"
-	environment                = "environment"
-	runBefore                  = "run-before"
-	runAfter                   = "run-after"
+	defaultSSMParameterFolder   = "/default/tgf"
+	defaultSecretsManagerSecret = "tgf-config"
+	configFile                  = ".tgf.config"
+	userConfigFile              = "tgf.user.config"
 )
 
 // TGFConfig contains the resulting configuration that will be applied
 type TGFConfig struct {
-	Image                   string
-	ImageVersion            *string
-	ImageTag                *string
-	ImageBuild              []TGFConfigBuild
-	LogLevel                string
-	EntryPoint              string
-	Refresh                 time.Duration
-	DockerOptions           []string
-	RecommendedImageVersion string
-	RequiredVersionRange    string
-	RecommendedTGFVersion   string
-	Environment             map[string]string
-	RunBefore, RunAfter     []string
+	Image        string  `yaml:"docker-image,omitempty" json:"docker-image,omitempty"`
+	ImageVersion *string `yaml:"docker-image-version,omitempty" json:"docker-image-version,omitempty"`
+	ImageTag     *string `yaml:"docker-image-tag,omitempty" json:"docker-image-tag,omitempty"`
 
-	recommendedImage string
-	separator        string
+	// Build config
+	ImageBuild       string `yaml:"docker-image-build,omitempty" json:"docker-image-build,omitempty"`
+	ImageBuildFolder string `yaml:"docker-image-build-folder,omitempty" json:"docker-image-build-folder,omitempty"`
+	ImageBuildTag    string `yaml:"docker-image-build-tag,omitempty" json:"docker-image-build-tag,omitempty"`
+
+	// List of config built from previous build configs
+	ImageBuildConfigs []*TGFConfigBuild
+
+	LogLevel                string            `yaml:"logging-level,omitempty" json:"logging-level,omitempty"`
+	EntryPoint              string            `yaml:"entry-point,omitempty" json:"entry-point,omitempty"`
+	Refresh                 time.Duration     `yaml:"docker-refresh,omitempty" json:"docker-refresh,omitempty"`
+	DockerOptions           []string          `yaml:"docker-options,omitempty" json:"docker-options,omitempty"`
+	RecommendedImageVersion string            `yaml:"recommended-image-version,omitempty" json:"recommended-image-version,omitempty"`
+	RequiredVersionRange    string            `yaml:"required-image-version,omitempty" json:"required-image-version,omitempty"`
+	RecommendedTGFVersion   string            `yaml:"tgf-recommended-version,omitempty" json:"tgf-recommended-version,omitempty"`
+	Environment             map[string]string `yaml:"environment,omitempty" json:"environment,omitempty"`
+	RunBefore               []string          `yaml:"run-before,omitempty" json:"run-before,omitempty"`
+	RunAfter                []string          `yaml:"run-after,omitempty" json:"run-after,omitempty"`
+
+	separator            string
+	ssmParameterFolder   string
+	secretsManagerSecret string
 }
 
 // TGFConfigBuild contains an entry specifying how to customize the current docker image
 type TGFConfigBuild struct {
 	Instructions string
 	Folder       string
-	tag          string
+	Tag          string
 	source       string
 }
-
-func (cb TGFConfigBuild) empty() bool { return strings.TrimSpace(cb.Instructions+cb.Folder) == "" }
 
 // Dir returns the folder name relative to the source
 func (cb TGFConfigBuild) Dir() string {
@@ -83,63 +78,34 @@ func (cb TGFConfigBuild) Dir() string {
 	return must(filepath.Abs(filepath.Join(filepath.Dir(cb.source), cb.Folder))).(string)
 }
 
-// Tag returns the tag name that should be added to the image
-func (cb TGFConfigBuild) Tag() string {
-	if cb.tag != "" {
-		return cb.tag
+// GetTag returns the tag name that should be added to the image
+func (cb TGFConfigBuild) GetTag() string {
+	if cb.Tag != "" {
+		return cb.Tag
 	}
 	return filepath.Base(filepath.Dir(cb.source))
 }
 
 // InitConfig returns a properly initialized TGF configuration struct
 func InitConfig() *TGFConfig {
-	return &TGFConfig{Environment: make(map[string]string)}
+	return &TGFConfig{Image: "coveo/tgf",
+		Refresh:              1 * time.Hour,
+		EntryPoint:           "terragrunt",
+		LogLevel:             "notice",
+		Environment:          make(map[string]string),
+		ImageBuildConfigs:    []*TGFConfigBuild{},
+		separator:            "-",
+		ssmParameterFolder:   defaultSSMParameterFolder,
+		secretsManagerSecret: defaultSecretsManagerSecret,
+	}
 }
 
-func (config *TGFConfig) build() *TGFConfigBuild { return &config.ImageBuild[len(config.ImageBuild)-1] }
-
-func (config TGFConfig) String() (result string) {
-	addIfNotEmpty := func(name string, value interface{}) {
-		if reflect.DeepEqual(value, reflect.Zero(reflect.TypeOf(value)).Interface()) {
-			return
-		}
-
-		valueOf := reflect.ValueOf(value)
-		switch valueOf.Kind() {
-		case reflect.Interface:
-			fallthrough
-		case reflect.Ptr:
-			value = valueOf.Elem()
-		}
-
-		result += fmt.Sprintf("%s: %v\n", name, value)
+func (config TGFConfig) String() string {
+	bytes, err := yaml.Marshal(config)
+	if err != nil {
+		return fmt.Sprintf("Error parsing TGFConfig: %v", err)
 	}
-
-	addIfNotEmpty(dockerImage, config.Image)
-	addIfNotEmpty(dockerImageVersion, config.ImageVersion)
-	addIfNotEmpty(dockerImageTag, config.ImageTag)
-	for _, ib := range config.ImageBuild {
-		addIfNotEmpty(dockerImageBuildFolder, ib.Folder)
-		addIfNotEmpty(dockerImageBuildTag, ib.Tag())
-		if ib.Instructions != "" {
-			lines := strings.Split(strings.TrimSpace(ib.Instructions), "\n")
-			buildScript := lines[0]
-			if len(lines) > 1 {
-				sep := "\n    "
-				buildScript = sep + strings.Join(lines, sep)
-			}
-
-			addIfNotEmpty(dockerImageBuild, buildScript)
-		}
-	}
-	addIfNotEmpty(dockerOptionsTag, config.DockerOptions)
-	addIfNotEmpty(recommendedImageVersion, config.RecommendedImageVersion)
-	addIfNotEmpty(requiredImageVersion, config.RequiredVersionRange)
-	addIfNotEmpty(dockerRefresh, config.Refresh)
-	addIfNotEmpty(loggingLevel, config.LogLevel)
-	addIfNotEmpty(entryPoint, config.EntryPoint)
-	addIfNotEmpty(tgfVersion, config.RecommendedTGFVersion)
-	return
+	return string(bytes)
 }
 
 // InitAWS tries to open an AWS session and init AWS environment variable on success
@@ -162,186 +128,103 @@ func (config *TGFConfig) InitAWS(profile string) error {
 }
 
 // SetDefaultValues sets the uninitialized values from the config files and the parameter store
+// Priorities (Higher overwrites lower values):
+// 1. SSM Parameter Config
+// 2. Secrets Manager Config (If exists, will not check SSM)
+// 3. tgf.user.config
+// 4. .tgf.config
 func (config *TGFConfig) SetDefaultValues() {
-	for _, configFile := range findConfigFiles(must(os.Getwd()).(string)) {
-		var content map[string]interface{}
-		debugPrint("# Reading configuration from %s", configFile)
-		if err := collections.LoadData(configFile, &content); err != nil {
-			printError("Error while loading configuration file %s\nConfiguration file must be valid YAML, JSON or HCL", configFile)
-			continue
-		}
-
-		extract := func(key string) (result interface{}) {
-			result = content[key]
-			delete(content, key)
-			return
-		}
-
-		apply := func(content interface{}) {
-			if content == nil {
-				return
-			}
-			config.ImageBuild = append(config.ImageBuild, TGFConfigBuild{source: configFile})
-			switch content := content.(type) {
-			case map[string]interface{}:
-				// We sort the keys to ensure that we alway process them in the same order
-				keys := make([]string, 0, len(content))
-				for key := range content {
-					keys = append(keys, key)
-				}
-				sort.Strings(keys)
-				for _, key := range keys {
-					if key == dockerImageBuildFolder {
-						folder := fmt.Sprint(content[key])
-						// If the build folder is relative, we make it relative to the config file folder where it is declared
-						if !filepath.IsAbs(folder) {
-							content[key] = filepath.Join(filepath.Dir(configFile), folder)
-						}
-					}
-					config.SetValue(key, content[key])
-				}
-			default:
-				printError("Invalid configuration format in file %s (%T)", configFile, content)
-			}
-		}
-
-		windows := extract("windows")
-		darwin := extract("darwin")
-		linux := extract("linux")
-		ix := extract("ix")
-
-		switch runtime.GOOS {
-		case "windows":
-			apply(windows)
-		case "darwin":
-			apply(darwin)
-			apply(ix)
-		case "linux":
-			apply(linux)
-			apply(ix)
-		}
-		apply(content)
+	type configData struct {
+		Name        string
+		Data        string
+		BuiltConfig *TGFConfig
 	}
+	configsData := []*configData{}
 
+	// Fetch SecretsManager or SSM configs
 	if awsConfigExist() {
-		// If we need to read the parameter store, we must init the session first to ensure that
-		// the credentials are only initialized once (avoiding asking multiple time the MFA)
-		if err := config.InitAWS(""); err != nil {
-			printError("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err)
+		awsSession := session.Must(session.NewSessionWithOptions(session.Options{
+			SharedConfigState: session.SharedConfigEnable,
+		}))
+		svc := secretsmanager.New(awsSession)
+		input := &secretsmanager.GetSecretValueInput{
+			SecretId: aws.String(config.secretsManagerSecret),
+		}
+		result, err := svc.GetSecretValue(input)
+		if err == nil && *result.SecretString != "" && *result.SecretString != "{}" {
+			configsData = append(configsData, &configData{Name: "AWS/SecretsManager", Data: *result.SecretString})
 		} else {
-			debugPrint("# Reading configuration from AWS parameter store %s", parameterFolder)
-			config.ImageBuild = append(config.ImageBuild, TGFConfigBuild{source: "AWS/ParametersStore"})
-			for _, parameter := range must(aws_helper.GetSSMParametersByPath(parameterFolder, "")).([]*ssm.Parameter) {
-				config.SetValue((*parameter.Name)[len(parameterFolder)+1:], *parameter.Value)
+			debugPrint("Failed to fetch from secrets manager %v\n", err)
+			// Unable to fetch secrets manager, trying SSM
+			parameters := must(aws_helper.GetSSMParametersByPath(config.ssmParameterFolder, "")).([]*ssm.Parameter)
+			ssmConfig := ""
+			for _, parameter := range parameters {
+				key := strings.TrimLeft(strings.Replace(*parameter.Name, config.ssmParameterFolder, "", 1), "/")
+				ssmConfig += fmt.Sprintf("%s: \"%s\"\n", key, *parameter.Value)
+			}
+			if ssmConfig != "" {
+				configsData = append(configsData, &configData{Name: "AWS/ParametersStore", Data: ssmConfig})
 			}
 		}
 	}
 
-	config.SetValue(dockerImage, "coveo/tgf")
-	config.SetValue(dockerRefresh, "1h")
-	config.SetValue(loggingLevel, "notice")
-	config.SetValue(entryPoint, "terragrunt")
+	// Fetch file configs
+	for _, configFile := range findConfigFiles(must(os.Getwd()).(string)) {
+		debugPrint("# Reading configuration from %s\n", configFile)
+		bytes, err := ioutil.ReadFile(configFile)
 
-	build := make([]TGFConfigBuild, 0, len(config.ImageBuild))
-	for i := len(config.ImageBuild) - 1; i >= 0; i-- {
-		ib := config.ImageBuild[i]
-		if ib.empty() {
+		if err != nil {
+			fmt.Fprintln(os.Stderr, errorString("Error while loading configuration file %s\n%v", configFile, err))
 			continue
 		}
-		build = append(build, ib)
+		configsData = append(configsData, &configData{Name: configFile, Data: string(bytes)})
 	}
-	config.ImageBuild = build
+
+	// Parse/Unmarshal configs
+	for _, configData := range configsData {
+		configData.BuiltConfig = &TGFConfig{}
+		if err := collections.ConvertData(configData.Data, &config); err != nil {
+			fmt.Fprintln(os.Stderr, errorString("Error while loading configuration from %s\nConfiguration file must be valid YAML, JSON or HCL\n%v", configData.Name, err))
+		}
+		collections.ConvertData(configData.Data, &configData.BuiltConfig)
+	}
+
+	// Special case for image build configs, we must build a list of build instructions from all configs
+	config.ImageBuild = ""
+	config.ImageBuildFolder = ""
+	config.ImageBuildTag = ""
+	for _, configData := range configsData {
+		if configData.BuiltConfig.ImageBuild != "" {
+			config.ImageBuildConfigs = append(config.ImageBuildConfigs, &TGFConfigBuild{
+				Instructions: configData.BuiltConfig.ImageBuild,
+				Folder:       configData.BuiltConfig.ImageBuildFolder,
+				Tag:          configData.BuiltConfig.ImageBuildTag,
+				source:       configData.Name,
+			})
+		}
+	}
+
 }
 
-// SetValue sets value of the key in the configuration only if it does not already have a value
-func (config *TGFConfig) SetValue(key string, value interface{}) {
-	key = strings.ToLower(key)
-	valueStr := fmt.Sprintf("%v", value)
-	switch key {
-	case dockerImage:
-		if strings.Contains(valueStr, ":") && config.Image == "" {
-			printWarning("Parameter %s should not contains the version: %s", key, valueStr)
-		}
-		config.apply(key, valueStr)
-	case dockerImageVersion:
-		if strings.ContainsAny(valueStr, ":-") && config.ImageVersion == nil {
-			printWarning("Parameter %s should not contains the image name nor the specialized version: %s", key, valueStr)
-		}
-		config.apply(key, ":"+valueStr)
-	case dockerImageTag:
-		if strings.ContainsAny(valueStr, ":") && config.ImageTag == nil {
-			printWarning("Parameter %s should not contains the image name: %s", key, valueStr)
-		}
-		config.apply(key, ":"+valueStr)
-	case dockerOptionsTag:
-		config.DockerOptions = append(config.DockerOptions, strings.Split(valueStr, " ")...)
-	case dockerImageBuild:
-		config.build().Instructions = strings.TrimSpace(valueStr)
-	case dockerImageBuildFolder:
-		config.build().Folder = valueStr
-	case dockerImageBuildTag:
-		config.build().tag = valueStr
-	case recommendedImageVersion:
-		if config.RecommendedImageVersion == "" {
-			config.RecommendedImageVersion = valueStr
-		}
-	case requiredImageVersion:
-		if config.RequiredVersionRange == "" {
-			config.RequiredVersionRange = valueStr
-		}
-	case dockerRefresh:
-		if config.Refresh == 0 {
-			config.Refresh = must(time.ParseDuration(valueStr)).(time.Duration)
-		}
-	case loggingLevel:
-		if config.LogLevel == "" {
-			config.LogLevel = valueStr
-		}
-	case entryPoint:
-		if config.EntryPoint == "" {
-			config.EntryPoint = valueStr
-		}
-	case tgfVersion:
-		if config.RecommendedTGFVersion == "" {
-			config.RecommendedTGFVersion = valueStr
-		}
-	case environment:
-		switch value := value.(type) {
-		case map[string]interface{}:
-			for key, val := range value {
-				if _, set := config.Environment[key]; !set {
-					config.Environment[key] = fmt.Sprintf("%v", val)
-				}
-			}
-		default:
-			printWarning("Environment must be a map of key/value %T", value)
-		}
-	case runBefore, runAfter:
-		list := &config.RunBefore
-		if key == runAfter {
-			list = &config.RunAfter
-		}
-		switch value := value.(type) {
-		case string:
-			*list = append(*list, value)
-		case []interface{}:
-			for i := len(value) - 1; i >= 0; i-- {
-				*list = append(*list, fmt.Sprint(value[i]))
-			}
-		case map[string]interface{}:
-			for _, value := range value {
-				*list = append(*list, fmt.Sprint(value))
-			}
-		}
-	case deprecatedRecommendedImage:
-		printWarning("Config key %s is deprecated (%s ignored)", key, valueStr)
-	default:
-		printError("Unknown parameter %s = %s", key, value)
-	}
-}
+var reVersion = regexp.MustCompile(`(?P<version>\d+\.\d+(?:\.\d+){0,1})`)
+
+// https://regex101.com/r/ZKt4OP/5
+var reImage = regexp.MustCompile(`^(?P<image>.*?)(?::(?:` + reVersion.String() + `(?:(?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
 
 // Validate ensure that the current version is compliant with the setting (mainly those in the parameter store1)
 func (config *TGFConfig) Validate() (errors []error) {
+	if strings.Contains(config.Image, ":") {
+		errors = append(errors, ConfigWarning(fmt.Sprintf("Image should not contain the version: %s", config.Image)))
+	}
+
+	if config.ImageVersion != nil && strings.ContainsAny(*config.ImageVersion, ":-") {
+		errors = append(errors, ConfigWarning(fmt.Sprintf("Image version parameter should not contain the image name nor the specialized version: %s", *config.ImageVersion)))
+	}
+
+	if config.ImageTag != nil && strings.ContainsAny(*config.ImageTag, ":") {
+		errors = append(errors, ConfigWarning(fmt.Sprintf("Image tag parameter should not contain the image name: %s", *config.ImageTag)))
+	}
+
 	if config.RecommendedTGFVersion != "" {
 		if valid, err := CheckVersionRange(version, config.RecommendedTGFVersion); err != nil {
 			errors = append(errors, fmt.Errorf("Unable to check recommended tgf version %s vs %s: %v", version, config.RecommendedTGFVersion, err))
@@ -350,12 +233,7 @@ func (config *TGFConfig) Validate() (errors []error) {
 		}
 	}
 
-	if config.Image != config.recommendedImage {
-		// We should not issue version warning if the recommended image is not the same as the current image
-		return
-	}
-
-	if config.RequiredVersionRange != "" && config.ImageVersion != nil && *config.ImageVersion != "" {
+	if config.RequiredVersionRange != "" && config.ImageVersion != nil && *config.ImageVersion != "" && reVersion.MatchString(*config.ImageVersion) {
 		if valid, err := CheckVersionRange(*config.ImageVersion, config.RequiredVersionRange); err != nil {
 			errors = append(errors, fmt.Errorf("Unable to check recommended image version %s vs %s: %v", *config.ImageVersion, config.RequiredVersionRange, err))
 			return
@@ -365,7 +243,7 @@ func (config *TGFConfig) Validate() (errors []error) {
 		}
 	}
 
-	if config.RecommendedImageVersion != "" && config.ImageVersion != nil && *config.ImageVersion != "" {
+	if config.RecommendedImageVersion != "" && config.ImageVersion != nil && *config.ImageVersion != "" && reVersion.MatchString(*config.ImageVersion) {
 		if valid, err := CheckVersionRange(*config.ImageVersion, config.RecommendedImageVersion); err != nil {
 			errors = append(errors, fmt.Errorf("Unable to check recommended image version %s vs %s: %v", *config.ImageVersion, config.RecommendedImageVersion, err))
 		} else if !valid {
@@ -382,10 +260,8 @@ func (config *TGFConfig) GetImageName() string {
 	if config.ImageVersion != nil {
 		suffix += *config.ImageVersion
 	}
-	if config.separator == "" {
-		config.separator = "-"
-	}
-	if config.ImageTag != nil {
+	shouldAddTag := config.ImageVersion == nil || *config.ImageVersion == "" || reVersion.MatchString(*config.ImageVersion)
+	if config.ImageTag != nil && shouldAddTag {
 		if suffix != "" && *config.ImageTag != "" {
 			suffix += config.separator
 		}
@@ -395,45 +271,6 @@ func (config *TGFConfig) GetImageName() string {
 		return fmt.Sprintf("%s:%s", config.Image, suffix)
 	}
 	return config.Image
-}
-
-// https://regex101.com/r/ZKt4OP/5
-var reVersion = regexp.MustCompile(`^(?P<image>.*?)(?::(?:(?P<version>\d+\.\d+(?:\.\d+){0,1})(?:(?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
-
-func (config *TGFConfig) apply(key, value string) {
-	matches := reVersion.FindStringSubmatch(value)
-	var valueUsed bool
-	for i, name := range reVersion.SubexpNames() {
-		switch name {
-		case "image":
-			if matches[i] != "" {
-				if config.Image == "" {
-					config.Image = matches[i]
-					valueUsed = true
-				}
-				config.recommendedImage = matches[i]
-			}
-		case "version":
-			if config.ImageVersion == nil && config.Image == config.recommendedImage && (matches[i] != "" || key == dockerImageVersion) {
-				config.ImageVersion = &matches[i]
-				valueUsed = true
-			}
-		case "spec":
-			if matches[i] != "" {
-				// If spec is specified, its value will be handled by fix, so we copy the value in the fix match
-				matches[i+1] = matches[i]
-			}
-		case "fix":
-			if config.ImageTag == nil && config.Image == config.recommendedImage && (matches[i] != "" || key == dockerImageTag) {
-				config.ImageTag = &matches[i]
-				valueUsed = true
-			}
-		case "sep":
-			if config.separator == "" && config.Image == config.recommendedImage && valueUsed {
-				config.separator = matches[i]
-			}
-		}
-	}
 }
 
 // Check if there is an AWS configuration available.
@@ -481,6 +318,18 @@ func findConfigFiles(folder string) (result []string) {
 	}
 
 	return
+}
+
+func getTgfConfigFields() []string {
+	fields := []string{}
+	classType := reflect.ValueOf(TGFConfig{}).Type()
+	for i := 0; i < classType.NumField(); i++ {
+		tagValue := classType.Field(i).Tag.Get("yaml")
+		if tagValue != "" {
+			fields = append(fields, strings.Replace(tagValue, ",omitempty", "", -1))
+		}
+	}
+	return fields
 }
 
 // CheckVersionRange compare a version with a range of values

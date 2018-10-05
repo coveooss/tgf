@@ -1,5 +1,5 @@
-hash: b80cebdfbed7b8242179a9eeda00528e9b75f39764eb2b074b11e612ae93f639
-updated: 2018-09-21T13:51:37.207215-04:00
+hash: 8b3e49f2466eaf67644a055f0e9926d76a386fa12174e89537f0a5a1d5a68276
+updated: 2018-10-04T14:37:49.058751-04:00
 imports:
 - name: github.com/agext/levenshtein
   version: 5f10fee965225ac1eecdc234c09daf5cd9e7f7b6
@@ -24,7 +24,7 @@ imports:
 - name: github.com/armon/go-radix
   version: 1a2de0c21c94309923825da3df33a4381872c795
 - name: github.com/aws/aws-sdk-go
-  version: a93d31c26045c00c52f58dda4dcad02a3e622534
+  version: cfcda8304585604aabf1f7f8f7ce67b55029d0ca
   subpackages:
   - aws
   - aws/awserr
@@ -58,6 +58,7 @@ imports:
   - private/protocol/restxml
   - private/protocol/xml/xmlutil
   - service/s3
+  - service/secretsmanager
   - service/ssm
   - service/sts
 - name: github.com/bgentry/go-netrc
@@ -81,12 +82,12 @@ imports:
   - xml
   - yaml
 - name: github.com/docker/distribution
-  version: 16128bbac47f75050e82f7e91b04df33775e0c23
+  version: 1cb4180b1a5b9c029b2f2beaeb38f0b5cf64e12e
   subpackages:
   - digestset
   - reference
 - name: github.com/docker/docker
-  version: b1116479b23434de7d70710b6454af7cb2484a58
+  version: 71d1cc34c007636ac147e6dc2f2559fddb85e377
   subpackages:
   - api
   - api/types
@@ -121,9 +122,9 @@ imports:
 - name: github.com/go-errors/errors
   version: d98b870cc4e05f1545532a80e9909be8216095b6
 - name: github.com/go-ini/ini
-  version: fa25069db393aecc09b71267d0489b357781c860
+  version: 7b294651033cd7d9e7f0d9ffa1b75ed1e198e737
 - name: github.com/gogo/protobuf
-  version: e14cafb6a2c249986e51c4b65c3206bf18578715
+  version: 61dbc136cf5d2f08d68a011382652244990a53a9
   subpackages:
   - proto
 - name: github.com/google/uuid
@@ -163,7 +164,7 @@ imports:
   - json/scanner
   - json/token
 - name: github.com/hashicorp/hcl2
-  version: ffb8e97eb71bbcee2ea32048b0a7e451d37bdb27
+  version: 3e4b7e0eb20ecc20e70dbd458f7a54daf0032830
   subpackages:
   - gohcl
   - hcl
@@ -223,7 +224,7 @@ imports:
 - name: github.com/mitchellh/hashstructure
   version: a38c50148365edc8df43c1580c48fb2b3a1e9cd7
 - name: github.com/mitchellh/mapstructure
-  version: fa473d140ef3c6adf42d6b391fe76707f1f243c8
+  version: 8121acaf832261966919850eded22f06427f030e
 - name: github.com/mitchellh/reflectwalk
   version: eecee6c969c02c8cc2ae48e1e269843ae8590796
 - name: github.com/op/go-logging
@@ -245,11 +246,15 @@ imports:
   - cmd/install
   - match
 - name: github.com/PuerkitoBio/goquery
-  version: dc2ec5c7ca4d9aae063b79b9f581dd3ea6afd2b2
+  version: 8311f594d701949445e752a2c4794db4d4a7e204
 - name: github.com/sergi/go-diff
   version: da645544ed44df016359bd4c0e3dc60ee3a0da43
   subpackages:
   - diffmatchpatch
+- name: github.com/stretchr/testify
+  version: f35b8ab0b5a2cef36673838d662e249dd9c94686
+  subpackages:
+  - assert
 - name: github.com/ulikunitz/xz
   version: 636d36a76670e6c700f22fd5f4588679ff2896c4
   subpackages:
@@ -257,7 +262,7 @@ imports:
   - internal/xlog
   - lzma
 - name: github.com/zclconf/go-cty
-  version: cc054f996f8b732f7205fd6f1ef84c39f2720461
+  version: d9b87d891d0b42399ce5bab2f87ad2860ca0239c
   subpackages:
   - cty
   - cty/convert
@@ -267,7 +272,7 @@ imports:
   - cty/json
   - cty/set
 - name: golang.org/x/crypto
-  version: 0e37d006457bf46f9e6692014ba72ef82c33022c
+  version: e3636079e1a4c1f337f212cc5cd2aca108f6c900
   subpackages:
   - bcrypt
   - blowfish
@@ -282,7 +287,7 @@ imports:
   - scrypt
   - ssh/terminal
 - name: golang.org/x/net
-  version: 2f5d2388922f370f4355f327fcf4cfe9f5583908
+  version: f5e5bdd778241bfefa8627f7124c39cd6ad8d74f
   subpackages:
   - context
   - context/ctxhttp
@@ -292,7 +297,7 @@ imports:
   - internal/socks
   - proxy
 - name: golang.org/x/sys
-  version: d47a0f3392421c5624713c9a19fe781f651f8a50
+  version: 8469e314837c2e2471561de5c47bbf8bfd0d9099
   subpackages:
   - unix
   - windows
@@ -307,4 +312,12 @@ imports:
   version: 947dcec5ba9c011838740e680966fd7087a71d0d
 - name: gopkg.in/yaml.v2
   version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
-testImports: []
+testImports:
+- name: github.com/davecgh/go-spew
+  version: d8f796af33cc11cb798c1aaeb27a4ebc5099927d
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
+  subpackages:
+  - difflib

@@ -16,7 +16,7 @@ import (
 )
 
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
-var version = "1.17.0"
+var version = "1.18.0"
 
 var description = `
 DESCRIPTION:
@@ -104,23 +104,19 @@ func main() {
 	bold := color.New(color.Bold).SprintfFunc()
 
 	descriptionTemplate.Execute(&descriptionBuffer, map[string]interface{}{
-		"parameterStoreKey": parameterFolder,
+		"parameterStoreKey": defaultSSMParameterFolder,
 		"config":            configFile,
-		"options": color.GreenString(strings.Join([]string{
-			dockerImage, dockerImageVersion, dockerImageTag, dockerImageBuild, dockerImageBuildFolder, dockerImageBuildTag,
-			dockerRefresh, dockerOptionsTag, recommendedImageVersion, requiredImageVersion, loggingLevel, entryPoint, tgfVersion,
-			environment, runBefore, runAfter,
-		}, ", ")),
-		"readme":          link(gitSource + "/blob/master/README.md"),
-		"latest":          link(gitSource + "/releases/latest"),
-		"terragruntCoveo": link("https://github.com/coveo/terragrunt/blob/master/README.md"),
-		"terragruntGW":    link("https://github.com/gruntwork-io/terragrunt/blob/master/README.md"),
-		"terraform":       link("https://www.terraform.io/docs/index.html"),
-		"tgfImages":       link("https://hub.docker.com/r/coveo/tgf/tags"),
-		"terragrunt":      bold("t") + "erra" + bold("g") + "runt " + bold("f") + "rontend",
-		"version":         version,
-		"envArgs":         envArgs,
-		"envDebug":        envDebug,
+		"options":           color.GreenString(strings.Join(getTgfConfigFields(), ", ")),
+		"readme":            link(gitSource + "/blob/master/README.md"),
+		"latest":            link(gitSource + "/releases/latest"),
+		"terragruntCoveo":   link("https://github.com/coveo/terragrunt/blob/master/README.md"),
+		"terragruntGW":      link("https://github.com/gruntwork-io/terragrunt/blob/master/README.md"),
+		"terraform":         link("https://www.terraform.io/docs/index.html"),
+		"tgfImages":         link("https://hub.docker.com/r/coveo/tgf/tags"),
+		"terragrunt":        bold("t") + "erra" + bold("g") + "runt " + bold("f") + "rontend",
+		"version":           version,
+		"envArgs":           envArgs,
+		"envDebug":          envDebug,
 	})
 
 	var app = NewApplication(kingpin.New(os.Args[0], descriptionBuffer.String()))
@@ -143,13 +139,13 @@ func main() {
 
 	var (
 		getAllVersions    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
-		getCurrentVersion = app.Switch("current-version", "Get current version information (alias --cv)").Bool()
 		pruneImages       = app.Switch("prune", "Remove all previous versions of the targeted image").Bool()
-		defaultEntryPoint = app.Argument("entrypoint", "Override the entry point for docker", 'E').PlaceHolder("terragrunt").String()
+		getCurrentVersion = app.Switch("current-version", "Get current version information (alias --cv)").Bool()
+		entrypoint        = app.Argument("entrypoint", "Override the entry point for docker", 'E').PlaceHolder("terragrunt").String()
 		image             = app.Argument("image", "Use the specified image instead of the default one").PlaceHolder("coveo/tgf").String()
 		imageVersion      = app.Argument("image-version", "Use a different version of docker image instead of the default one (alias --iv)").PlaceHolder("version").Default("-").String()
 		imageTag          = app.Argument("tag", "Use a different tag of docker image instead of the default one", 'T').PlaceHolder("latest").Default("-").String()
-		awsProfile        = app.Argument("profile", "Set the AWS profile configuration to use", 'P').Default("").String()
+		awsProfile        = app.Argument("profile", "Set the AWS profile configuration to use", 'P').String()
 		loggingLevel      = app.Argument("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)", 'L').PlaceHolder("<level>").String()
 	)
 
@@ -177,19 +173,20 @@ func main() {
 		must(config.InitAWS(*awsProfile))
 	}
 
-	if *image != "" {
-		config.SetValue(dockerImage, *image)
-	}
-
-	if *imageVersion != "-" {
-		config.SetValue(dockerImageVersion, *imageVersion)
-	}
-
-	if *imageTag != "-" {
-		config.SetValue(dockerImageTag, *imageTag)
-	}
-	config.SetValue(entryPoint, *defaultEntryPoint)
 	config.SetDefaultValues()
+
+	if *image != "" {
+		config.Image = *image
+	}
+	if *imageVersion != "-" {
+		config.ImageVersion = imageVersion
+	}
+	if *imageTag != "-" {
+		config.ImageTag = imageTag
+	}
+	if *entrypoint != "" {
+		config.EntryPoint = *entrypoint
+	}
 
 	if !validateVersion(*imageVersion) {
 		os.Exit(1)

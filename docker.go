@@ -193,7 +193,7 @@ func getImage() (name string) {
 		name += ":latest"
 	}
 
-	for i, ib := range config.ImageBuild {
+	for i, ib := range config.ImageBuildConfigs {
 		var temp, folder, dockerFile string
 		var out *os.File
 		if ib.Folder == "" {
@@ -230,7 +230,7 @@ func getImage() (name string) {
 			}()
 		}
 
-		name = name + "-" + ib.Tag()
+		name = name + "-" + ib.GetTag()
 		if refresh || getActualImageVersionInternal(name) == "" {
 			args := []string{"build", ".", "--quiet", "--force-rm"}
 			if i == 0 && refresh {
@@ -270,7 +270,7 @@ func prune(images ...string) {
 					actual := getActualImageVersionFromImageID(image.ID)
 					if actual == "" {
 						for _, tag := range image.RepoTags {
-							matches, _ := utils.MultiMatch(tag, reVersion)
+							matches, _ := utils.MultiMatch(tag, reImage)
 							if version := matches["version"]; version != "" {
 								if len(version) > len(actual) {
 									actual = version

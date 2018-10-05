@@ -2,20 +2,25 @@ language: go
 go:
 - 1.11.x
 
-sudo: required
+sudo: false
+
+before_install:
+  - go get github.com/Masterminds/glide
+  - go get github.com/mattn/goveralls
 
 install:
-- if [ ${TRAVIS_TAG::1} = v ];
-  then
-    go get github.com/Masterminds/glide &&
-    glide install;
-  fi
+  - make install
+
+before_script:
+  - go test ./...
 
 script:
-- if [ ${TRAVIS_TAG::1} = v ];
-  then
-    curl -sL https://git.io/goreleaser | bash;
-  fi
+  - if [ "${TRAVIS_TAG::1}" = "v" ]; then
+        curl -sL https://git.io/goreleaser | bash;
+    fi
+  
+after_success:
+  - make coveralls
   
 notifications:
   email: false
