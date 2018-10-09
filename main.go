@@ -163,10 +163,15 @@ func main() {
 	app.Argument("iu", "alias for ignore-user-config").Hidden().BoolVar(&disableUserConfig)
 	app.Argument("iuc", "alias for ignore-user-config").Hidden().BoolVar(&disableUserConfig)
 
+	config.SetDefaultValues()
+
 	// Split up the managed parameters from the unmanaged ones
 	if extraArgs, ok := os.LookupEnv(envArgs); ok {
 		os.Args = append(os.Args, strings.Split(extraArgs, " ")...)
 	}
+
+	os.Args = config.ParseAliases(os.Args)
+
 	managed, unmanaged := app.SplitManaged(os.Args)
 	must(app.Parse(managed))
 
@@ -174,8 +179,6 @@ func main() {
 	if *awsProfile != "" {
 		must(config.InitAWS(*awsProfile))
 	}
-
-	config.SetDefaultValues()
 
 	if *image != "" {
 		config.Image = *image

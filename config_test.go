@@ -102,6 +102,20 @@ docker-image-build-folder: my-folder`)
 	assert.Nil(t, config.ImageVersion)
 }
 
+func TestParseAliases(t *testing.T) {
+	t.Parallel()
+
+	config := &TGFConfig{Aliases: map[string]string{"other_arg1": "will not be replaced", "to_replace": "one two three,four"}}
+	argsThatShouldBeChanged := []string{"tgf", "to_replace", "other_arg1", "other_arg2"}
+	argsThatShouldBeUnchanged := []string{"tgf", "not_replace", "to_replace", "other_arg1", "other_arg2"}
+
+	parsedChangedArgs := config.ParseAliases(argsThatShouldBeChanged)
+	parsedUnchangedArgs := config.ParseAliases(argsThatShouldBeUnchanged)
+
+	assert.Equal(t, []string{"tgf", "one", "two", "three,four", "other_arg1", "other_arg2"}, parsedChangedArgs)
+	assert.Equal(t, []string{"tgf", "not_replace", "to_replace", "other_arg1", "other_arg2"}, parsedUnchangedArgs)
+}
+
 func writeSSMConfig(parameterFolder, parameterKey, parameterValue string) {
 	fullParameterKey := fmt.Sprintf("%s/%s", parameterFolder, parameterKey)
 	client := getSSMClient()

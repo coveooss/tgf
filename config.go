@@ -53,6 +53,7 @@ type TGFConfig struct {
 	Environment             map[string]string `yaml:"environment,omitempty" json:"environment,omitempty"`
 	RunBefore               []string          `yaml:"run-before,omitempty" json:"run-before,omitempty"`
 	RunAfter                []string          `yaml:"run-after,omitempty" json:"run-after,omitempty"`
+	Aliases                 map[string]string `yaml:"alias,omitempty" json:"alias,omitempty"`
 
 	separator            string
 	ssmParameterFolder   string
@@ -271,6 +272,17 @@ func (config *TGFConfig) GetImageName() string {
 		return fmt.Sprintf("%s:%s", config.Image, suffix)
 	}
 	return config.Image
+}
+
+// ParseAliases will parse the original os.Args list and replace aliases only in the first argument.
+func (config *TGFConfig) ParseAliases(args []string) []string {
+	for key, value := range config.Aliases {
+		if args[1] == key {
+			args = append(args[:1], append(strings.Split(value, " "), args[2:]...)...)
+			break
+		}
+	}
+	return args
 }
 
 // Check if there is an AWS configuration available.
