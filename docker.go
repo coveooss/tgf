@@ -27,9 +27,10 @@ import (
 const (
 	minimumDockerVersion = "1.25"
 	tgfImageVersion      = "TGF_IMAGE_VERSION"
+	dockerSocketFile     = "/var/run/docker.sock"
 )
 
-func callDocker(args ...string) int {
+func callDocker(withDockerMount bool, args ...string) int {
 	command := append([]string{config.EntryPoint}, args...)
 
 	// Change the default log level for terragrunt
@@ -71,6 +72,12 @@ func callDocker(args ...string) int {
 		"-v", fmt.Sprintf("%s%s:%s", convertDrive(currentDrive), rootFolder, filepath.ToSlash(filepath.Join("/", mountPoint, rootFolder))),
 		"-w", sourceFolder,
 	}
+
+	if withDockerMount {
+		withDockerMountArgs := []string{"-v", fmt.Sprintf(dockerSocketMountPattern, dockerSocketFile), "--group-add", getDockerGroup()}
+		dockerArgs = append(dockerArgs, withDockerMountArgs...)
+	}
+
 	if !noHome {
 		currentUser := must(user.Current()).(*user.User)
 		home := filepath.ToSlash(currentUser.HomeDir)
