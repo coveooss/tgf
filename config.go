@@ -158,11 +158,7 @@ func (config *TGFConfig) SetDefaultValues() {
 			debugPrint("Failed to fetch from secrets manager %v\n", err)
 			// Unable to fetch secrets manager, trying SSM
 			parameters := must(aws_helper.GetSSMParametersByPath(config.ssmParameterFolder, "")).([]*ssm.Parameter)
-			ssmConfig := ""
-			for _, parameter := range parameters {
-				key := strings.TrimLeft(strings.Replace(*parameter.Name, config.ssmParameterFolder, "", 1), "/")
-				ssmConfig += fmt.Sprintf("%s: \"%s\"\n", key, *parameter.Value)
-			}
+			ssmConfig := config.parseSsmConfig(parameters)
 			if ssmConfig != "" {
 				configsData = append(configsData, &configData{Name: "AWS/ParametersStore", Data: ssmConfig})
 			}
@@ -283,6 +279,21 @@ func (config *TGFConfig) ParseAliases(args []string) []string {
 		}
 	}
 	return args
+}
+
+func (config *TGFConfig) parseSsmConfig(parameters []*ssm.Parameter) string {
+	ssmConfig := ""
+	for _, parameter := range parameters {
+		key := strings.TrimLeft(strings.Replace(*parameter.Name, config.ssmParameterFolder, "", 1), "/")
+		value := *parameter.Value
+		isDict := strings.HasPrefix(value, "{") && strings.HasSuffix(value, "}")
+		isList := strings.HasPrefix(value, "[") && strings.HasSuffix(value, "]")
+		if !isDict && !isList {
+			value = fmt.Sprintf("\"%s\"", value)
+		}
+		ssmConfig += fmt.Sprintf("%s: %s\n", key, value)
+	}
+	return ssmConfig
 }
 
 // Check if there is an AWS configuration available.

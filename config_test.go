@@ -67,8 +67,10 @@ func TestSetConfigDefaultValues(t *testing.T) {
 
 	writeSSMConfig(testSSMParameterFolder, "docker-image-build", "RUN ls test")
 	writeSSMConfig(testSSMParameterFolder, "docker-image-build-folder", "/abspath/my-folder")
+	writeSSMConfig(testSSMParameterFolder, "alias", `{"my-alias": "--arg value"}`)
 	defer deleteSSMConfig(testSSMParameterFolder, "docker-image-build")
 	defer deleteSSMConfig(testSSMParameterFolder, "docker-image-build-folder")
+	defer deleteSSMConfig(testSSMParameterFolder, "alias")
 
 	userTgfConfig := []byte(`docker-image: coveo/overwritten
 docker-image-tag: test`)
@@ -99,6 +101,7 @@ docker-image-build-folder: my-folder`)
 
 	assert.Equal(t, "coveo/stuff", config.Image)
 	assert.Equal(t, "test", *config.ImageTag)
+	assert.Equal(t, map[string]string{"my-alias": "--arg value"}, config.Aliases)
 	assert.Nil(t, config.ImageVersion)
 }
 
