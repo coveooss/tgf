@@ -182,6 +182,10 @@ func main() {
 
 	if *image != "" {
 		config.Image = *image
+		config.RecommendedImageVersion = ""
+		config.RequiredVersionRange = ""
+		config.ImageVersion = nil
+		config.ImageTag = nil
 	}
 	if *imageVersion != "-" {
 		config.ImageVersion = imageVersion
