@@ -49,12 +49,9 @@ type TGFConfig struct {
 	RunAfter                string            `yaml:"run-after,omitempty" json:"run-after,omitempty"`
 	Aliases                 map[string]string `yaml:"alias,omitempty" json:"alias,omitempty"`
 
-	separator            string
-	ssmParameterFolder   string
-	secretsManagerSecret string
-	runBeforeCommands    []string
-	runAfterCommands     []string
-	imageBuildConfigs    []*TGFConfigBuild // List of config built from previous build configs
+	separator, ssmParameterFolder, secretsManagerSecret string
+	runBeforeCommands, runAfterCommands                 []string
+	imageBuildConfigs                                   []TGFConfigBuild // List of config built from previous build configs
 }
 
 // TGFConfigBuild contains an entry specifying how to customize the current docker image
@@ -91,7 +88,7 @@ func InitConfig() *TGFConfig {
 		EntryPoint:           "terragrunt",
 		LogLevel:             "notice",
 		Environment:          make(map[string]string),
-		imageBuildConfigs:    []*TGFConfigBuild{},
+		imageBuildConfigs:    []TGFConfigBuild{},
 		separator:            "-",
 		ssmParameterFolder:   defaultSSMParameterFolder,
 		secretsManagerSecret: defaultSecretsManagerSecret,
@@ -133,31 +130,27 @@ func (config *TGFConfig) InitAWS(profile string) error {
 // 4. .tgf.config
 func (config *TGFConfig) SetDefaultValues() {
 	type configData struct {
-		Name        string
-		Data        string
-		BuiltConfig *TGFConfig
+		Name   string
+		Raw    string
+		Config *TGFConfig
 	}
-	configsData := []*configData{}
+	configsData := []configData{}
 
 	// Fetch SecretsManager or SSM configs
 	if awsConfigExist() {
-		awsSession := session.Must(session.NewSessionWithOptions(session.Options{
-			SharedConfigState: session.SharedConfigEnable,
-		}))
+		awsSession := session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
 		svc := secretsmanager.New(awsSession)
-		input := &secretsmanager.GetSecretValueInput{
-			SecretId: aws.String(config.secretsManagerSecret),
-		}
+		input := &secretsmanager.GetSecretValueInput{SecretId: aws.String(config.secretsManagerSecret)}
 		result, err := svc.GetSecretValue(input)
 		if err == nil && *result.SecretString != "" && *result.SecretString != "{}" {
-			configsData = append(configsData, &configData{Name: "AWS/SecretsManager", Data: *result.SecretString})
+			configsData = append(configsData, configData{Name: "AWS/SecretsManager", Raw: *result.SecretString})
 		} else {
 			debugPrint("Failed to fetch from secrets manager %v\n", err)
 			// Unable to fetch secrets manager, trying SSM
 			parameters := must(aws_helper.GetSSMParametersByPath(config.ssmParameterFolder, "")).([]*ssm.Parameter)
 			ssmConfig := config.parseSsmConfig(parameters)
 			if ssmConfig != "" {
-				configsData = append(configsData, &configData{Name: "AWS/ParametersStore", Data: ssmConfig})
+				configsData = append(configsData, configData{Name: "AWS/ParametersStore", Raw: ssmConfig})
 			}
 		}
 	}
@@ -171,38 +164,38 @@ func (config *TGFConfig) SetDefaultValues() {
 			fmt.Fprintln(os.Stderr, errorString("Error while loading configuration file %s\n%v", configFile, err))
 			continue
 		}
-		configsData = append(configsData, &configData{Name: configFile, Data: string(bytes)})
+		configsData = append(configsData, configData{Name: configFile, Raw: string(bytes)})
 	}
 
 	// Parse/Unmarshal configs
-	for _, configData := range configsData {
-		configData.BuiltConfig = &TGFConfig{}
-		if err := collections.ConvertData(configData.Data, &config); err != nil {
+	for i := range configsData {
+		configData := &configsData[i]
+		if err := collections.ConvertData(configData.Raw, &config); err != nil {
 			fmt.Fprintln(os.Stderr, errorString("Error while loading configuration from %s\nConfiguration file must be valid YAML, JSON or HCL\n%v", configData.Name, err))
 		}
-		collections.ConvertData(configData.Data, &configData.BuiltConfig)
+		collections.ConvertData(configData.Raw, &configData.Config)
 	}
 
-	// Special case for image build configs, we must build a list of build instructions from all configs
-	config.ImageBuild = ""
-	config.ImageBuildFolder = ""
-	config.ImageBuildTag = ""
-	for _, configData := range configsData {
-		if configData.BuiltConfig.ImageBuild != "" {
-			config.imageBuildConfigs = append(config.imageBuildConfigs, &TGFConfigBuild{
-				Instructions: configData.BuiltConfig.ImageBuild,
-				Folder:       configData.BuiltConfig.ImageBuildFolder,
-				Tag:          configData.BuiltConfig.ImageBuildTag,
+	// Special case for image build configs and run before/after, we must build a list of instructions from all configs
+	for i := range configsData {
+		configData := &configsData[i]
+		if configData.Config.ImageBuild != "" {
+			config.imageBuildConfigs = append([]TGFConfigBuild{TGFConfigBuild{
+				Instructions: configData.Config.ImageBuild,
+				Folder:       configData.Config.ImageBuildFolder,
+				Tag:          configData.Config.ImageBuildTag,
 				source:       configData.Name,
-			})
+			}}, config.imageBuildConfigs...)
 		}
-		if configData.BuiltConfig.RunBefore != "" {
-			config.runBeforeCommands = append(config.runBeforeCommands, configData.BuiltConfig.RunBefore)
+		if configData.Config.RunBefore != "" {
+			config.runBeforeCommands = append(config.runBeforeCommands, configData.Config.RunBefore)
 		}
-		if configData.BuiltConfig.RunAfter != "" {
-			config.runAfterCommands = append(config.runAfterCommands, configData.BuiltConfig.RunAfter)
+		if configData.Config.RunAfter != "" {
+			config.runAfterCommands = append(config.runAfterCommands, configData.Config.RunAfter)
 		}
 	}
+	// We reverse the execution of before scripts to ensure that more specific commands are executed last
+	config.runBeforeCommands = collections.AsList(config.runBeforeCommands).Reverse().Strings()
 }
 
 var reVersion = regexp.MustCompile(`(?P<version>\d+\.\d+(?:\.\d+){0,1})`)
