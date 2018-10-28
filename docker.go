@@ -11,7 +11,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
-	"sort"
 	"strings"
 	"syscall"
 
@@ -175,7 +174,6 @@ func debugPrint(format string, args ...interface{}) {
 }
 
 func runCommands(commands []string) error {
-	sort.Sort(sort.Reverse(sort.StringSlice(commands)))
 	for _, script := range commands {
 		cmd, tempFile, err := utils.GetCommandFromString(script)
 		if err != nil {
