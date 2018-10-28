@@ -1,5 +1,5 @@
 hash: 8b3e49f2466eaf67644a055f0e9926d76a386fa12174e89537f0a5a1d5a68276
-updated: 2018-10-04T14:37:49.058751-04:00
+updated: 2018-10-28T08:34:51.75679-04:00
 imports:
 - name: github.com/agext/levenshtein
   version: 5f10fee965225ac1eecdc234c09daf5cd9e7f7b6
@@ -10,7 +10,7 @@ imports:
 - name: github.com/alecthomas/units
   version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
 - name: github.com/andybalholm/cascadia
-  version: 901648c87902174f774fac311d7f176f8647bdaa
+  version: 680b6a57bda4f657485ad44bdea42342ead737bc
 - name: github.com/aokoli/goutils
   version: 3391d3790d23d03408670993e957e8f408993c34
 - name: github.com/apparentlymart/go-cidr
@@ -24,7 +24,7 @@ imports:
 - name: github.com/armon/go-radix
   version: 1a2de0c21c94309923825da3df33a4381872c795
 - name: github.com/aws/aws-sdk-go
-  version: cfcda8304585604aabf1f7f8f7ce67b55029d0ca
+  version: 34ab03ee1a2b90b3baf97ff666397c8fb9b8714b
   subpackages:
   - aws
   - aws/awserr
@@ -43,6 +43,8 @@ imports:
   - aws/request
   - aws/session
   - aws/signer/v4
+  - internal/ini
+  - internal/s3err
   - internal/sdkio
   - internal/sdkrand
   - internal/sdkuri
@@ -82,12 +84,12 @@ imports:
   - xml
   - yaml
 - name: github.com/docker/distribution
-  version: 1cb4180b1a5b9c029b2f2beaeb38f0b5cf64e12e
+  version: 93e082742a009850ac46962150b2f652a822c5ff
   subpackages:
   - digestset
   - reference
 - name: github.com/docker/docker
-  version: 71d1cc34c007636ac147e6dc2f2559fddb85e377
+  version: b8e87cfdad8daa6ef782ddb90691a259483bc8e4
   subpackages:
   - api
   - api/types
@@ -118,13 +120,13 @@ imports:
 - name: github.com/drhodes/goLorem
   version: ecccc744c2d953a1e13cbe5e5fc5d4cbc9b8daeb
 - name: github.com/fatih/color
-  version: 2d684516a8861da43017284349b7e303e809ac21
+  version: 3f9d52f7176a6927daacff70a3e8d1dc2025c53e
 - name: github.com/go-errors/errors
   version: d98b870cc4e05f1545532a80e9909be8216095b6
 - name: github.com/go-ini/ini
-  version: 7b294651033cd7d9e7f0d9ffa1b75ed1e198e737
+  version: 9c8236e659b76e87bf02044d06fde8683008ff3e
 - name: github.com/gogo/protobuf
-  version: 61dbc136cf5d2f08d68a011382652244990a53a9
+  version: e87afe3c25daf6fa321fed3705938e53672b0a3b
   subpackages:
   - proto
 - name: github.com/google/uuid
@@ -178,7 +180,7 @@ imports:
   - parser
   - scanner
 - name: github.com/hashicorp/terraform
-  version: 6dfc4d748de9cda23835bc5704307ed45e839622
+  version: 17850e9a55d33c43d7c31fd6ac122ba97a51d899
   subpackages:
   - config
   - config/hcl2shim
@@ -224,7 +226,7 @@ imports:
 - name: github.com/mitchellh/hashstructure
   version: a38c50148365edc8df43c1580c48fb2b3a1e9cd7
 - name: github.com/mitchellh/mapstructure
-  version: 8121acaf832261966919850eded22f06427f030e
+  version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
 - name: github.com/mitchellh/reflectwalk
   version: eecee6c969c02c8cc2ae48e1e269843ae8590796
 - name: github.com/op/go-logging
@@ -233,20 +235,20 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: c9281466c8b2f606084ac71339773efd177436e7
 - name: github.com/opencontainers/image-spec
-  version: 7b1e489870acb042978a3935d2fb76f8a79aff81
+  version: b6e51fa50549ee0bd5188494912a7f4c382cb0d4
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/pkg/errors
-  version: c059e472caf75dbe73903f6521a20abac245b17f
+  version: 059132a15dd08d6704c67711dae0cf35ab991756
 - name: github.com/posener/complete
-  version: 0d98d7ee195f007b3453c002780ed80c76e7c806
+  version: 3ef9b31a6a0613ae832e7ecf208374027c3b2343
   subpackages:
   - cmd
   - cmd/install
   - match
 - name: github.com/PuerkitoBio/goquery
-  version: 8311f594d701949445e752a2c4794db4d4a7e204
+  version: 2af3d16e2bb8c46efba31b0af1d7ca2eac7fcc23
 - name: github.com/sergi/go-diff
   version: da645544ed44df016359bd4c0e3dc60ee3a0da43
   subpackages:
@@ -262,7 +264,7 @@ imports:
   - internal/xlog
   - lzma
 - name: github.com/zclconf/go-cty
-  version: d9b87d891d0b42399ce5bab2f87ad2860ca0239c
+  version: 01c5aba823a6c91fe3bc287fd6e493ca717a64b8
   subpackages:
   - cty
   - cty/convert
@@ -272,7 +274,7 @@ imports:
   - cty/json
   - cty/set
 - name: golang.org/x/crypto
-  version: e3636079e1a4c1f337f212cc5cd2aca108f6c900
+  version: e84da0312774c21d64ee2317962ef669b27ffb41
   subpackages:
   - bcrypt
   - blowfish
@@ -287,22 +289,20 @@ imports:
   - scrypt
   - ssh/terminal
 - name: golang.org/x/net
-  version: f5e5bdd778241bfefa8627f7124c39cd6ad8d74f
+  version: 9b4f9f5ad5197c79fd623a3638e70d8b26cef344
   subpackages:
-  - context
-  - context/ctxhttp
   - html
   - html/atom
   - idna
   - internal/socks
   - proxy
 - name: golang.org/x/sys
-  version: 8469e314837c2e2471561de5c47bbf8bfd0d9099
+  version: 95b1ffbd15a57cc5abb3f04402b9e8ec0016a52c
   subpackages:
   - unix
   - windows
 - name: golang.org/x/text
-  version: 905a57155faa8230500121607930ebb9dd8e139c
+  version: 4d1c5fb19474adfe9562c9847ba425e7da817e81
   subpackages:
   - secure/bidirule
   - transform
