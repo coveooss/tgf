@@ -31,18 +31,12 @@ const (
 
 // TGFConfig contains the resulting configuration that will be applied
 type TGFConfig struct {
-	Image        string  `yaml:"docker-image,omitempty" json:"docker-image,omitempty"`
-	ImageVersion *string `yaml:"docker-image-version,omitempty" json:"docker-image-version,omitempty"`
-	ImageTag     *string `yaml:"docker-image-tag,omitempty" json:"docker-image-tag,omitempty"`
-
-	// Build config
-	ImageBuild       string `yaml:"docker-image-build,omitempty" json:"docker-image-build,omitempty"`
-	ImageBuildFolder string `yaml:"docker-image-build-folder,omitempty" json:"docker-image-build-folder,omitempty"`
-	ImageBuildTag    string `yaml:"docker-image-build-tag,omitempty" json:"docker-image-build-tag,omitempty"`
-
-	// List of config built from previous build configs
-	ImageBuildConfigs []*TGFConfigBuild
-
+	Image                   string            `yaml:"docker-image,omitempty" json:"docker-image,omitempty"`
+	ImageVersion            *string           `yaml:"docker-image-version,omitempty" json:"docker-image-version,omitempty"`
+	ImageTag                *string           `yaml:"docker-image-tag,omitempty" json:"docker-image-tag,omitempty"`
+	ImageBuild              string            `yaml:"docker-image-build,omitempty" json:"docker-image-build,omitempty"`
+	ImageBuildFolder        string            `yaml:"docker-image-build-folder,omitempty" json:"docker-image-build-folder,omitempty"`
+	ImageBuildTag           string            `yaml:"docker-image-build-tag,omitempty" json:"docker-image-build-tag,omitempty"`
 	LogLevel                string            `yaml:"logging-level,omitempty" json:"logging-level,omitempty"`
 	EntryPoint              string            `yaml:"entry-point,omitempty" json:"entry-point,omitempty"`
 	Refresh                 time.Duration     `yaml:"docker-refresh,omitempty" json:"docker-refresh,omitempty"`
@@ -51,13 +45,16 @@ type TGFConfig struct {
 	RequiredVersionRange    string            `yaml:"required-image-version,omitempty" json:"required-image-version,omitempty"`
 	RecommendedTGFVersion   string            `yaml:"tgf-recommended-version,omitempty" json:"tgf-recommended-version,omitempty"`
 	Environment             map[string]string `yaml:"environment,omitempty" json:"environment,omitempty"`
-	RunBefore               []string          `yaml:"run-before,omitempty" json:"run-before,omitempty"`
-	RunAfter                []string          `yaml:"run-after,omitempty" json:"run-after,omitempty"`
+	RunBefore               string            `yaml:"run-before,omitempty" json:"run-before,omitempty"`
+	RunAfter                string            `yaml:"run-after,omitempty" json:"run-after,omitempty"`
 	Aliases                 map[string]string `yaml:"alias,omitempty" json:"alias,omitempty"`
 
 	separator            string
 	ssmParameterFolder   string
 	secretsManagerSecret string
+	runBeforeCommands    []string
+	runAfterCommands     []string
+	imageBuildConfigs    []*TGFConfigBuild // List of config built from previous build configs
 }
 
 // TGFConfigBuild contains an entry specifying how to customize the current docker image
@@ -94,7 +91,7 @@ func InitConfig() *TGFConfig {
 		EntryPoint:           "terragrunt",
 		LogLevel:             "notice",
 		Environment:          make(map[string]string),
-		ImageBuildConfigs:    []*TGFConfigBuild{},
+		imageBuildConfigs:    []*TGFConfigBuild{},
 		separator:            "-",
 		ssmParameterFolder:   defaultSSMParameterFolder,
 		secretsManagerSecret: defaultSecretsManagerSecret,
@@ -192,15 +189,20 @@ func (config *TGFConfig) SetDefaultValues() {
 	config.ImageBuildTag = ""
 	for _, configData := range configsData {
 		if configData.BuiltConfig.ImageBuild != "" {
-			config.ImageBuildConfigs = append(config.ImageBuildConfigs, &TGFConfigBuild{
+			config.imageBuildConfigs = append(config.imageBuildConfigs, &TGFConfigBuild{
 				Instructions: configData.BuiltConfig.ImageBuild,
 				Folder:       configData.BuiltConfig.ImageBuildFolder,
 				Tag:          configData.BuiltConfig.ImageBuildTag,
 				source:       configData.Name,
 			})
 		}
+		if configData.BuiltConfig.RunBefore != "" {
+			config.runBeforeCommands = append(config.runBeforeCommands, configData.BuiltConfig.RunBefore)
+		}
+		if configData.BuiltConfig.RunAfter != "" {
+			config.runAfterCommands = append(config.runAfterCommands, configData.BuiltConfig.RunAfter)
+		}
 	}
-
 }
 
 var reVersion = regexp.MustCompile(`(?P<version>\d+\.\d+(?:\.\d+){0,1})`)

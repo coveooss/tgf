@@ -148,7 +148,7 @@ func callDocker(withDockerMount bool, args ...string) int {
 	}
 	debugPrint("%s\n", strings.Join(dockerCmd.Args, " "))
 
-	if err := runCommands(config.RunBefore); err != nil {
+	if err := runCommands(config.runBeforeCommands); err != nil {
 		return -1
 	}
 	if err := dockerCmd.Run(); err != nil {
@@ -161,7 +161,7 @@ func callDocker(withDockerMount bool, args ...string) int {
 			}
 		}
 	}
-	if err := runCommands(config.RunAfter); err != nil {
+	if err := runCommands(config.runAfterCommands); err != nil {
 		ErrPrintf(errorString("%v", err))
 	}
 
@@ -200,7 +200,7 @@ func getImage() (name string) {
 		name += ":latest"
 	}
 
-	for i, ib := range config.ImageBuildConfigs {
+	for i, ib := range config.imageBuildConfigs {
 		var temp, folder, dockerFile string
 		var out *os.File
 		if ib.Folder == "" {

@@ -2,16 +2,22 @@ package main
 
 import (
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ssm"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"math/rand"
 	"os"
 	"path"
 	"testing"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/coveo/gotemplate/collections"
+	"github.com/stretchr/testify/assert"
+)
+
+type (
+	String = collections.String
 )
 
 func TestCheckVersionRange(t *testing.T) {
@@ -72,32 +78,36 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	defer deleteSSMConfig(testSSMParameterFolder, "docker-image-build-folder")
 	defer deleteSSMConfig(testSSMParameterFolder, "alias")
 
-	userTgfConfig := []byte(`docker-image: coveo/overwritten
-docker-image-tag: test`)
+	userTgfConfig := []byte(String(`
+		docker-image: coveo/overwritten
+		docker-image-tag: test
+	`).UnIndent().TrimSpace())
 	ioutil.WriteFile(testTgfUserConfigFile, userTgfConfig, 0644)
 
-	tgfConfig := []byte(`docker-image: coveo/stuff
-docker-image-build: RUN ls test2
-docker-image-build-tag: hello
-docker-image-build-folder: my-folder`)
+	tgfConfig := []byte(String(`
+		docker-image: coveo/stuff
+		docker-image-build: RUN ls test2
+		docker-image-build-tag: hello
+		docker-image-build-folder: my-folder
+	`).UnIndent().TrimSpace())
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
 	config := &TGFConfig{ssmParameterFolder: testSSMParameterFolder, secretsManagerSecret: testSecretsManagerSecret}
 	config.SetDefaultValues()
 
-	assert.Len(t, config.ImageBuildConfigs, 2)
+	assert.Len(t, config.imageBuildConfigs, 2)
 
-	assert.Equal(t, "AWS/ParametersStore", config.ImageBuildConfigs[0].source)
-	assert.Equal(t, "RUN ls test", config.ImageBuildConfigs[0].Instructions)
-	assert.Equal(t, "/abspath/my-folder", config.ImageBuildConfigs[0].Folder)
-	assert.Equal(t, "/abspath/my-folder", config.ImageBuildConfigs[0].Dir())
-	assert.Equal(t, "AWS", config.ImageBuildConfigs[0].GetTag())
+	assert.Equal(t, "AWS/ParametersStore", config.imageBuildConfigs[0].source)
+	assert.Equal(t, "RUN ls test", config.imageBuildConfigs[0].Instructions)
+	assert.Equal(t, "/abspath/my-folder", config.imageBuildConfigs[0].Folder)
+	assert.Equal(t, "/abspath/my-folder", config.imageBuildConfigs[0].Dir())
+	assert.Equal(t, "AWS", config.imageBuildConfigs[0].GetTag())
 
-	assert.Equal(t, path.Join(tempDir, ".tgf.config"), config.ImageBuildConfigs[1].source)
-	assert.Equal(t, "RUN ls test2", config.ImageBuildConfigs[1].Instructions)
-	assert.Equal(t, "my-folder", config.ImageBuildConfigs[1].Folder)
-	assert.Equal(t, path.Join(tempDir, "my-folder"), config.ImageBuildConfigs[1].Dir())
-	assert.Equal(t, "hello", config.ImageBuildConfigs[1].GetTag())
+	assert.Equal(t, path.Join(tempDir, ".tgf.config"), config.imageBuildConfigs[1].source)
+	assert.Equal(t, "RUN ls test2", config.imageBuildConfigs[1].Instructions)
+	assert.Equal(t, "my-folder", config.imageBuildConfigs[1].Folder)
+	assert.Equal(t, path.Join(tempDir, "my-folder"), config.imageBuildConfigs[1].Dir())
+	assert.Equal(t, "hello", config.imageBuildConfigs[1].GetTag())
 
 	assert.Equal(t, "coveo/stuff", config.Image)
 	assert.Equal(t, "test", *config.ImageTag)
