@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -57,11 +58,15 @@ func TestCheckVersionRange(t *testing.T) {
 }
 
 func TestSetConfigDefaultValues(t *testing.T) {
-	t.Parallel()
-
 	tempDir, _ := ioutil.TempDir("", "TestGetConfig")
+	tempDir, _ = filepath.EvalSymlinks(tempDir)
+	currentDir, _ := os.Getwd()
 	os.Chdir(tempDir)
-	defer os.RemoveAll(tempDir)
+	fmt.Println(tempDir)
+	defer func() {
+		os.Chdir(currentDir)
+		os.RemoveAll(tempDir)
+	}()
 
 	testTgfConfigFile := fmt.Sprintf("%s/.tgf.config", tempDir)
 	testTgfUserConfigFile := fmt.Sprintf("%s/tgf.user.config", tempDir)
@@ -94,17 +99,17 @@ func TestSetConfigDefaultValues(t *testing.T) {
 
 	assert.Len(t, config.imageBuildConfigs, 2)
 
-	assert.Equal(t, "AWS/ParametersStore", config.imageBuildConfigs[0].source)
-	assert.Equal(t, "RUN ls test", config.imageBuildConfigs[0].Instructions)
-	assert.Equal(t, "/abspath/my-folder", config.imageBuildConfigs[0].Folder)
-	assert.Equal(t, "/abspath/my-folder", config.imageBuildConfigs[0].Dir())
-	assert.Equal(t, "AWS", config.imageBuildConfigs[0].GetTag())
+	assert.Equal(t, path.Join(tempDir, ".tgf.config"), config.imageBuildConfigs[0].source)
+	assert.Equal(t, "RUN ls test2", config.imageBuildConfigs[0].Instructions)
+	assert.Equal(t, "my-folder", config.imageBuildConfigs[0].Folder)
+	assert.Equal(t, path.Join(tempDir, "my-folder"), config.imageBuildConfigs[0].Dir())
+	assert.Equal(t, "hello", config.imageBuildConfigs[0].GetTag())
 
-	assert.Equal(t, path.Join(tempDir, ".tgf.config"), config.imageBuildConfigs[1].source)
-	assert.Equal(t, "RUN ls test2", config.imageBuildConfigs[1].Instructions)
-	assert.Equal(t, "my-folder", config.imageBuildConfigs[1].Folder)
-	assert.Equal(t, path.Join(tempDir, "my-folder"), config.imageBuildConfigs[1].Dir())
-	assert.Equal(t, "hello", config.imageBuildConfigs[1].GetTag())
+	assert.Equal(t, "AWS/ParametersStore", config.imageBuildConfigs[1].source)
+	assert.Equal(t, "RUN ls test", config.imageBuildConfigs[1].Instructions)
+	assert.Equal(t, "/abspath/my-folder", config.imageBuildConfigs[1].Folder)
+	assert.Equal(t, "/abspath/my-folder", config.imageBuildConfigs[1].Dir())
+	assert.Equal(t, "AWS", config.imageBuildConfigs[1].GetTag())
 
 	assert.Equal(t, "coveo/stuff", config.Image)
 	assert.Equal(t, "test", *config.ImageTag)
