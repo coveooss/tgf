@@ -54,6 +54,11 @@ VERSION: {{ .version }}
 AUTHOR:	Coveo
 `
 
+type (
+	// String is imported from gotemplate/collections
+	String = collections.String
+)
+
 var (
 	config            = InitConfig()
 	dockerOptions     []string
@@ -163,17 +168,19 @@ func main() {
 	app.Argument("iu", "alias for ignore-user-config").Hidden().BoolVar(&disableUserConfig)
 	app.Argument("iuc", "alias for ignore-user-config").Hidden().BoolVar(&disableUserConfig)
 
-	config.SetDefaultValues()
-
 	// Split up the managed parameters from the unmanaged ones
 	if extraArgs, ok := os.LookupEnv(envArgs); ok {
 		os.Args = append(os.Args, strings.Split(extraArgs, " ")...)
 	}
-
-	os.Args = config.ParseAliases(os.Args)
-
 	managed, unmanaged := app.SplitManaged(os.Args)
 	must(app.Parse(managed))
+	config.SetDefaultValues()
+
+	if alias := config.ParseAliases(unmanaged); alias != nil {
+		if managed, unmanaged = app.SplitManaged(append(os.Args[:1], alias...)); len(managed) != 0 {
+			must(app.Parse(managed))
+		}
+	}
 
 	// If AWS profile is supplied, we freeze the current session
 	if *awsProfile != "" {

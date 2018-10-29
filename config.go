@@ -265,15 +265,22 @@ func (config *TGFConfig) GetImageName() string {
 	return config.Image
 }
 
-// ParseAliases will parse the original os.Args list and replace aliases only in the first argument.
+// ParseAliases will parse the original argument list and replace aliases only in the first argument.
 func (config *TGFConfig) ParseAliases(args []string) []string {
-	for key, value := range config.Aliases {
-		if args[1] == key {
-			args = append(args[:1], append(strings.Split(value, " "), args[2:]...)...)
-			break
+	if len(args) > 0 {
+		if replace := String(config.Aliases[args[0]]); replace != "" {
+			var result collections.StringArray
+			replace, quoted := replace.Protect()
+			result = replace.Fields()
+			if len(quoted) > 0 {
+				for i := range result {
+					result[i] = result[i].RestoreProtected(quoted).Trim(`"`)
+				}
+			}
+			return append(result.Strings(), args[1:]...)
 		}
 	}
-	return args
+	return nil
 }
 
 func (config *TGFConfig) parseSsmConfig(parameters []*ssm.Parameter) string {

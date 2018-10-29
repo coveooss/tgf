@@ -6,18 +6,15 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
-	"github.com/coveo/gotemplate/collections"
 	"github.com/stretchr/testify/assert"
-)
-
-type (
-	String = collections.String
 )
 
 func TestCheckVersionRange(t *testing.T) {
@@ -118,15 +115,35 @@ func TestSetConfigDefaultValues(t *testing.T) {
 func TestParseAliases(t *testing.T) {
 	t.Parallel()
 
-	config := &TGFConfig{Aliases: map[string]string{"other_arg1": "will not be replaced", "to_replace": "one two three,four"}}
-	argsThatShouldBeChanged := []string{"tgf", "to_replace", "other_arg1", "other_arg2"}
-	argsThatShouldBeUnchanged := []string{"tgf", "not_replace", "to_replace", "other_arg1", "other_arg2"}
+	config := TGFConfig{
+		Aliases: map[string]string{
+			"to_replace": "one two three,four",
+			"other_arg1": "will not be replaced",
+			"with_quote": `quoted arg1 "arg 2" -D -it --rm`,
+		},
+	}
 
-	parsedChangedArgs := config.ParseAliases(argsThatShouldBeChanged)
-	parsedUnchangedArgs := config.ParseAliases(argsThatShouldBeUnchanged)
+	tests := []struct {
+		name   string
+		config TGFConfig
+		args   []string
+		want   []string
+	}{
+		{"Nil", config, nil, nil},
+		{"Empty", config, []string{}, nil},
+		{"Unchanged", config, strings.Split("whatever the args are", " "), nil},
+		{"Replaced", config, strings.Split("to_replace with some args", " "), []string{"one", "two", "three,four", "with", "some", "args"}},
+		{"Replaced 2", config, strings.Split("to_replace other_arg1", " "), []string{"one", "two", "three,four", "other_arg1"}},
+		{"Replaced with quote", config, strings.Split("with_quote 1 2 3", " "), []string{"quoted", "arg1", "arg 2", "-D", "-it", "--rm", "1", "2", "3"}},
+	}
 
-	assert.Equal(t, []string{"tgf", "one", "two", "three,four", "other_arg1", "other_arg2"}, parsedChangedArgs)
-	assert.Equal(t, []string{"tgf", "not_replace", "to_replace", "other_arg1", "other_arg2"}, parsedUnchangedArgs)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.config.ParseAliases(tt.args); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("TGFConfig.ParseAliases() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
 func writeSSMConfig(parameterFolder, parameterKey, parameterValue string) {
