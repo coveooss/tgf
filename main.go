@@ -54,6 +54,11 @@ VERSION: {{ .version }}
 AUTHOR:	Coveo
 `
 
+type (
+	// String is imported from gotemplate/collections
+	String = collections.String
+)
+
 var (
 	config            = InitConfig()
 	dockerOptions     []string
@@ -169,16 +174,25 @@ func main() {
 	}
 	managed, unmanaged := app.SplitManaged(os.Args)
 	must(app.Parse(managed))
+	config.SetDefaultValues()
+
+	if alias := config.ParseAliases(unmanaged); alias != nil {
+		if managed, unmanaged = app.SplitManaged(append(os.Args[:1], alias...)); len(managed) != 0 {
+			must(app.Parse(managed))
+		}
+	}
 
 	// If AWS profile is supplied, we freeze the current session
 	if *awsProfile != "" {
 		must(config.InitAWS(*awsProfile))
 	}
 
-	config.SetDefaultValues()
-
 	if *image != "" {
 		config.Image = *image
+		config.RecommendedImageVersion = ""
+		config.RequiredVersionRange = ""
+		config.ImageVersion = nil
+		config.ImageTag = nil
 	}
 	if *imageVersion != "-" {
 		config.ImageVersion = imageVersion
