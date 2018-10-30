@@ -23,10 +23,11 @@ import (
 )
 
 const (
-	defaultSSMParameterFolder   = "/default/tgf"
-	defaultSecretsManagerSecret = "tgf-config"
-	configFile                  = ".tgf.config"
-	userConfigFile              = "tgf.user.config"
+	defaultSSMLinkToSecretsManager = "secrets-manager-id"
+	defaultSSMParameterFolder      = "/default/tgf"
+	defaultSecretsManagerSecret    = "tgf-config"
+	configFile                     = ".tgf.config"
+	userConfigFile                 = "tgf.user.config"
 )
 
 // TGFConfig contains the resulting configuration that will be applied
@@ -49,9 +50,11 @@ type TGFConfig struct {
 	RunAfter                string            `yaml:"run-after,omitempty" json:"run-after,omitempty"`
 	Aliases                 map[string]string `yaml:"alias,omitempty" json:"alias,omitempty"`
 
-	separator, ssmParameterFolder, secretsManagerSecret string
-	runBeforeCommands, runAfterCommands                 []string
-	imageBuildConfigs                                   []TGFConfigBuild // List of config built from previous build configs
+	separator                                   string
+	ssmLinkToSecretsManager, ssmParameterFolder string
+	secretsManagerSecret                        string
+	runBeforeCommands, runAfterCommands         []string
+	imageBuildConfigs                           []TGFConfigBuild // List of config built from previous build configs
 }
 
 // TGFConfigBuild contains an entry specifying how to customize the current docker image
@@ -84,14 +87,15 @@ func (cb TGFConfigBuild) GetTag() string {
 // InitConfig returns a properly initialized TGF configuration struct
 func InitConfig() *TGFConfig {
 	return &TGFConfig{Image: "coveo/tgf",
-		Refresh:              1 * time.Hour,
-		EntryPoint:           "terragrunt",
-		LogLevel:             "notice",
-		Environment:          make(map[string]string),
-		imageBuildConfigs:    []TGFConfigBuild{},
-		separator:            "-",
-		ssmParameterFolder:   defaultSSMParameterFolder,
-		secretsManagerSecret: defaultSecretsManagerSecret,
+		Refresh:                 1 * time.Hour,
+		EntryPoint:              "terragrunt",
+		LogLevel:                "notice",
+		Environment:             make(map[string]string),
+		imageBuildConfigs:       []TGFConfigBuild{},
+		separator:               "-",
+		ssmLinkToSecretsManager: defaultSSMLinkToSecretsManager,
+		ssmParameterFolder:      defaultSSMParameterFolder,
+		secretsManagerSecret:    defaultSecretsManagerSecret,
 	}
 }
 
@@ -138,16 +142,16 @@ func (config *TGFConfig) SetDefaultValues() {
 
 	// Fetch SecretsManager or SSM configs
 	if awsConfigExist() {
-		awsSession := session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
-		svc := secretsmanager.New(awsSession)
-		input := &secretsmanager.GetSecretValueInput{SecretId: aws.String(config.secretsManagerSecret)}
-		result, err := svc.GetSecretValue(input)
-		if err == nil && *result.SecretString != "" && *result.SecretString != "{}" {
-			configsData = append(configsData, configData{Name: "AWS/SecretsManager", Raw: *result.SecretString})
+		parameters, secretID, ssmErr := config.getSsmConfig()
+
+		secret, err := getSecretsManagerSecret(secretID)
+		if err == nil && *secret != "" && *secret != "{}" {
+			configsData = append(configsData, configData{Name: "AWS/SecretsManager", Raw: *secret})
 		} else {
 			debugPrint("Failed to fetch from secrets manager %v\n", err)
-			// Unable to fetch secrets manager, trying SSM
-			parameters := must(aws_helper.GetSSMParametersByPath(config.ssmParameterFolder, "")).([]*ssm.Parameter)
+			if ssmErr != nil {
+				panic(ssmErr)
+			}
 			ssmConfig := config.parseSsmConfig(parameters)
 			if ssmConfig != "" {
 				configsData = append(configsData, configData{Name: "AWS/ParametersStore", Raw: ssmConfig})
@@ -283,6 +287,20 @@ func (config *TGFConfig) ParseAliases(args []string) []string {
 	return nil
 }
 
+func (config *TGFConfig) getSsmConfig() ([]*ssm.Parameter, *string, error) {
+	parameters, ssmErr := aws_helper.GetSSMParametersByPath(config.ssmParameterFolder, "")
+	secretID := aws.String(config.secretsManagerSecret)
+	if ssmErr == nil {
+		for _, parameter := range parameters {
+			if strings.Replace(*parameter.Name, config.ssmParameterFolder, "", 1) == "/"+config.ssmLinkToSecretsManager {
+				secretID = parameter.Value
+				break
+			}
+		}
+	}
+	return parameters, secretID, ssmErr
+}
+
 func (config *TGFConfig) parseSsmConfig(parameters []*ssm.Parameter) string {
 	ssmConfig := ""
 	for _, parameter := range parameters {
@@ -323,6 +341,14 @@ func awsConfigExist() bool {
 		return false
 	}
 	return awsFolder.IsDir()
+}
+
+func getSecretsManagerSecret(secretID *string) (*string, error) {
+	awsSession := session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
+	svc := secretsmanager.New(awsSession)
+	input := &secretsmanager.GetSecretValueInput{SecretId: secretID}
+	result, err := svc.GetSecretValue(input)
+	return result.SecretString, err
 }
 
 // Return the list of configuration files found from the current working directory up to the root folder
