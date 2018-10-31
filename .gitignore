@@ -5,3 +5,7 @@ vendor
 tasks.json
 
 \.vscode/
+
+# built executables
+tgf
+tgf.exe
