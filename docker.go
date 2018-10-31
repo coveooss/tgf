@@ -3,13 +3,18 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ecr"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/signal"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"syscall"
@@ -371,13 +376,44 @@ func checkImage(image string) bool {
 	return out.String() != ""
 }
 
+// ECR Regex: https://regex101.com/r/GRxU06/1
+var reECR = regexp.MustCompile(`(?P<account>[0-9]+)\.dkr\.ecr\.(?P<region>[a-z0-9\-]+)\.amazonaws\.com`)
+
 func refreshImage(image string) {
 	ErrPrintf("Checking if there is a newer version of docker image %v\n", image)
-	dockerUpdateCmd := exec.Command("docker", "pull", image)
-	dockerUpdateCmd.Stdout, dockerUpdateCmd.Stderr = os.Stderr, os.Stderr
-	must(dockerUpdateCmd.Run())
+	err := getDockerUpdateCmd(image).Run()
+	if err != nil {
+		matches, _ := utils.MultiMatch(image, reECR)
+		account, accountOk := matches["account"]
+		region, regionOk := matches["region"]
+		if accountOk && regionOk && awsConfigExist() {
+			ErrPrintf("Failed to pull %v. It is an ECR image, trying again after a login.\n", image)
+			loginToECR(account, region)
+			must(getDockerUpdateCmd(image).Run())
+		} else {
+			panic(err)
+		}
+	}
 	touchImageRefresh(image)
 	ErrPrintln()
+}
+
+func loginToECR(account string, region string) {
+	awsSession := session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
+	svc := ecr.New(awsSession, &aws.Config{Region: aws.String(region)})
+	requestInput := &ecr.GetAuthorizationTokenInput{RegistryIds: []*string{aws.String(account)}}
+	result := must(svc.GetAuthorizationToken(requestInput)).(*ecr.GetAuthorizationTokenOutput)
+
+	decodedLogin := string(must(base64.StdEncoding.DecodeString(*result.AuthorizationData[0].AuthorizationToken)).([]byte))
+	dockerUpdateCmd := exec.Command("docker", "login", "-u", strings.Split(decodedLogin, ":")[0],
+		"-p", strings.Split(decodedLogin, ":")[1], *result.AuthorizationData[0].ProxyEndpoint)
+	must(dockerUpdateCmd.Run())
+}
+
+func getDockerUpdateCmd(image string) *exec.Cmd {
+	dockerUpdateCmd := exec.Command("docker", "pull", image)
+	dockerUpdateCmd.Stdout, dockerUpdateCmd.Stderr = os.Stderr, os.Stderr
+	return dockerUpdateCmd
 }
 
 func getEnviron(noHome bool) (result []string) {
