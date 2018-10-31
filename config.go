@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	defaultSSMLinkToSecretsManager = "secrets-manager-id"
+	defaultConfigLocationParameter = "config-location" // Supports secretsmanager ARNs for now
 	defaultSSMParameterFolder      = "/default/tgf"
 	defaultSecretsManagerSecret    = "tgf-config"
 	configFile                     = ".tgf.config"
@@ -50,11 +50,11 @@ type TGFConfig struct {
 	RunAfter                string            `yaml:"run-after,omitempty" json:"run-after,omitempty"`
 	Aliases                 map[string]string `yaml:"alias,omitempty" json:"alias,omitempty"`
 
-	separator                                   string
-	ssmLinkToSecretsManager, ssmParameterFolder string
-	secretsManagerSecret                        string
-	runBeforeCommands, runAfterCommands         []string
-	imageBuildConfigs                           []TGFConfigBuild // List of config built from previous build configs
+	separator                                string
+	configLocationParameter                  string
+	secretsManagerSecret, ssmParameterFolder string
+	runBeforeCommands, runAfterCommands      []string
+	imageBuildConfigs                        []TGFConfigBuild // List of config built from previous build configs
 }
 
 // TGFConfigBuild contains an entry specifying how to customize the current docker image
@@ -93,7 +93,7 @@ func InitConfig() *TGFConfig {
 		Environment:             make(map[string]string),
 		imageBuildConfigs:       []TGFConfigBuild{},
 		separator:               "-",
-		ssmLinkToSecretsManager: defaultSSMLinkToSecretsManager,
+		configLocationParameter: defaultConfigLocationParameter,
 		ssmParameterFolder:      defaultSSMParameterFolder,
 		secretsManagerSecret:    defaultSecretsManagerSecret,
 	}
@@ -292,7 +292,7 @@ func (config *TGFConfig) getSsmConfig() ([]*ssm.Parameter, *string, error) {
 	secretID := aws.String(config.secretsManagerSecret)
 	if ssmErr == nil {
 		for _, parameter := range parameters {
-			if strings.Replace(*parameter.Name, config.ssmParameterFolder, "", 1) == "/"+config.ssmLinkToSecretsManager {
+			if strings.Replace(*parameter.Name, config.ssmParameterFolder, "", 1) == "/"+config.configLocationParameter {
 				secretID = parameter.Value
 				break
 			}
