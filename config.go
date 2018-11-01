@@ -15,8 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/blang/semver"
 	"github.com/coveo/gotemplate/collections"
@@ -391,14 +389,6 @@ func awsConfigExist() bool {
 		return false
 	}
 	return awsFolder.IsDir()
-}
-
-func getSecretsManagerSecret(secretID *string) (*string, error) {
-	awsSession := session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
-	svc := secretsmanager.New(awsSession)
-	input := &secretsmanager.GetSecretValueInput{SecretId: secretID}
-	result, err := svc.GetSecretValue(input)
-	return result.SecretString, err
 }
 
 // Return the list of configuration files found from the current working directory up to the root folder
