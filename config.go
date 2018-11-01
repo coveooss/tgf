@@ -1,18 +1,20 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"github.com/hashicorp/go-getter"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
+	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/service/ssm"
@@ -23,11 +25,19 @@ import (
 )
 
 const (
-	defaultConfigLocationParameter = "config-location" // Supports secretsmanager ARNs for now
-	defaultSSMParameterFolder      = "/default/tgf"
-	defaultSecretsManagerSecret    = "tgf-config"
-	configFile                     = ".tgf.config"
-	userConfigFile                 = "tgf.user.config"
+	// ssm configuration
+	ssmParameterFolder = "/default/tgf"
+
+	// ssm configuration used to fetch configs from a remote location
+	remoteDefaultConfigPath       = "TGFConfig"
+	remoteConfigLocationParameter = "config-location"
+	remoteConfigPathsParameter    = "config-paths"
+
+	// configuration files
+	configFile     = ".tgf.config"
+	userConfigFile = "tgf.user.config"
+
+	tagSeparator = "-"
 )
 
 // TGFConfig contains the resulting configuration that will be applied
@@ -50,11 +60,8 @@ type TGFConfig struct {
 	RunAfter                string            `yaml:"run-after,omitempty" json:"run-after,omitempty"`
 	Aliases                 map[string]string `yaml:"alias,omitempty" json:"alias,omitempty"`
 
-	separator                                string
-	configLocationParameter                  string
-	secretsManagerSecret, ssmParameterFolder string
-	runBeforeCommands, runAfterCommands      []string
-	imageBuildConfigs                        []TGFConfigBuild // List of config built from previous build configs
+	runBeforeCommands, runAfterCommands []string
+	imageBuildConfigs                   []TGFConfigBuild // List of config built from previous build configs
 }
 
 // TGFConfigBuild contains an entry specifying how to customize the current docker image
@@ -87,15 +94,11 @@ func (cb TGFConfigBuild) GetTag() string {
 // InitConfig returns a properly initialized TGF configuration struct
 func InitConfig() *TGFConfig {
 	return &TGFConfig{Image: "coveo/tgf",
-		Refresh:                 1 * time.Hour,
-		EntryPoint:              "terragrunt",
-		LogLevel:                "notice",
-		Environment:             make(map[string]string),
-		imageBuildConfigs:       []TGFConfigBuild{},
-		separator:               "-",
-		configLocationParameter: defaultConfigLocationParameter,
-		ssmParameterFolder:      defaultSSMParameterFolder,
-		secretsManagerSecret:    defaultSecretsManagerSecret,
+		Refresh:           1 * time.Hour,
+		EntryPoint:        "terragrunt",
+		LogLevel:          "notice",
+		Environment:       make(map[string]string),
+		imageBuildConfigs: []TGFConfigBuild{},
 	}
 }
 
@@ -133,6 +136,10 @@ func (config *TGFConfig) InitAWS(profile string) error {
 // 3. tgf.user.config
 // 4. .tgf.config
 func (config *TGFConfig) SetDefaultValues() {
+	config.setDefaultValues(ssmParameterFolder)
+}
+
+func (config *TGFConfig) setDefaultValues(ssmParameterFolder string) {
 	type configData struct {
 		Name   string
 		Raw    string
@@ -140,19 +147,18 @@ func (config *TGFConfig) SetDefaultValues() {
 	}
 	configsData := []configData{}
 
-	// Fetch SecretsManager or SSM configs
+	// Fetch SSM configs
 	if awsConfigExist() {
-		parameters, secretID, ssmErr := config.getSsmConfig()
+		parameters := must(aws_helper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter)
+		parameterValues := extractMapFromParameters(ssmParameterFolder, parameters)
 
-		secret, err := getSecretsManagerSecret(secretID)
-		if err == nil && *secret != "" && *secret != "{}" {
-			configsData = append(configsData, configData{Name: "AWS/SecretsManager", Raw: *secret})
-		} else {
-			debugPrint("Failed to fetch from secrets manager %v\n", err)
-			if ssmErr != nil {
-				panic(ssmErr)
-			}
-			ssmConfig := config.parseSsmConfig(parameters)
+		for _, configFile := range findRemoteConfigFiles(parameterValues) {
+			configsData = append(configsData, configData{Name: "RemoteConfigFile", Raw: configFile})
+		}
+
+		// Only fetch SSM parameters if no ConfigFile was found
+		if len(configsData) == 0 {
+			ssmConfig := parseSsmConfig(parameterValues)
 			if ssmConfig != "" {
 				configsData = append(configsData, configData{Name: "AWS/ParametersStore", Raw: ssmConfig})
 			}
@@ -259,7 +265,7 @@ func (config *TGFConfig) GetImageName() string {
 	shouldAddTag := config.ImageVersion == nil || *config.ImageVersion == "" || reVersion.MatchString(*config.ImageVersion)
 	if config.ImageTag != nil && shouldAddTag {
 		if suffix != "" && *config.ImageTag != "" {
-			suffix += config.separator
+			suffix += tagSeparator
 		}
 		suffix += *config.ImageTag
 	}
@@ -287,25 +293,69 @@ func (config *TGFConfig) ParseAliases(args []string) []string {
 	return nil
 }
 
-func (config *TGFConfig) getSsmConfig() ([]*ssm.Parameter, *string, error) {
-	parameters, ssmErr := aws_helper.GetSSMParametersByPath(config.ssmParameterFolder, "")
-	secretID := aws.String(config.secretsManagerSecret)
-	if ssmErr == nil {
-		for _, parameter := range parameters {
-			if strings.Replace(*parameter.Name, config.ssmParameterFolder, "", 1) == "/"+config.configLocationParameter {
-				secretID = parameter.Value
-				break
+func extractMapFromParameters(ssmParameterFolder string, parameters []*ssm.Parameter) map[string]string {
+	values := make(map[string]string)
+	for _, parameter := range parameters {
+		key := strings.TrimLeft(strings.Replace(*parameter.Name, ssmParameterFolder, "", 1), "/")
+		values[key] = *parameter.Value
+	}
+	return values
+}
+
+func findRemoteConfigFiles(parameterValues map[string]string) []string {
+	configLocation, configLocationOk := parameterValues[remoteConfigLocationParameter]
+	if !configLocationOk || configLocation == "" {
+		return []string{}
+	}
+
+	if !strings.HasSuffix(configLocation, "/") {
+		configLocation = configLocation + "/"
+	}
+
+	configPaths := []string{remoteDefaultConfigPath}
+	if configPathString, configPathsOk := parameterValues[remoteConfigPathsParameter]; configPathsOk && configPathString != "" {
+		configPaths = strings.Split(configPathString, ":")
+	}
+
+	aws_helper.InitAwsSession("")
+	tempDir := must(ioutil.TempDir("", "tgf-config-files")).(string)
+	defer os.RemoveAll(tempDir)
+
+	configs := []string{}
+	for _, configPath := range configPaths {
+		fullConfigPath := configLocation + configPath
+		destConfigPath := path.Join(tempDir, configPath)
+		source := must(getter.Detect(fullConfigPath, must(os.Getwd()).(string), getter.Detectors)).(string)
+
+		err := getter.Get(destConfigPath, source)
+		if err == nil {
+			_, err = os.Stat(destConfigPath)
+			if os.IsNotExist(err) {
+				err = errors.New("Config file was not found at the source")
+			}
+		}
+
+		if err != nil {
+			printWarning("Error fetching config at %s: %v", source, err)
+			continue
+		}
+
+		if content, err := ioutil.ReadFile(destConfigPath); err != nil {
+			printWarning("Error reading fetched config file %s: %v", configPath, err)
+		} else {
+			contentString := string(content)
+			if contentString != "" {
+				configs = append(configs, contentString)
 			}
 		}
 	}
-	return parameters, secretID, ssmErr
+
+	return configs
 }
 
-func (config *TGFConfig) parseSsmConfig(parameters []*ssm.Parameter) string {
+func parseSsmConfig(parameterValues map[string]string) string {
 	ssmConfig := ""
-	for _, parameter := range parameters {
-		key := strings.TrimLeft(strings.Replace(*parameter.Name, config.ssmParameterFolder, "", 1), "/")
-		value := *parameter.Value
+	for key, value := range parameterValues {
 		isDict := strings.HasPrefix(value, "{") && strings.HasSuffix(value, "}")
 		isList := strings.HasPrefix(value, "[") && strings.HasSuffix(value, "]")
 		if !isDict && !isList {

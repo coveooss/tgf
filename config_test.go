@@ -71,7 +71,6 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	testTgfConfigFile := fmt.Sprintf("%s/.tgf.config", tempDir)
 	testTgfUserConfigFile := fmt.Sprintf("%s/tgf.user.config", tempDir)
 	testSSMParameterFolder := fmt.Sprintf("/test/tgf-%v", randInt())
-	testSecretsManagerSecret := fmt.Sprintf("test-tgf-config-%v", randInt())
 
 	writeSSMConfig(testSSMParameterFolder, "docker-image-build", "RUN ls test")
 	writeSSMConfig(testSSMParameterFolder, "docker-image-build-folder", "/abspath/my-folder")
@@ -94,8 +93,8 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	`).UnIndent().TrimSpace())
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
-	config := &TGFConfig{ssmParameterFolder: testSSMParameterFolder, secretsManagerSecret: testSecretsManagerSecret}
-	config.SetDefaultValues()
+	config := &TGFConfig{}
+	config.setDefaultValues(testSSMParameterFolder)
 
 	assert.Len(t, config.imageBuildConfigs, 2)
 
