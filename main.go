@@ -109,7 +109,7 @@ func main() {
 	bold := color.New(color.Bold).SprintfFunc()
 
 	descriptionTemplate.Execute(&descriptionBuffer, map[string]interface{}{
-		"parameterStoreKey": ssmParameterFolder,
+		"parameterStoreKey": defaultSSMParameterFolder,
 		"config":            configFile,
 		"options":           color.GreenString(strings.Join(getTgfConfigFields(), ", ")),
 		"readme":            link(gitSource + "/blob/master/README.md"),
