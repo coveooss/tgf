@@ -315,7 +315,9 @@ func findRemoteConfigFiles(parameterValues map[string]string) []string {
 		configPaths = strings.Split(configPathString, ":")
 	}
 
-	aws_helper.InitAwsSession("")
+	if awsConfigExist() {
+		aws_helper.InitAwsSession("")
+	}
 	tempDir := must(ioutil.TempDir("", "tgf-config-files")).(string)
 	defer os.RemoveAll(tempDir)
 
