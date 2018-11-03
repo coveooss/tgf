@@ -24,7 +24,8 @@ import (
 
 const (
 	// ssm configuration
-	ssmParameterFolder = "/default/tgf"
+	defaultSSMParameterFolder     = "/default/tgf"
+	ssmParameterFolderEnvVariable = "TGF_SSM_PATH"
 
 	// ssm configuration used to fetch configs from a remote location
 	remoteDefaultConfigPath       = "TGFConfig"
@@ -134,7 +135,7 @@ func (config *TGFConfig) InitAWS(profile string) error {
 // 3. tgf.user.config
 // 4. .tgf.config
 func (config *TGFConfig) SetDefaultValues() {
-	config.setDefaultValues(ssmParameterFolder)
+	config.setDefaultValues(getSSMParameterFolder())
 }
 
 func (config *TGFConfig) setDefaultValues(ssmParameterFolder string) {
@@ -423,6 +424,13 @@ func getTgfConfigFields() []string {
 		}
 	}
 	return fields
+}
+
+func getSSMParameterFolder() string {
+	if value, ok := os.LookupEnv(ssmParameterFolderEnvVariable); ok {
+		return value
+	}
+	return defaultSSMParameterFolder
 }
 
 // CheckVersionRange compare a version with a range of values

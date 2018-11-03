@@ -58,31 +58,26 @@ Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.18.0/tgf_1.1
 
 ## Configuration
 
-TGF looks for a file named .tgf.config or tgf.user.config in the current working folder (and recursively in any parent folders) to get its parameters.
-If some parameters are missing, it tries to find the remaining configuration through the [AWS parameter store](https://aws.amazon.com/ec2/systems-manager/parameter-store/)
-under `/default/tgf` using your current [AWS CLI configuration](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html) if any.
+TGF has multiple levels of configuration. It first looks through the [AWS parameter store](https://aws.amazon.com/ec2/systems-manager/parameter-store/)
+under `/default/tgf` using your current [AWS CLI configuration](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html) if any. There it tries to find parameters called `config-location` (example: bucket.s3.amazonaws.com/foo) and `config-paths` (example: my-file.json:my-second-file.json, default: TGFConfig). If it finds `config-location`, it fetches its config from that path using the [go-getter library](https://github.com/hashicorp/go-getter). Otherwise, it looks directly in SSM for configuration keys (ex: `/default/tgf/logging-level`).
 
-Your configuration file could be expressed in any of the [YAML](http://www.yaml.org/start.html), [JSON](http://www.json.org/) or [Terraform HCL](https://www.terraform.io/docs/configuration/syntax.html) declarative language.
+TGF then looks for a file named .tgf.config or tgf.user.config in the current working folder (and recursively in any parent folders) to get its parameters. These configuration files overwrite the remote configurations.
+Your configuration file could be expressed in  [YAML](http://www.yaml.org/start.html) or [JSON](http://www.json.org/)
 
 Example of YAML configuration file:
 
-```text
+```yaml
 docker-refresh: 1h
 logging-level: notice
 ```
 
-Example of HCL configuration file:
-
-```text
-docker-refresh = "1h"
-logging-level = "notice"
-```
-
 Example of JSON configuration file:
 
-```text
-"docker-refresh": "1h"
-"logging-level": "notice"
+```json
+{
+  "docker-refresh": "1h",
+  "logging-level": "notice"
+}
 ```
 
 ### Configuration keys
@@ -103,6 +98,7 @@ Key | Description | Default value
 | environment | Allows temporary addition of environment variables | *no default*
 | run-before | Script that is executed before the actual command | *no default*
 | run-after | Script that is executed after the actual command | *no default*
+| alias | Allows to set short aliases for long commands<br>`my_command: "--ri --with-docker-mount --image=my-image --image-version=my-tag -E my-script.py"` | *no default*
 
 Note: *The key names are not case sensitive*
 
@@ -132,29 +128,30 @@ section | Description
 
 ```text
 > tgf -H
-usage: tgf [<flags>]
+usage: ./tgf [<flags>]
 
-DESCRIPTION: TGF (terragrunt frontend) is a Docker frontend for terragrunt/terraform. It automatically maps your current folder, your HOME folder, your TEMP folder as well of most
-environment variables to the docker process. You can add -D to your command to get the exact docker command that is generated.
+DESCRIPTION: TGF (terragrunt frontend) is a Docker frontend for terragrunt/terraform. It automatically maps your current folder, your HOME
+folder, your TEMP folder as well of most environment variables to the docker process. You can add -D to your command to get the exact docker command that is generated.
 
-It then looks in your current folder and all its parents to find a file named '.tgf.config' to retrieve the default configuration. If not all configurable values are satisfied and you have an AWS configuration,
-it will then try to retrieve the missing elements from the AWS Parameter Store under the key '/default/tgf'.
+It then looks in your current folder and all its parents to find a file named '.tgf.config' to retrieve the default configuration. If not all configurable values are
+satisfied and you have an AWS configuration, it will then try to retrieve the missing elements from the AWS Parameter Store under the key '/default/tgf'.
 
-Configurable values are: docker-image, docker-image-version, docker-image-tag, docker-image-build, docker-image-build-folder, docker-image-build-tag, logging-level, entry-point, docker-refresh,
-docker-options, recommended-image-version, required-image-version, tgf-recommended-version, environment, run-before, run-after.
+Configurable values are: docker-image, docker-image-version, docker-image-tag, docker-image-build, docker-image-build-folder, docker-image-build-tag, logging-level,
+entry-point, docker-refresh, docker-options, recommended-image-version, required-image-version, tgf-recommended-version, environment, run-before, run-after, alias.
 
-You can get the full documentation at https://github.com/coveo/tgf/blob/master/README.md and check for new version at https://github.com/coveo/tgf/releases/latest.
+You can get the full documentation at https://github.com/coveo/tgf/blob/master/README.md and check for new version at
+https://github.com/coveo/tgf/releases/latest.
 
 Any docker image could be used, but TGF specialized images could be found at: https://hub.docker.com/r/coveo/tgf/tags.
 
-Terragrunt documentation could be found at https://github.com/coveo/terragrunt/blob/master/README.md (Coveo fork) or https://github.com/gruntwork-io/terragrunt/blob/master/README.md
-(Gruntwork.io original)
+Terragrunt documentation could be found at https://github.com/coveo/terragrunt/blob/master/README.md (Coveo fork) or
+https://github.com/gruntwork-io/terragrunt/blob/master/README.md (Gruntwork.io original)
 
 Terraform documentation could be found at https://www.terraform.io/docs/index.html.
 
-IMPORTANT: Most of the tgf command line arguments are in uppercase to avoid potential conflict with the underlying command. If any of the tgf arguments conflicts with an argument of the desired entry point, you
-must place that argument after -- to ensure that they are not interpreted by tgf and are passed to the entry point. Any non conflicting argument will be passed to the entry point wherever it is located on the
-invocation arguments.
+IMPORTANT: Most of the tgf command line arguments are in uppercase to avoid potential conflict with the underlying command. If any of the tgf arguments conflicts with an
+argument of the desired entry point, you must place that argument after -- to ensure that they are not interpreted by tgf and are passed to the entry point. Any non
+conflicting argument will be passed to the entry point wherever it is located on the invocation arguments.
 
   tgf ls -- -D   # Avoid -D to be interpreted by tgf as --debug-docker
 
@@ -178,6 +175,7 @@ Flags:
       --all-versions             Get versions of TGF & all others underlying utilities (alias --av)
       --prune                    Remove all previous versions of the targeted image
       --current-version          Get current version information (alias --cv)
+      --with-docker-mount        Mounts the docker socket to the image so the host's docker api is usable (alias --wd)
   -E, --entrypoint=terragrunt    Override the entry point for docker
       --image=coveo/tgf          Use the specified image instead of the default one
       --image-version=version    Use a different version of docker image instead of the default one (alias --iv)
