@@ -148,18 +148,22 @@ func (config *TGFConfig) setDefaultValues(ssmParameterFolder string) {
 
 	// Fetch SSM configs
 	if awsConfigExist() {
-		parameters := must(aws_helper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter)
-		parameterValues := extractMapFromParameters(ssmParameterFolder, parameters)
+		if err := config.InitAWS(""); err != nil {
+			printError("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err)
+		} else {
+			parameters := must(aws_helper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter)
+			parameterValues := extractMapFromParameters(ssmParameterFolder, parameters)
 
-		for _, configFile := range findRemoteConfigFiles(parameterValues) {
-			configsData = append(configsData, configData{Name: "RemoteConfigFile", Raw: configFile})
-		}
+			for _, configFile := range findRemoteConfigFiles(parameterValues) {
+				configsData = append(configsData, configData{Name: "RemoteConfigFile", Raw: configFile})
+			}
 
-		// Only fetch SSM parameters if no ConfigFile was found
-		if len(configsData) == 0 {
-			ssmConfig := parseSsmConfig(parameterValues)
-			if ssmConfig != "" {
-				configsData = append(configsData, configData{Name: "AWS/ParametersStore", Raw: ssmConfig})
+			// Only fetch SSM parameters if no ConfigFile was found
+			if len(configsData) == 0 {
+				ssmConfig := parseSsmConfig(parameterValues)
+				if ssmConfig != "" {
+					configsData = append(configsData, configData{Name: "AWS/ParametersStore", Raw: ssmConfig})
+				}
 			}
 		}
 	}
@@ -316,9 +320,6 @@ func findRemoteConfigFiles(parameterValues map[string]string) []string {
 		configPaths = strings.Split(configPathString, ":")
 	}
 
-	if awsConfigExist() {
-		aws_helper.InitAwsSession("")
-	}
 	tempDir := must(ioutil.TempDir("", "tgf-config-files")).(string)
 	defer os.RemoveAll(tempDir)
 
