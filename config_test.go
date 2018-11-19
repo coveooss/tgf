@@ -93,7 +93,7 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	`).UnIndent().TrimSpace())
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
-	config := &TGFConfig{}
+	config := InitConfig()
 	config.setDefaultValues(testSSMParameterFolder)
 
 	assert.Len(t, config.imageBuildConfigs, 2)
