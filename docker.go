@@ -380,6 +380,7 @@ func checkImage(image string) bool {
 var reECR = regexp.MustCompile(`(?P<account>[0-9]+)\.dkr\.ecr\.(?P<region>[a-z0-9\-]+)\.amazonaws\.com`)
 
 func refreshImage(image string) {
+	refresh = true // Setting this to true will ensure that dependant built images will also be refreshed
 	ErrPrintf("Checking if there is a newer version of docker image %v\n", image)
 	err := getDockerUpdateCmd(image).Run()
 	if err != nil {
