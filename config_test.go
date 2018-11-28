@@ -1,7 +1,9 @@
 package main
 
 import (
+	"crypto/md5"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -108,7 +110,7 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	assert.Equal(t, "RUN ls test", config.imageBuildConfigs[1].Instructions)
 	assert.Equal(t, "/abspath/my-folder", config.imageBuildConfigs[1].Folder)
 	assert.Equal(t, "/abspath/my-folder", config.imageBuildConfigs[1].Dir())
-	assert.Equal(t, "AWS", config.imageBuildConfigs[1].GetTag())
+	assert.Equal(t, "AWS-"+getHash(config.imageBuildConfigs[1].Instructions), config.imageBuildConfigs[1].GetTag())
 
 	assert.Equal(t, "coveo/stuff", config.Image)
 	assert.Equal(t, "test", *config.ImageTag)
@@ -190,4 +192,10 @@ func randInt() int {
 	source := rand.NewSource(time.Now().UnixNano())
 	random := rand.New(source)
 	return random.Int()
+}
+
+func getHash(value string) string {
+	h := md5.New()
+	io.WriteString(h, value)
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
