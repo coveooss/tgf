@@ -1,9 +1,11 @@
 package main
 
 import (
+	"crypto/md5"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/go-getter"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -87,7 +89,9 @@ func (cb TGFConfigBuild) GetTag() string {
 	if cb.Tag != "" {
 		return cb.Tag
 	}
-	return filepath.Base(filepath.Dir(cb.source))
+	h := md5.New()
+	io.WriteString(h, cb.Instructions)
+	return fmt.Sprintf("%s-%x", filepath.Base(filepath.Dir(cb.source)), h.Sum(nil))
 }
 
 // InitConfig returns a properly initialized TGF configuration struct
