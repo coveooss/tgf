@@ -223,7 +223,7 @@ func main() {
 	}
 
 	imageName := config.GetImageName()
-	if config.ImageVersion == nil && lastRefresh(imageName) > config.Refresh || !checkImage(imageName) || refresh {
+	if lastRefresh(imageName) > config.Refresh || !checkImage(imageName) || refresh {
 		refreshImage(imageName)
 	}
 
