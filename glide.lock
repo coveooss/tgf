@@ -1,5 +1,5 @@
 hash: d176a52200680e0082539a460361b73df85ae6b27e64de0e9bc620c8ad574527
-updated: 2018-10-31T21:50:30.384755572-04:00
+updated: 2018-11-30T11:47:48.593944005-05:00
 imports:
 - name: github.com/agext/levenshtein
   version: 5f10fee965225ac1eecdc234c09daf5cd9e7f7b6
@@ -24,7 +24,7 @@ imports:
 - name: github.com/armon/go-radix
   version: 1a2de0c21c94309923825da3df33a4381872c795
 - name: github.com/aws/aws-sdk-go
-  version: 870fa4307c5f57c14153c695df7b87af1acdcbf1
+  version: ceab7b7ac6f535d1397f124620720b5145f1ad59
   subpackages:
   - aws
   - aws/awserr
@@ -61,7 +61,6 @@ imports:
   - private/protocol/xml/xmlutil
   - service/ecr
   - service/s3
-  - service/secretsmanager
   - service/ssm
   - service/sts
 - name: github.com/bgentry/go-netrc
@@ -73,7 +72,7 @@ imports:
 - name: github.com/blang/semver
   version: 3c1074078d32d767e08ab2c8564867292da86926
 - name: github.com/coveo/gotemplate
-  version: b84a8d33b31471ae3e078eb8f29747be62ea4209
+  version: 6c245adc3fcf99f2de22f5ec06f2752f2b49fb11
   subpackages:
   - collections
   - collections/implementation
@@ -124,8 +123,6 @@ imports:
   version: 2d684516a8861da43017284349b7e303e809ac21
 - name: github.com/go-errors/errors
   version: d98b870cc4e05f1545532a80e9909be8216095b6
-- name: github.com/go-ini/ini
-  version: fa25069db393aecc09b71267d0489b357781c860
 - name: github.com/gogo/protobuf
   version: e14cafb6a2c249986e51c4b65c3206bf18578715
   subpackages:
@@ -167,7 +164,7 @@ imports:
   - json/scanner
   - json/token
 - name: github.com/hashicorp/hcl2
-  version: ffb8e97eb71bbcee2ea32048b0a7e451d37bdb27
+  version: 864f97c8ab203ef9f72a47f231e7d10e52a33ce7
   subpackages:
   - gohcl
   - hcl
@@ -241,7 +238,7 @@ imports:
   - specs-go
   - specs-go/v1
 - name: github.com/pkg/errors
-  version: c059e472caf75dbe73903f6521a20abac245b17f
+  version: 816c9085562cd7ee03e7f8188a1cfd942858cded
 - name: github.com/posener/complete
   version: 0d98d7ee195f007b3453c002780ed80c76e7c806
   subpackages:
@@ -290,7 +287,7 @@ imports:
   - scrypt
   - ssh/terminal
 - name: golang.org/x/net
-  version: 2f5d2388922f370f4355f327fcf4cfe9f5583908
+  version: 26e67e76b6c3f6ce91f7c52def5af501b4e0f3a2
   subpackages:
   - context
   - context/ctxhttp
@@ -300,7 +297,7 @@ imports:
   - internal/socks
   - proxy
 - name: golang.org/x/sys
-  version: d47a0f3392421c5624713c9a19fe781f651f8a50
+  version: ee1b12c67af419cf5a9be3bdbeea7fc1c5f32f11
   subpackages:
   - unix
   - windows
@@ -317,10 +314,10 @@ imports:
   version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
 testImports:
 - name: github.com/davecgh/go-spew
-  version: 782f4967f2dc4564575ca782fe2d04090b5faca8
+  version: d8f796af33cc11cb798c1aaeb27a4ebc5099927d
   subpackages:
   - spew
 - name: github.com/pmezard/go-difflib
-  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  version: 792786c7400a136282c1664665ae0a8db921c6c2
   subpackages:
   - difflib

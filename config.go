@@ -183,7 +183,7 @@ func (config *TGFConfig) setDefaultValues(ssmParameterFolder string) {
 	// Parse/Unmarshal configs
 	for i := range configsData {
 		configData := &configsData[i]
-		if err := collections.ConvertData(configData.Raw, &config); err != nil {
+		if err := collections.ConvertData(configData.Raw, config); err != nil {
 			fmt.Fprintln(os.Stderr, errorString("Error while loading configuration from %s\nConfiguration file must be valid YAML, JSON or HCL\n%v", configData.Name, err))
 		}
 		collections.ConvertData(configData.Raw, &configData.Config)
