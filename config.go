@@ -73,6 +73,23 @@ type TGFConfigBuild struct {
 	source       string
 }
 
+func (cb TGFConfigBuild) hash() string {
+	h := md5.New()
+	io.WriteString(h, cb.Instructions)
+	if cb.Folder != "" {
+		filepath.Walk(cb.Dir(), func(path string, info os.FileInfo, err error) error {
+			if info == nil || info.IsDir() || err != nil {
+				return nil
+			}
+			if !strings.Contains(path, dockerfilePattern) {
+				io.WriteString(h, fmt.Sprintf("%v", info.ModTime()))
+			}
+			return nil
+		})
+	}
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
 // Dir returns the folder name relative to the source
 func (cb TGFConfigBuild) Dir() string {
 	if cb.Folder == "" {
@@ -89,9 +106,7 @@ func (cb TGFConfigBuild) GetTag() string {
 	if cb.Tag != "" {
 		return cb.Tag
 	}
-	h := md5.New()
-	io.WriteString(h, cb.Instructions)
-	return fmt.Sprintf("%s-%x", filepath.Base(filepath.Dir(cb.source)), h.Sum(nil))
+	return fmt.Sprintf("%s-%s", filepath.Base(filepath.Dir(cb.source)), cb.hash())
 }
 
 // InitConfig returns a properly initialized TGF configuration struct

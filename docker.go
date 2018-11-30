@@ -32,6 +32,7 @@ const (
 	minimumDockerVersion = "1.25"
 	tgfImageVersion      = "TGF_IMAGE_VERSION"
 	dockerSocketFile     = "/var/run/docker.sock"
+	dockerfilePattern    = "TGF_dockerfile"
 )
 
 func callDocker(withDockerMount bool, args ...string) int {
@@ -209,11 +210,11 @@ func getImage() (name string) {
 		if ib.Folder == "" {
 			// There is no explicit folder, so we create a temporary folder to store the docker file
 			temp = must(ioutil.TempDir("", "tgf-dockerbuild")).(string)
-			out = must(os.Create(filepath.Join(temp, "Dockerfile"))).(*os.File)
+			out = must(os.Create(filepath.Join(temp, dockerfilePattern))).(*os.File)
 			folder = temp
 		} else {
 			if ib.Instructions != "" {
-				out = must(ioutil.TempFile(ib.Dir(), "DockerFile")).(*os.File)
+				out = must(ioutil.TempFile(ib.Dir(), dockerfilePattern)).(*os.File)
 				temp = out.Name()
 				dockerFile = temp
 			}
