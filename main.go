@@ -63,13 +63,14 @@ var (
 	config            = InitConfig()
 	dockerOptions     []string
 	debugMode         bool
+	disableUserConfig bool
 	flushCache        bool
 	getImageName      bool
+	mountPoint        string
 	noHome            bool
 	noTemp            bool
 	refresh           bool
-	disableUserConfig bool
-	mountPoint        string
+	useLocalImage     bool
 )
 
 var must = errors.Must
@@ -134,10 +135,11 @@ func main() {
 
 	app.Switch("debug-docker", "Print the docker command issued", 'D').BoolVar(&debugMode)
 	app.Switch("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache", 'F').BoolVar(&flushCache)
-	app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").BoolVar(&refresh)
 	app.Switch("get-image-name", "Just return the resulting image name (alias --gi)").BoolVar(&getImageName)
 	app.Switch("no-home", "Disable the mapping of the home directory (alias --nh)").BoolVar(&noHome)
 	app.Switch("no-temp", "Disable the mapping of the temp directory (alias --nt)").BoolVar(&noTemp)
+	app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").BoolVar(&refresh)
+	app.Switch("local-image", "If set, TGF will not pull the image when refreshing (alias --li)").BoolVar(&useLocalImage)
 	app.Argument("mount-point", "Specify a mount point for the current folder --mp)").StringVar(&mountPoint)
 	app.Argument("docker-arg", "Supply extra argument to Docker (alias --da)").PlaceHolder("<opt>").StringsVar(&dockerOptions)
 	app.Argument("ignore-user-config", "Ignore all tgf.user.config files (alias --iuc)").BoolVar(&disableUserConfig)
@@ -162,6 +164,7 @@ func main() {
 	app.Switch("cv", "alias for current-version").Hidden().BoolVar(getCurrentVersion)
 	app.Switch("av", "alias for all-versions").Hidden().BoolVar(getAllVersions)
 	app.Switch("wd", "alias for with-docker").Hidden().BoolVar(withDockerMount)
+	app.Switch("li", "alias for local-image").Hidden().BoolVar(&useLocalImage)
 	app.Argument("da", "alias for docker-arg").Hidden().StringsVar(&dockerOptions)
 	app.Argument("iv", "alias for image-version").Default("-").Hidden().StringVar(imageVersion)
 	app.Argument("mp", "alias for mount-point").Hidden().StringVar(&mountPoint)

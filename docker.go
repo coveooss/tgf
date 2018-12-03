@@ -243,7 +243,7 @@ func getImage() (name string) {
 		name = name + "-" + ib.GetTag()
 		if refresh || getActualImageVersionInternal(name) == "" {
 			args := []string{"build", ".", "--quiet", "--force-rm"}
-			if i == 0 && refresh {
+			if i == 0 && refresh && !useLocalImage {
 				args = append(args, "--pull")
 			}
 			if dockerFile != "" {
@@ -381,6 +381,12 @@ var reECR = regexp.MustCompile(`(?P<account>[0-9]+)\.dkr\.ecr\.(?P<region>[a-z0-
 
 func refreshImage(image string) {
 	refresh = true // Setting this to true will ensure that dependant built images will also be refreshed
+
+	if useLocalImage {
+		ErrPrintf("Not refreshing %v because `local-image` is set\n", image)
+		return
+	}
+
 	ErrPrintf("Checking if there is a newer version of docker image %v\n", image)
 	err := getDockerUpdateCmd(image).Run()
 	if err != nil {
