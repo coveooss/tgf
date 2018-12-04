@@ -243,7 +243,7 @@ func getImage() (name string) {
 
 		name = name + "-" + ib.GetTag()
 		if refresh || getActualImageVersionInternal(name) == "" {
-			args := []string{"build", ".", "--quiet", "--force-rm"}
+			args := []string{"build", ".", "-f", dockerfilePattern, "--quiet", "--force-rm"}
 			if i == 0 && refresh && !useLocalImage {
 				args = append(args, "--pull")
 			}

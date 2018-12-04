@@ -16,7 +16,7 @@ import (
 )
 
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
-var version = "1.18.0"
+var version = "1.18.1"
 
 var description = `
 DESCRIPTION:

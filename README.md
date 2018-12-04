@@ -188,7 +188,7 @@ Example:
 
 ```bash
 > tgf --current-version
-tgf v1.18.0
+tgf v1.18.1
 ```
 
 Returns the current version of the tgf tool
