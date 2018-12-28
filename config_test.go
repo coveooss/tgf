@@ -82,8 +82,8 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	defer deleteSSMConfig(testSSMParameterFolder, "alias")
 
 	userTgfConfig := []byte(String(`
-		docker-image: coveo/overwritten
-		docker-image-tag: test
+		docker-image = "coveo/overwritten"
+		docker-image-tag = "test"
 	`).UnIndent().TrimSpace())
 	ioutil.WriteFile(testTgfUserConfigFile, userTgfConfig, 0644)
 

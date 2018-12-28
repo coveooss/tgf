@@ -43,23 +43,23 @@ const (
 
 // TGFConfig contains the resulting configuration that will be applied
 type TGFConfig struct {
-	Image                   string            `yaml:"docker-image,omitempty" json:"docker-image,omitempty"`
-	ImageVersion            *string           `yaml:"docker-image-version,omitempty" json:"docker-image-version,omitempty"`
-	ImageTag                *string           `yaml:"docker-image-tag,omitempty" json:"docker-image-tag,omitempty"`
-	ImageBuild              string            `yaml:"docker-image-build,omitempty" json:"docker-image-build,omitempty"`
-	ImageBuildFolder        string            `yaml:"docker-image-build-folder,omitempty" json:"docker-image-build-folder,omitempty"`
-	ImageBuildTag           string            `yaml:"docker-image-build-tag,omitempty" json:"docker-image-build-tag,omitempty"`
-	LogLevel                string            `yaml:"logging-level,omitempty" json:"logging-level,omitempty"`
-	EntryPoint              string            `yaml:"entry-point,omitempty" json:"entry-point,omitempty"`
-	Refresh                 time.Duration     `yaml:"docker-refresh,omitempty" json:"docker-refresh,omitempty"`
-	DockerOptions           []string          `yaml:"docker-options,omitempty" json:"docker-options,omitempty"`
-	RecommendedImageVersion string            `yaml:"recommended-image-version,omitempty" json:"recommended-image-version,omitempty"`
-	RequiredVersionRange    string            `yaml:"required-image-version,omitempty" json:"required-image-version,omitempty"`
-	RecommendedTGFVersion   string            `yaml:"tgf-recommended-version,omitempty" json:"tgf-recommended-version,omitempty"`
-	Environment             map[string]string `yaml:"environment,omitempty" json:"environment,omitempty"`
-	RunBefore               string            `yaml:"run-before,omitempty" json:"run-before,omitempty"`
-	RunAfter                string            `yaml:"run-after,omitempty" json:"run-after,omitempty"`
-	Aliases                 map[string]string `yaml:"alias,omitempty" json:"alias,omitempty"`
+	Image                   string            `yaml:"docker-image,omitempty" json:"docker-image,omitempty" hcl:"docker-image,omitempty"`
+	ImageVersion            *string           `yaml:"docker-image-version,omitempty" json:"docker-image-version,omitempty" hcl:"docker-image-version,omitempty"`
+	ImageTag                *string           `yaml:"docker-image-tag,omitempty" json:"docker-image-tag,omitempty" hcl:"docker-image-tag,omitempty"`
+	ImageBuild              string            `yaml:"docker-image-build,omitempty" json:"docker-image-build,omitempty" hcl:"docker-image-build,omitempty"`
+	ImageBuildFolder        string            `yaml:"docker-image-build-folder,omitempty" json:"docker-image-build-folder,omitempty" hcl:"docker-image-build-folder,omitempty"`
+	ImageBuildTag           string            `yaml:"docker-image-build-tag,omitempty" json:"docker-image-build-tag,omitempty" hcl:"docker-image-build-tag,omitempty"`
+	LogLevel                string            `yaml:"logging-level,omitempty" json:"logging-level,omitempty" hcl:"logging-level,omitempty"`
+	EntryPoint              string            `yaml:"entry-point,omitempty" json:"entry-point,omitempty" hcl:"entry-point,omitempty"`
+	Refresh                 time.Duration     `yaml:"docker-refresh,omitempty" json:"docker-refresh,omitempty" hcl:"docker-refresh,omitempty"`
+	DockerOptions           []string          `yaml:"docker-options,omitempty" json:"docker-options,omitempty" hcl:"docker-options,omitempty"`
+	RecommendedImageVersion string            `yaml:"recommended-image-version,omitempty" json:"recommended-image-version,omitempty" hcl:"recommended-image-version,omitempty"`
+	RequiredVersionRange    string            `yaml:"required-image-version,omitempty" json:"required-image-version,omitempty" hcl:"required-image-version,omitempty"`
+	RecommendedTGFVersion   string            `yaml:"tgf-recommended-version,omitempty" json:"tgf-recommended-version,omitempty" hcl:"tgf-recommended-version,omitempty"`
+	Environment             map[string]string `yaml:"environment,omitempty" json:"environment,omitempty" hcl:"environment,omitempty"`
+	RunBefore               string            `yaml:"run-before,omitempty" json:"run-before,omitempty" hcl:"run-before,omitempty"`
+	RunAfter                string            `yaml:"run-after,omitempty" json:"run-after,omitempty" hcl:"run-after,omitempty"`
+	Aliases                 map[string]string `yaml:"alias,omitempty" json:"alias,omitempty" hcl:"alias,omitempty"`
 
 	runBeforeCommands, runAfterCommands []string
 	imageBuildConfigs                   []TGFConfigBuild // List of config built from previous build configs
