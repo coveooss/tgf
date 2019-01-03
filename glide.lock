@@ -1,5 +1,5 @@
 hash: d176a52200680e0082539a460361b73df85ae6b27e64de0e9bc620c8ad574527
-updated: 2018-11-30T11:47:48.593944005-05:00
+updated: 2019-01-03T09:01:21.622289289-05:00
 imports:
 - name: github.com/agext/levenshtein
   version: 5f10fee965225ac1eecdc234c09daf5cd9e7f7b6
@@ -10,9 +10,9 @@ imports:
 - name: github.com/alecthomas/units
   version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
 - name: github.com/andybalholm/cascadia
-  version: 901648c87902174f774fac311d7f176f8647bdaa
+  version: 680b6a57bda4f657485ad44bdea42342ead737bc
 - name: github.com/aokoli/goutils
-  version: 3391d3790d23d03408670993e957e8f408993c34
+  version: 41ac8693c5c10a92ea1ff5ac3a7f95646f6123b0
 - name: github.com/apparentlymart/go-cidr
   version: 1755c023625ec3a84979b90841a1ab067ed6c071
   subpackages:
@@ -24,7 +24,7 @@ imports:
 - name: github.com/armon/go-radix
   version: 1a2de0c21c94309923825da3df33a4381872c795
 - name: github.com/aws/aws-sdk-go
-  version: ceab7b7ac6f535d1397f124620720b5145f1ad59
+  version: 1fae280bf2fb990480b751e0ba0d2428548c98b6
   subpackages:
   - aws
   - aws/awserr
@@ -35,6 +35,7 @@ imports:
   - aws/credentials
   - aws/credentials/ec2rolecreds
   - aws/credentials/endpointcreds
+  - aws/credentials/processcreds
   - aws/credentials/stscreds
   - aws/csm
   - aws/defaults
@@ -72,7 +73,7 @@ imports:
 - name: github.com/blang/semver
   version: 3c1074078d32d767e08ab2c8564867292da86926
 - name: github.com/coveo/gotemplate
-  version: 6c245adc3fcf99f2de22f5ec06f2752f2b49fb11
+  version: 3edf3fa42949d978a47053705974f5a501da6ad4
   subpackages:
   - collections
   - collections/implementation
@@ -84,12 +85,12 @@ imports:
   - xml
   - yaml
 - name: github.com/docker/distribution
-  version: 16128bbac47f75050e82f7e91b04df33775e0c23
+  version: 40b7b5830a2337bb07627617740c0e39eb92800c
   subpackages:
   - digestset
   - reference
 - name: github.com/docker/docker
-  version: b1116479b23434de7d70710b6454af7cb2484a58
+  version: 3f7898cfcd537fed9f5df64ae0d11e7a2fa83208
   subpackages:
   - api
   - api/types
@@ -116,21 +117,28 @@ imports:
   - sockets
   - tlsconfig
 - name: github.com/docker/go-units
-  version: 47565b4f722fb6ceae66b95f853feed578a4a51c
+  version: 2fb04c6466a548a03cb009c5569ee1ab1e35398e
 - name: github.com/drhodes/goLorem
   version: ecccc744c2d953a1e13cbe5e5fc5d4cbc9b8daeb
 - name: github.com/fatih/color
-  version: 2d684516a8861da43017284349b7e303e809ac21
+  version: 3f9d52f7176a6927daacff70a3e8d1dc2025c53e
 - name: github.com/go-errors/errors
   version: d98b870cc4e05f1545532a80e9909be8216095b6
 - name: github.com/gogo/protobuf
-  version: e14cafb6a2c249986e51c4b65c3206bf18578715
+  version: 8e4a75f11384d0fb2188d872d456407e41f33fc0
   subpackages:
   - proto
+- name: github.com/google/go-cmp
+  version: 2248b49eaa8e1c8c0963ee77b40841adbc19d4ca
+  subpackages:
+  - cmp
+  - cmp/internal/diff
+  - cmp/internal/function
+  - cmp/internal/value
 - name: github.com/google/uuid
   version: 064e2069ce9c359c118179501254f67d7d37ba24
 - name: github.com/gruntwork-io/terragrunt
-  version: bb5fb87f2b72073d3b499b1a819b289cdea121fd
+  version: 00221ed63526ef3b26bba8867a12322c8bd36a9f
   repo: https://github.com/coveo/terragrunt.git
   subpackages:
   - aws_helper
@@ -141,7 +149,7 @@ imports:
 - name: github.com/hashicorp/go-cleanhttp
   version: e8ab9daed8d1ddd2d3c4efba338fe2eeae2e4f18
 - name: github.com/hashicorp/go-getter
-  version: 4bda8fa99001c61db3cad96b421d4c12a81f256d
+  version: be39683deade1b3613258f751a2fad316d7b5e7c
   subpackages:
   - helper/url
 - name: github.com/hashicorp/go-multierror
@@ -149,7 +157,7 @@ imports:
 - name: github.com/hashicorp/go-safetemp
   version: c9a55de4fe06c920a71964b53cfe3dd293a3c743
 - name: github.com/hashicorp/go-uuid
-  version: de160f5c59f693fed329e73e291bb751fe4ea4dc
+  version: 4f571afc59f3043a65f8fe6bf46d887b10a01d43
 - name: github.com/hashicorp/go-version
   version: b5a281d3160aa11950a6182bd9a9dc2cb1e02d50
 - name: github.com/hashicorp/hcl
@@ -164,13 +172,14 @@ imports:
   - json/scanner
   - json/token
 - name: github.com/hashicorp/hcl2
-  version: 864f97c8ab203ef9f72a47f231e7d10e52a33ce7
+  version: 6631d7cd0a68d20ba7d0aa559f883c86158fffd9
   subpackages:
   - gohcl
   - hcl
   - hcl/hclsyntax
   - hcl/json
   - hclparse
+  - hclwrite
 - name: github.com/hashicorp/hil
   version: fa9f258a92500514cc8e9c67020487709df92432
   subpackages:
@@ -178,7 +187,7 @@ imports:
   - parser
   - scanner
 - name: github.com/hashicorp/terraform
-  version: 07da549a1d20bf1db1a5f841835aa28b1576b4d3
+  version: ac4fff416318bf0915a0ab80e062a99ef3724334
   subpackages:
   - config
   - config/hcl2shim
@@ -198,13 +207,14 @@ imports:
 - name: github.com/huandu/xstrings
   version: 8bbcf2f9ccb55755e748b7644164cd4bdce94c1d
 - name: github.com/imdario/mergo
-  version: 7fe0c75c13abdee74b09fcacef5ea1c6bba6a874
+  version: 9f23e2d6bd2a77f959b2bf6acdbefd708a83a4a4
 - name: github.com/jmespath/go-jmespath
   version: c2b33e8439af944379acbdd9c3a5fe0bc44bd8a5
 - name: github.com/Masterminds/semver
   version: 59c29afe1a994eacb71c833025ca7acf874bb1da
 - name: github.com/Masterminds/sprig
-  version: 15f9564e7e9cf0da02a48e0d25f12a7b83559aa6
+  version: 6f47c5a313118e47c93c062ac4ed24eb141d0243
+  repo: https://github.com/coveord/sprig
 - name: github.com/mattn/go-colorable
   version: efa589957cd060542a26d2dd7832fd6a6c6c3ade
 - name: github.com/mattn/go-isatty
@@ -224,7 +234,7 @@ imports:
 - name: github.com/mitchellh/hashstructure
   version: a38c50148365edc8df43c1580c48fb2b3a1e9cd7
 - name: github.com/mitchellh/mapstructure
-  version: fa473d140ef3c6adf42d6b391fe76707f1f243c8
+  version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
 - name: github.com/mitchellh/reflectwalk
   version: eecee6c969c02c8cc2ae48e1e269843ae8590796
 - name: github.com/op/go-logging
@@ -233,20 +243,20 @@ imports:
 - name: github.com/opencontainers/go-digest
   version: c9281466c8b2f606084ac71339773efd177436e7
 - name: github.com/opencontainers/image-spec
-  version: 7b1e489870acb042978a3935d2fb76f8a79aff81
+  version: e74bb5aed1c876be723e181895359d8dca9b56a6
   subpackages:
   - specs-go
   - specs-go/v1
 - name: github.com/pkg/errors
-  version: 816c9085562cd7ee03e7f8188a1cfd942858cded
+  version: ba968bfe8b2f7e042a574c888954fccecfa385b4
 - name: github.com/posener/complete
-  version: 0d98d7ee195f007b3453c002780ed80c76e7c806
+  version: 3ef9b31a6a0613ae832e7ecf208374027c3b2343
   subpackages:
   - cmd
   - cmd/install
   - match
 - name: github.com/PuerkitoBio/goquery
-  version: dc2ec5c7ca4d9aae063b79b9f581dd3ea6afd2b2
+  version: 2d2796f41742ece03e8086188fa4db16a3a0b458
 - name: github.com/sergi/go-diff
   version: da645544ed44df016359bd4c0e3dc60ee3a0da43
   subpackages:
@@ -256,13 +266,13 @@ imports:
   subpackages:
   - assert
 - name: github.com/ulikunitz/xz
-  version: 636d36a76670e6c700f22fd5f4588679ff2896c4
+  version: 590df8077fbcb06ad62d7714da06c00e5dd2316d
   subpackages:
   - internal/hash
   - internal/xlog
   - lzma
 - name: github.com/zclconf/go-cty
-  version: cc054f996f8b732f7205fd6f1ef84c39f2720461
+  version: 67e3da15e4309389854d5b28eaaede43da5ca9ad
   subpackages:
   - cty
   - cty/convert
@@ -272,7 +282,7 @@ imports:
   - cty/json
   - cty/set
 - name: golang.org/x/crypto
-  version: 0e37d006457bf46f9e6692014ba72ef82c33022c
+  version: 505ab145d0a99da450461ae2c1a9f6cd10d1f447
   subpackages:
   - bcrypt
   - blowfish
@@ -287,22 +297,20 @@ imports:
   - scrypt
   - ssh/terminal
 - name: golang.org/x/net
-  version: 26e67e76b6c3f6ce91f7c52def5af501b4e0f3a2
+  version: e147a9138326bc0e9d4e179541ffd8af41cff8a9
   subpackages:
-  - context
-  - context/ctxhttp
   - html
   - html/atom
   - idna
   - internal/socks
   - proxy
 - name: golang.org/x/sys
-  version: ee1b12c67af419cf5a9be3bdbeea7fc1c5f32f11
+  version: 074acd46bca67915925527c07849494d115e7c43
   subpackages:
   - unix
   - windows
 - name: golang.org/x/text
-  version: 905a57155faa8230500121607930ebb9dd8e139c
+  version: e6919f6577db79269a6443b9dc46d18f2238fb5d
   subpackages:
   - secure/bidirule
   - transform
@@ -311,7 +319,7 @@ imports:
 - name: gopkg.in/alecthomas/kingpin.v2
   version: 947dcec5ba9c011838740e680966fd7087a71d0d
 - name: gopkg.in/yaml.v2
-  version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
+  version: 51d6538a90f86fe93ac480b35f37b2be17fef232
 testImports:
 - name: github.com/davecgh/go-spew
   version: d8f796af33cc11cb798c1aaeb27a4ebc5099927d
