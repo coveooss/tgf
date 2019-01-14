@@ -75,6 +75,7 @@ type TGFConfigBuild struct {
 
 func (cb TGFConfigBuild) hash() string {
 	h := md5.New()
+	io.WriteString(h, filepath.Base(filepath.Dir(cb.source)))
 	io.WriteString(h, cb.Instructions)
 	if cb.Folder != "" {
 		filepath.Walk(cb.Dir(), func(path string, info os.FileInfo, err error) error {
@@ -106,7 +107,7 @@ func (cb TGFConfigBuild) GetTag() string {
 	if cb.Tag != "" {
 		return cb.Tag
 	}
-	return fmt.Sprintf("%s-%s", filepath.Base(filepath.Dir(cb.source)), cb.hash())
+	return cb.hash()
 }
 
 // InitConfig returns a properly initialized TGF configuration struct
