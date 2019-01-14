@@ -110,7 +110,7 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	assert.Equal(t, "RUN ls test", config.imageBuildConfigs[1].Instructions)
 	assert.Equal(t, "/abspath/my-folder", config.imageBuildConfigs[1].Folder)
 	assert.Equal(t, "/abspath/my-folder", config.imageBuildConfigs[1].Dir())
-	assert.Equal(t, "AWS-"+getHash(config.imageBuildConfigs[1].Instructions), config.imageBuildConfigs[1].GetTag())
+	assert.Equal(t, getHash([]string{"AWS", config.imageBuildConfigs[1].Instructions}), config.imageBuildConfigs[1].GetTag())
 
 	assert.Equal(t, "coveo/stuff", config.Image)
 	assert.Equal(t, "test", *config.ImageTag)
@@ -194,8 +194,10 @@ func randInt() int {
 	return random.Int()
 }
 
-func getHash(value string) string {
+func getHash(values []string) string {
 	h := md5.New()
-	io.WriteString(h, value)
+	for _, value := range values {
+		io.WriteString(h, value)
+	}
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
