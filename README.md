@@ -40,20 +40,20 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.18.3/tgf_1.18.3_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
+curl -sL https://github.com/coveo/tgf/releases/download/v1.18.5/tgf_1.18.5_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.18.3/tgf_1.18.3_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.18.5/tgf_1.18.5_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.18.3/tgf_1.18.3_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.18.5/tgf_1.18.5_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
