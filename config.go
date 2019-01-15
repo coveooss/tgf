@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/go-getter"
 	"io"
 	"io/ioutil"
 	"os"
@@ -21,6 +20,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/coveo/gotemplate/collections"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
+	"github.com/hashicorp/go-getter"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -107,7 +107,7 @@ func (cb TGFConfigBuild) GetTag() string {
 	if cb.Tag != "" {
 		return cb.Tag
 	}
-	return cb.hash()
+	return filepath.Base(filepath.Dir(cb.source))
 }
 
 // InitConfig returns a properly initialized TGF configuration struct

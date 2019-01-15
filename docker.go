@@ -5,9 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ecr"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -19,6 +16,9 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/blang/semver"
 	"github.com/coveo/gotemplate/utils"
 	"github.com/docker/docker/api/types"
@@ -33,6 +33,7 @@ const (
 	tgfImageVersion      = "TGF_IMAGE_VERSION"
 	dockerSocketFile     = "/var/run/docker.sock"
 	dockerfilePattern    = "TGF_dockerfile"
+	maxDockerTagLength   = 128
 )
 
 func callDocker(withDockerMount bool, args ...string) int {
@@ -242,8 +243,12 @@ func getImage() (name string) {
 		}
 
 		name = name + "-" + ib.GetTag()
-		if refresh || getActualImageVersionInternal(name) == "" {
-			args := []string{"build", ".", "-f", dockerfilePattern, "--quiet", "--force-rm"}
+		if image, tag := Split2(name, ":"); len(tag) > maxDockerTagLength {
+			name = image + ":" + tag[0:maxDockerTagLength]
+		}
+		if refresh || getImageHash(name) != ib.hash() {
+			label := fmt.Sprintf("hash=%s", ib.hash())
+			args := []string{"build", ".", "-f", dockerfilePattern, "--quiet", "--force-rm", "--label", label}
 			if i == 0 && refresh && !useLocalImage {
 				args = append(args, "--pull")
 			}
@@ -341,17 +346,30 @@ func getDockerClient() (*client.Client, context.Context) {
 var dockerClient *client.Client
 var dockerContext context.Context
 
-func getActualImageVersionInternal(imageName string) string {
+func getImageSummary(imageName string) *types.ImageSummary {
 	cli, ctx := getDockerClient()
 	// Find image
 	filters := filters.NewArgs()
 	filters.Add("reference", imageName)
 	images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters})
 	if err != nil || len(images) != 1 {
-		return ""
+		return nil
 	}
+	return &images[0]
+}
 
-	return getActualImageVersionFromImageID(images[0].ID)
+func getActualImageVersionInternal(imageName string) string {
+	if image := getImageSummary(imageName); image != nil {
+		return getActualImageVersionFromImageID(image.ID)
+	}
+	return ""
+}
+
+func getImageHash(imageName string) string {
+	if image := getImageSummary(imageName); image != nil {
+		return image.Labels["hash"]
+	}
+	return ""
 }
 
 func getActualImageVersionFromImageID(imageID string) string {
