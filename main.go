@@ -16,7 +16,7 @@ import (
 )
 
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
-var version = "1.18.1"
+var version = "1.18.5"
 
 var description = `
 DESCRIPTION:
@@ -83,6 +83,7 @@ var (
 	ErrPrintf  = utils.ColorErrorPrintf
 	ErrPrintln = utils.ColorErrorPrintln
 	ErrPrint   = utils.ColorErrorPrint
+	Split2     = collections.Split2
 )
 
 // Environment variables
