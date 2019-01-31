@@ -116,6 +116,30 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	assert.Nil(t, config.ImageVersion)
 }
 
+func TestWeirdDirName(t *testing.T) {
+	tempDir, _ := ioutil.TempDir("", "bad@(){}-good-_.1234567890ABC")
+	currentDir, _ := os.Getwd()
+	os.Chdir(tempDir)
+	fmt.Println(tempDir)
+	defer func() {
+		os.Chdir(currentDir)
+		os.RemoveAll(tempDir)
+	}()
+	testSSMParameterFolder := fmt.Sprintf("/test/tgf-%v", randInt())
+	testTgfConfigFile := fmt.Sprintf("%s/.tgf.config", tempDir)
+	tgfConfig := []byte(String(`
+		docker-image: coveo/stuff
+		docker-image-build: RUN ls test2
+		docker-image-build-folder: my-folder
+	`).UnIndent().TrimSpace())
+	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
+
+	config := InitConfig()
+	config.setDefaultValues(testSSMParameterFolder)
+
+	assert.True(t, strings.HasPrefix(config.imageBuildConfigs[0].GetTag(), "bad-good-_.1234567890ABC"))
+}
+
 func TestParseAliases(t *testing.T) {
 	t.Parallel()
 

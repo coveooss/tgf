@@ -104,10 +104,12 @@ func (cb TGFConfigBuild) Dir() string {
 
 // GetTag returns the tag name that should be added to the image
 func (cb TGFConfigBuild) GetTag() string {
+	tag := filepath.Base(filepath.Dir(cb.source))
 	if cb.Tag != "" {
-		return cb.Tag
+		tag = cb.Tag
 	}
-	return filepath.Base(filepath.Dir(cb.source))
+	tagRegex := regexp.MustCompile(`[^a-zA-Z0-9\._-]`)
+	return tagRegex.ReplaceAllString(tag, "")
 }
 
 // InitConfig returns a properly initialized TGF configuration struct
