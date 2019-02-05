@@ -58,8 +58,7 @@ func TestCheckVersionRange(t *testing.T) {
 }
 
 func TestSetConfigDefaultValues(t *testing.T) {
-	tempDir, _ := ioutil.TempDir("", "TestGetConfig")
-	tempDir, _ = filepath.EvalSymlinks(tempDir)
+	tempDir, _ := filepath.EvalSymlinks(must(ioutil.TempDir("", "TestGetConfig")).(string))
 	currentDir, _ := os.Getwd()
 	os.Chdir(tempDir)
 	fmt.Println(tempDir)
@@ -114,6 +113,40 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	assert.Equal(t, "test", *config.ImageTag)
 	assert.Equal(t, map[string]string{"my-alias": "--arg value"}, config.Aliases)
 	assert.Nil(t, config.ImageVersion)
+}
+
+func TestTwoLevelsOfTgfConfig(t *testing.T) {
+	tempDir, _ := filepath.EvalSymlinks(must(ioutil.TempDir("", "TestGetConfig")).(string))
+	subFolder := path.Join(tempDir, "sub-folder")
+	must(os.Mkdir(subFolder, os.ModePerm))
+	tempDir = subFolder
+	currentDir, _ := os.Getwd()
+	os.Chdir(tempDir)
+	fmt.Println(tempDir)
+	defer func() {
+		os.Chdir(currentDir)
+		os.RemoveAll(tempDir)
+	}()
+
+	testParentTgfConfigFile := fmt.Sprintf("%s/../.tgf.config", tempDir)
+	testTgfConfigFile := fmt.Sprintf("%s/.tgf.config", tempDir)
+	testSSMParameterFolder := fmt.Sprintf("/test/tgf-%v", randInt())
+
+	parentTgfConfig := []byte(String(`
+	docker-image: coveo/stuff
+	docker-image-version: 2.0.1
+	`).UnIndent().TrimSpace())
+	ioutil.WriteFile(testParentTgfConfigFile, parentTgfConfig, 0644)
+
+	// Current directory config overwrites parent directory config
+	tgfConfig := []byte(String(`docker-image-version: 2.0.2`))
+	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
+
+	config := InitConfig()
+	config.setDefaultValues(testSSMParameterFolder)
+
+	assert.Equal(t, "coveo/stuff", config.Image)
+	assert.Equal(t, "2.0.2", *config.ImageVersion)
 }
 
 func TestWeirdDirName(t *testing.T) {

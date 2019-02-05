@@ -431,7 +431,7 @@ func findConfigFiles(folder string) (result []string) {
 	}
 
 	if parent := filepath.Dir(folder); parent != folder {
-		result = append(result, findConfigFiles(parent)...)
+		result = append(findConfigFiles(parent), result...)
 	}
 
 	return
