@@ -18,7 +18,10 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/blang/semver"
-	"github.com/coveo/gotemplate/collections"
+	"github.com/coveo/gotemplate/v3/collections"
+	_ "github.com/coveo/gotemplate/v3/hcl"
+	_ "github.com/coveo/gotemplate/v3/json"
+	_ "github.com/coveo/gotemplate/v3/yaml"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
 	"github.com/hashicorp/go-getter"
 	yaml "gopkg.in/yaml.v2"
@@ -151,11 +154,11 @@ func (config *TGFConfig) InitAWS(profile string) error {
 
 // SetDefaultValues sets the uninitialized values from the config files and the parameter store
 // Priorities (Higher overwrites lower values):
-// 1. SSM Parameter Config
-// 2. Secrets Manager Config (If exists, will not check SSM)
+// 1. Configuration location files
+// 2. SSM Parameter Config
 // 3. tgf.user.config
 // 4. .tgf.config
-func (config *TGFConfig) SetDefaultValues(ssmParameterFolder string) {
+func (config *TGFConfig) SetDefaultValues(ssmParameterFolder, location, files string) {
 	type configData struct {
 		Name   string
 		Raw    string
@@ -168,16 +171,21 @@ func (config *TGFConfig) SetDefaultValues(ssmParameterFolder string) {
 		if err := config.InitAWS(""); err != nil {
 			printError("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err)
 		} else {
-			parameters := must(aws_helper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter)
-			parameterValues := extractMapFromParameters(ssmParameterFolder, parameters)
+			if location == "" {
+				values := readSSMParameterStore(ssmParameterFolder)
+				location = values[remoteConfigLocationParameter]
+				if files == "" {
+					files = values[remoteConfigPathsParameter]
+				}
+			}
 
-			for _, configFile := range findRemoteConfigFiles(parameterValues) {
+			for _, configFile := range findRemoteConfigFiles(location, files) {
 				configsData = append(configsData, configData{Name: "RemoteConfigFile", Raw: configFile})
 			}
 
 			// Only fetch SSM parameters if no ConfigFile was found
 			if len(configsData) == 0 {
-				ssmConfig := parseSsmConfig(parameterValues)
+				ssmConfig := parseSsmConfig(readSSMParameterStore(ssmParameterFolder))
 				if ssmConfig != "" {
 					configsData = append(configsData, configData{Name: "AWS/ParametersStore", Raw: ssmConfig})
 				}
@@ -313,6 +321,12 @@ func (config *TGFConfig) ParseAliases(args []string) []string {
 	return nil
 }
 
+func readSSMParameterStore(ssmParameterFolder string) map[string]string {
+	debugPrint("# Reading configuration from SSM %s\n", ssmParameterFolder)
+	parameters := must(aws_helper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter)
+	return extractMapFromParameters(ssmParameterFolder, parameters)
+}
+
 func extractMapFromParameters(ssmParameterFolder string, parameters []*ssm.Parameter) map[string]string {
 	values := make(map[string]string)
 	for _, parameter := range parameters {
@@ -322,28 +336,28 @@ func extractMapFromParameters(ssmParameterFolder string, parameters []*ssm.Param
 	return values
 }
 
-func findRemoteConfigFiles(parameterValues map[string]string) []string {
-	configLocation, configLocationOk := parameterValues[remoteConfigLocationParameter]
-	if !configLocationOk || configLocation == "" {
+func findRemoteConfigFiles(location, files string) []string {
+	if location == "" {
 		return []string{}
 	}
 
-	if !strings.HasSuffix(configLocation, "/") {
-		configLocation = configLocation + "/"
+	if !strings.HasSuffix(location, "/") {
+		location += "/"
 	}
 
-	configPaths := []string{remoteDefaultConfigPath}
-	if configPathString, configPathsOk := parameterValues[remoteConfigPathsParameter]; configPathsOk && configPathString != "" {
-		configPaths = strings.Split(configPathString, ":")
+	if files == "" {
+		files = remoteDefaultConfigPath
 	}
+	configPaths := strings.Split(files, ":")
 
 	tempDir := must(ioutil.TempDir("", "tgf-config-files")).(string)
 	defer os.RemoveAll(tempDir)
 
 	configs := []string{}
 	for _, configPath := range configPaths {
-		fullConfigPath := configLocation + configPath
+		fullConfigPath := location + configPath
 		destConfigPath := path.Join(tempDir, configPath)
+		debugPrint("# Reading configuration from %s\n", fullConfigPath)
 		source := must(getter.Detect(fullConfigPath, must(os.Getwd()).(string), getter.Detectors)).(string)
 
 		err := getter.Get(destConfigPath, source)

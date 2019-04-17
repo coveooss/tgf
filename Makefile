@@ -1,7 +1,6 @@
 SOURCES = $(wildcard **/*.go)
 
 install:
-	glide install
 	go install
 
 coveralls:

@@ -93,7 +93,7 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
 	config := InitConfig()
-	config.SetDefaultValues(testSSMParameterFolder)
+	config.SetDefaultValues(testSSMParameterFolder, "", "")
 
 	assert.Len(t, config.imageBuildConfigs, 2)
 
@@ -143,7 +143,7 @@ func TestTwoLevelsOfTgfConfig(t *testing.T) {
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
 	config := InitConfig()
-	config.setDefaultValues(testSSMParameterFolder)
+	config.SetDefaultValues(testSSMParameterFolder, "", "")
 
 	assert.Equal(t, "coveo/stuff", config.Image)
 	assert.Equal(t, "2.0.2", *config.ImageVersion)
@@ -168,7 +168,7 @@ func TestWeirdDirName(t *testing.T) {
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
 	config := InitConfig()
-	config.setDefaultValues(testSSMParameterFolder)
+	config.SetDefaultValues(testSSMParameterFolder, "", "")
 
 	assert.True(t, strings.HasPrefix(config.imageBuildConfigs[0].GetTag(), "bad-good-_.1234567890ABC"))
 }

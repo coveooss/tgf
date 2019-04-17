@@ -1,15 +1,15 @@
 language: go
+
 go:
-- 1.11.x
+- 1.12.x
+
+env:
+- GO111MODULE=on CGO_ENABLED=0
 
 sudo: false
 
 before_install:
-  - go get github.com/Masterminds/glide
-  - go get github.com/mattn/goveralls
-
-install:
-  - make install
+  -  GO111MODULE=off go get github.com/mattn/goveralls
 
 before_script:
   - go test ./...

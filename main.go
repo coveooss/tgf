@@ -8,15 +8,15 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/coveo/gotemplate/collections"
-	"github.com/coveo/gotemplate/errors"
-	"github.com/coveo/gotemplate/utils"
+	"github.com/coveo/gotemplate/v3/collections"
+	"github.com/coveo/gotemplate/v3/errors"
+	"github.com/coveo/gotemplate/v3/utils"
 	"github.com/fatih/color"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
-var version = "1.18.5"
+var version = "1.19.0"
 
 var description = `
 DESCRIPTION:
@@ -88,10 +88,12 @@ var (
 
 // Environment variables
 const (
-	envArgs    = "TGF_ARGS"
-	envDebug   = "TGF_DEBUG"
-	envLogging = "TGF_LOGGING_LEVEL"
-	envPSPath  = "TGF_SSM_PATH"
+	envArgs        = "TGF_ARGS"
+	envDebug       = "TGF_DEBUG"
+	envLogging     = "TGF_LOGGING_LEVEL"
+	envPSPath      = "TGF_SSM_PATH"
+	envLocation    = "TGF_CONFIG_LOCATION"
+	envConfigFiles = "TGF_CONFIG_FILES"
 )
 
 func main() {
@@ -159,6 +161,8 @@ func main() {
 		awsProfile        = app.Argument("profile", "Set the AWS profile configuration to use", 'P').String()
 		loggingLevel      = app.Argument("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6) or set "+envLogging, 'L').PlaceHolder("<level>").Envar(envLogging).String()
 		psPath            = app.Argument("ps-path", "Parameter Store path used to find AWS common configuration shared by a team or set "+envPSPath).PlaceHolder("<path>").Default(defaultSSMParameterFolder).Envar(envPSPath).String()
+		configLocation    = app.Argument("config-location", "Set the configuration location or set "+envLocation).PlaceHolder("<path>").Envar(envLocation).String()
+		configFiles       = app.Argument("config-files", "Set the files to look for (default: "+remoteDefaultConfigPath+") or set "+envConfigFiles).PlaceHolder("<files>").Envar(envConfigFiles).String()
 	)
 
 	app.Switch("ri", "alias for refresh-image)").Hidden().BoolVar(&refresh)
@@ -181,7 +185,7 @@ func main() {
 	}
 	managed, unmanaged := app.SplitManaged(os.Args)
 	must(app.Parse(managed))
-	config.SetDefaultValues(*psPath)
+	config.SetDefaultValues(*psPath, *configLocation, *configFiles)
 
 	if alias := config.ParseAliases(unmanaged); alias != nil {
 		if managed, unmanaged = app.SplitManaged(append(os.Args[:1], alias...)); len(managed) != 0 {
