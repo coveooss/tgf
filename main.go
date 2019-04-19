@@ -16,7 +16,7 @@ import (
 )
 
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
-var version = "1.19.0"
+var version = "1.19.1"
 
 var description = `
 DESCRIPTION:
@@ -147,7 +147,7 @@ func main() {
 	app.Switch("no-temp", "Disable the mapping of the temp directory (alias --nt)").BoolVar(&noTemp)
 	app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").BoolVar(&refresh)
 	app.Switch("local-image", "If set, TGF will not pull the image when refreshing (alias --li)").BoolVar(&useLocalImage)
-	app.Switch("interactive", "If set, docker will be launched in interactive mode, i.e. the -it flag will be passed to the docker cli (alias --it) or set "+envPSPath).Envar(envInteractive).BoolVar(&dockerInteractive)
+	app.Switch("interactive", "If set, docker will be launched in interactive mode, i.e. the -it flag will be passed to the docker cli (alias --it) or set "+envInteractive).Envar(envInteractive).BoolVar(&dockerInteractive)
 	app.Argument("mount-point", "Specify a mount point for the current folder --mp)").StringVar(&mountPoint)
 	app.Argument("docker-arg", "Supply extra argument to Docker (alias --da)").PlaceHolder("<opt>").StringsVar(&dockerOptions)
 	app.Argument("ignore-user-config", "Ignore all tgf.user.config files (alias --iuc)").BoolVar(&disableUserConfig)
@@ -183,7 +183,7 @@ func main() {
 	app.Argument("iu", "alias for ignore-user-config").Hidden().BoolVar(&disableUserConfig)
 	app.Argument("iuc", "alias for ignore-user-config").Hidden().BoolVar(&disableUserConfig)
 
-	// Split up the managed parameters from the unmanaged ones
+	// Split up the managed parameters from the unmanaged onese
 	if extraArgs, ok := os.LookupEnv(envArgs); ok {
 		os.Args = append(os.Args, strings.Split(extraArgs, " ")...)
 	}
