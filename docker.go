@@ -205,6 +205,7 @@ func getImage() (name string) {
 		name += ":latest"
 	}
 
+	lastHash := ""
 	for i, ib := range config.imageBuildConfigs {
 		var temp, folder, dockerFile string
 		var out *os.File
@@ -241,6 +242,10 @@ func getImage() (name string) {
 				panic(errorString("Execution interrupted by user: %v", c))
 			}()
 		}
+
+		// We remove the last hash from the name to avoid cumulating several hash in the final name
+		name = strings.Replace(name, lastHash, "", 1)
+		lastHash = fmt.Sprintf("-%s", ib.hash())
 
 		name = name + "-" + ib.GetTag()
 		if image, tag := Split2(name, ":"); len(tag) > maxDockerTagLength {
