@@ -106,9 +106,9 @@ func (cb TGFConfigBuild) Dir() string {
 
 // GetTag returns the tag name that should be added to the image
 func (cb TGFConfigBuild) GetTag() string {
-	tag := filepath.Base(filepath.Dir(cb.source))
-	if cb.Tag != "" {
-		tag = cb.Tag
+	tag := cb.Tag
+	if tag == "" {
+		tag = fmt.Sprintf("%s-%s", filepath.Base(filepath.Dir(cb.source)), cb.hash())
 	}
 	tagRegex := regexp.MustCompile(`[^a-zA-Z0-9\._-]`)
 	return tagRegex.ReplaceAllString(tag, "")

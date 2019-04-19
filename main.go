@@ -147,7 +147,7 @@ func main() {
 	app.Switch("no-temp", "Disable the mapping of the temp directory (alias --nt)").BoolVar(&noTemp)
 	app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").BoolVar(&refresh)
 	app.Switch("local-image", "If set, TGF will not pull the image when refreshing (alias --li)").BoolVar(&useLocalImage)
-	app.Switch("interactive", "If set, docker will be launched in interactive mode, i.e. the -it flag will be passed to the docker cli (alias --it) or set "+envInteractive).Envar(envInteractive).BoolVar(&dockerInteractive)
+	app.Switch("interactive", "On by default, use --no-interactive or --no-it to disable launching Docker in interactive mode or set "+envInteractive+" to 0 or false").Envar(envInteractive).BoolVar(&dockerInteractive)
 	app.Argument("mount-point", "Specify a mount point for the current folder --mp)").StringVar(&mountPoint)
 	app.Argument("docker-arg", "Supply extra argument to Docker (alias --da)").PlaceHolder("<opt>").StringsVar(&dockerOptions)
 	app.Argument("ignore-user-config", "Ignore all tgf.user.config files (alias --iuc)").BoolVar(&disableUserConfig)

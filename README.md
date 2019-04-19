@@ -40,20 +40,20 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.19.0/tgf_1.19.0_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
+curl -sL https://github.com/coveo/tgf/releases/download/v1.19.1/tgf_1.19.1_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.19.0/tgf_1.19.0_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.19.1/tgf_1.19.1_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.19.0/tgf_1.19.0_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.19.1/tgf_1.19.1_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -163,8 +163,7 @@ Flags:
       --no-temp                  Disable the mapping of the temp directory (alias --nt)
       --refresh-image            Force a refresh of the docker image (alias --ri)
       --local-image              If set, TGF will not pull the image when refreshing (alias --li)
-      --interactive              If set, docker will be launched in interactive mode, i.e. the -it flag will be passed 
-                                 to the docker cli (alias --it) or set TGF_INTERACTIVE
+      --interactive              On by default, use --no-interactive or --no-it to disable launching Docker in interactive mode or set TGF_INTERACTIVE to 0 or false
       --mount-point=MOUNT-POINT  Specify a mount point for the current folder --mp)
       --docker-arg=<opt> ...     Supply extra argument to Docker (alias --da)
       --ignore-user-config       Ignore all tgf.user.config files (alias --iuc)
