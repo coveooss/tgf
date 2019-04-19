@@ -9,8 +9,8 @@ import (
 // ApplicationArguments allows proper management between managed and non managed arguments provided to kingpin
 type ApplicationArguments struct {
 	*kingpin.Application
-	longs  map[string]bool
-	shorts map[rune]bool
+	longs  map[string]bool // true if it is a switch (bool), false otherwise
+	shorts map[rune]bool   // true if it is a switch (bool), false otherwise
 }
 
 func (app ApplicationArguments) add(name, description string, isSwitch bool, shorts ...rune) *kingpin.FlagClause {
@@ -52,7 +52,12 @@ Arg:
 		}
 		if strings.HasPrefix(arg, "--") {
 			argSplit := strings.Split(args[i][2:], "=")
-			if isSwitch, ok := app.longs[argSplit[0]]; ok {
+			argumentName := argSplit[0]
+			// Handle kingpin negative flags (e.g.: --no-interactive vs --interactive)
+			if strings.HasPrefix(argumentName, "no-") {
+				argumentName = argumentName[3:]
+			}
+			if isSwitch, ok := app.longs[argumentName]; ok {
 				managed = append(managed, arg)
 				if !isSwitch && len(argSplit) == 1 {
 					// This is not a switch (bool flag) and there is no argument with

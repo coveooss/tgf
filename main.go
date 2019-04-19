@@ -71,6 +71,7 @@ var (
 	noTemp            bool
 	refresh           bool
 	useLocalImage     bool
+	dockerInteractive = true
 )
 
 var must = errors.Must
@@ -94,6 +95,7 @@ const (
 	envPSPath      = "TGF_SSM_PATH"
 	envLocation    = "TGF_CONFIG_LOCATION"
 	envConfigFiles = "TGF_CONFIG_FILES"
+	envInteractive = "TGF_INTERACTIVE"
 )
 
 func main() {
@@ -145,6 +147,7 @@ func main() {
 	app.Switch("no-temp", "Disable the mapping of the temp directory (alias --nt)").BoolVar(&noTemp)
 	app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").BoolVar(&refresh)
 	app.Switch("local-image", "If set, TGF will not pull the image when refreshing (alias --li)").BoolVar(&useLocalImage)
+	app.Switch("interactive", "If set, docker will be launched in interactive mode, i.e. the -it flag will be passed to the docker cli (alias --it) or set "+envPSPath).Envar(envInteractive).BoolVar(&dockerInteractive)
 	app.Argument("mount-point", "Specify a mount point for the current folder --mp)").StringVar(&mountPoint)
 	app.Argument("docker-arg", "Supply extra argument to Docker (alias --da)").PlaceHolder("<opt>").StringsVar(&dockerOptions)
 	app.Argument("ignore-user-config", "Ignore all tgf.user.config files (alias --iuc)").BoolVar(&disableUserConfig)
@@ -173,6 +176,7 @@ func main() {
 	app.Switch("av", "alias for all-versions").Hidden().BoolVar(getAllVersions)
 	app.Switch("wd", "alias for with-docker").Hidden().BoolVar(withDockerMount)
 	app.Switch("li", "alias for local-image").Hidden().BoolVar(&useLocalImage)
+	app.Switch("it", "alias for interactive").Hidden().BoolVar(&dockerInteractive)
 	app.Argument("da", "alias for docker-arg").Hidden().StringsVar(&dockerOptions)
 	app.Argument("iv", "alias for image-version").Default("-").Hidden().StringVar(imageVersion)
 	app.Argument("mp", "alias for mount-point").Hidden().StringVar(&mountPoint)
