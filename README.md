@@ -40,20 +40,20 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.19.1/tgf_1.19.1_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
+curl -sL https://github.com/coveo/tgf/releases/download/v1.19.2/tgf_1.19.2_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.19.1/tgf_1.19.1_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.19.2/tgf_1.19.2_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.19.1/tgf_1.19.1_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.19.2/tgf_1.19.2_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -150,7 +150,7 @@ IMPORTANT: Most of the tgf command line arguments are in uppercase to avoid pote
 
 It is also possible to specify additional arguments through environment variable TGF_ARGS or enable debugging mode through TGF_DEBUG.
 
-VERSION: 1.19.1
+VERSION: 1.19.2
 
 AUTHOR: Coveo
 
@@ -159,8 +159,9 @@ Flags:
   -D, --debug-docker             Print the docker command issued
   -F, --flush-cache              Invoke terragrunt with --terragrunt-update-source to flush the cache
       --get-image-name           Just return the resulting image name (alias --gi)
-      --no-home                  Disable the mapping of the home directory (alias --nh)
-      --no-temp                  Disable the mapping of the temp directory (alias --nt)
+      --no-home                  Disable the mapping of the home directory (alias --nh) or set TGF_NO_HOME
+      --no-temp                  Disable the mapping of the temp directory (alias --nt) or set TGF_NO_TEMP
+      --no-aws                   Disable use of AWS to get configuration (alias --na) or set TGF_NO_AWS
       --refresh-image            Force a refresh of the docker image (alias --ri)
       --local-image              If set, TGF will not pull the image when refreshing (alias --li)
       --interactive              On by default, use --no-interactive or --no-it to disable launching Docker in interactive mode or set TGF_INTERACTIVE to 0 or false

@@ -16,7 +16,7 @@ import (
 )
 
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
-var version = "1.19.1"
+var version = "1.19.2"
 
 var description = `
 DESCRIPTION:
@@ -69,6 +69,7 @@ var (
 	mountPoint        string
 	noHome            bool
 	noTemp            bool
+	noAWS             bool
 	refresh           bool
 	useLocalImage     bool
 	dockerInteractive = true
@@ -96,6 +97,9 @@ const (
 	envLocation    = "TGF_CONFIG_LOCATION"
 	envConfigFiles = "TGF_CONFIG_FILES"
 	envInteractive = "TGF_INTERACTIVE"
+	envNoHome      = "TGF_NO_HOME"
+	envNoTemp      = "TGF_NO_TEMP"
+	envNoAWS       = "TGF_NO_AWS"
 )
 
 func main() {
@@ -143,8 +147,9 @@ func main() {
 	app.Switch("debug-docker", "Print the docker command issued", 'D').BoolVar(&debugMode)
 	app.Switch("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache", 'F').BoolVar(&flushCache)
 	app.Switch("get-image-name", "Just return the resulting image name (alias --gi)").BoolVar(&getImageName)
-	app.Switch("no-home", "Disable the mapping of the home directory (alias --nh)").BoolVar(&noHome)
-	app.Switch("no-temp", "Disable the mapping of the temp directory (alias --nt)").BoolVar(&noTemp)
+	app.Switch("no-home", "Disable the mapping of the home directory (alias --nh) or set "+envNoHome).Envar(envNoHome).BoolVar(&noHome)
+	app.Switch("no-temp", "Disable the mapping of the temp directory (alias --nt) or set "+envNoTemp).Envar(envNoTemp).BoolVar(&noTemp)
+	app.Switch("no-aws", "Disable use of AWS to get configuration (alias --na) or set "+envNoAWS).Envar(envNoAWS).BoolVar(&noAWS)
 	app.Switch("refresh-image", "Force a refresh of the docker image (alias --ri)").BoolVar(&refresh)
 	app.Switch("local-image", "If set, TGF will not pull the image when refreshing (alias --li)").BoolVar(&useLocalImage)
 	app.Switch("interactive", "On by default, use --no-interactive or --no-it to disable launching Docker in interactive mode or set "+envInteractive+" to 0 or false").Envar(envInteractive).BoolVar(&dockerInteractive)
@@ -172,6 +177,7 @@ func main() {
 	app.Switch("gi", "alias for get-image-name").Hidden().BoolVar(&getImageName)
 	app.Switch("nh", "alias for no-home").Hidden().BoolVar(&noHome)
 	app.Switch("nt", "alias for no-temp").Hidden().BoolVar(&noTemp)
+	app.Switch("na", "alias for no-aws").Hidden().BoolVar(&noAWS)
 	app.Switch("cv", "alias for current-version").Hidden().BoolVar(getCurrentVersion)
 	app.Switch("av", "alias for all-versions").Hidden().BoolVar(getAllVersions)
 	app.Switch("wd", "alias for with-docker").Hidden().BoolVar(withDockerMount)
@@ -183,7 +189,7 @@ func main() {
 	app.Argument("iu", "alias for ignore-user-config").Hidden().BoolVar(&disableUserConfig)
 	app.Argument("iuc", "alias for ignore-user-config").Hidden().BoolVar(&disableUserConfig)
 
-	// Split up the managed parameters from the unmanaged onese
+	// Split up the managed parameters from the unmanaged ones
 	if extraArgs, ok := os.LookupEnv(envArgs); ok {
 		os.Args = append(os.Args, strings.Split(extraArgs, " ")...)
 	}

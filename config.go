@@ -404,13 +404,17 @@ func parseSsmConfig(parameterValues map[string]string) string {
 // We call this function before trying to init an AWS session. This avoid trying to init a session in a non AWS context
 // and having to wait for metadata resolution or generating an error.
 func awsConfigExist() bool {
+	if noAWS {
+		return false
+	}
+
 	if os.Getenv("AWS_PROFILE")+os.Getenv("AWS_ACCESS_KEY_ID")+os.Getenv("AWS_CONFIG_FILE") != "" {
 		// If any AWS identification variable is defined, we consider that we are in an AWS environment.
 		return true
 	}
 
 	if _, err := exec.LookPath("aws"); err == nil {
-		// If aws program is installed, we also consider that we are  in an AWS environment.
+		// If aws program is installed, we also consider that we are in an AWS environment.
 		return true
 	}
 
