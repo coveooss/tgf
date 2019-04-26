@@ -284,6 +284,11 @@ func (config *TGFConfig) Validate() (errors []error) {
 	return
 }
 
+// IsPartialVersion returns true if the given version is partial (x.x instead of semver's x.x.x)
+func (config *TGFConfig) IsPartialVersion() bool {
+	return config.ImageVersion != nil && reVersion.MatchString(*config.ImageVersion) && strings.Count(*config.ImageVersion, ".") == 1
+}
+
 // GetImageName returns the actual image name
 func (config *TGFConfig) GetImageName() string {
 	var suffix string
