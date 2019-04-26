@@ -237,6 +237,7 @@ func (config *TGFConfig) SetDefaultValues(ssmParameterFolder, location, files st
 }
 
 var reVersion = regexp.MustCompile(`(?P<version>\d+\.\d+(?:\.\d+){0,1})`)
+var reVersionWithEndMarkers = regexp.MustCompile(`^` + reVersion.String() + `$`)
 
 // https://regex101.com/r/ZKt4OP/5
 var reImage = regexp.MustCompile(`^(?P<image>.*?)(?::(?:` + reVersion.String() + `(?:(?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
@@ -282,6 +283,13 @@ func (config *TGFConfig) Validate() (errors []error) {
 	}
 
 	return
+}
+
+// IsPartialVersion returns true if the given version is partial (x.x instead of semver's x.x.x)
+func (config *TGFConfig) IsPartialVersion() bool {
+	return config.ImageVersion != nil &&
+		reVersionWithEndMarkers.MatchString(*config.ImageVersion) &&
+		strings.Count(*config.ImageVersion, ".") == 1
 }
 
 // GetImageName returns the actual image name

@@ -244,7 +244,7 @@ func main() {
 	}
 
 	imageName := config.GetImageName()
-	if lastRefresh(imageName) > config.Refresh || !checkImage(imageName) || refresh {
+	if lastRefresh(imageName) > config.Refresh || config.IsPartialVersion() || !checkImage(imageName) || refresh {
 		refreshImage(imageName)
 	}
 

@@ -207,6 +207,56 @@ func TestParseAliases(t *testing.T) {
 	}
 }
 
+func TestIsPartialVersion(t *testing.T) {
+	tests := []struct {
+		name      string
+		version   *string
+		isPartial bool
+	}{
+		{
+			"nil version",
+			nil,
+			false,
+		},
+		{
+			"partial",
+			aws.String("2.1"),
+			true,
+		},
+		{
+			"full",
+			aws.String("2.1.2"),
+			false,
+		},
+		{
+			"non-semver",
+			aws.String("stuff"),
+			false,
+		},
+		{
+			"partial-letters",
+			aws.String("a.b"),
+			false,
+		},
+		{
+			"partial with tag (this is not a real version, TGF would give a warning)",
+			aws.String("2.1-k8s"),
+			false,
+		},
+		{
+			"partial with non-semver word",
+			aws.String("hello 2.1"),
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &TGFConfig{ImageVersion: tt.version}
+			assert.Equal(t, tt.isPartial, config.IsPartialVersion())
+		})
+	}
+}
+
 func writeSSMConfig(parameterFolder, parameterKey, parameterValue string) {
 	fullParameterKey := fmt.Sprintf("%s/%s", parameterFolder, parameterKey)
 	client := getSSMClient()
