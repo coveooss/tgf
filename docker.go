@@ -79,7 +79,7 @@ func callDocker(withDockerMount bool, args ...string) int {
 	if dockerInteractive {
 		dockerArgs = append(dockerArgs, "-it")
 	}
-	dockerArgs = append(dockerArgs,"-v", fmt.Sprintf("%s%s:%s", convertDrive(currentDrive), rootFolder, filepath.ToSlash(filepath.Join("/", mountPoint, rootFolder))), "-w", sourceFolder)
+	dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:%s", convertDrive(currentDrive), rootFolder, filepath.ToSlash(filepath.Join("/", mountPoint, rootFolder))), "-w", sourceFolder)
 
 	if withDockerMount {
 		withDockerMountArgs := []string{"-v", fmt.Sprintf(dockerSocketMountPattern, dockerSocketFile), "--group-add", getDockerGroup()}

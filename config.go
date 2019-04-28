@@ -245,7 +245,12 @@ var reImage = regexp.MustCompile(`^(?P<image>.*?)(?::(?:` + reVersion.String() +
 // Validate ensure that the current version is compliant with the setting (mainly those in the parameter store1)
 func (config *TGFConfig) Validate() (errors []error) {
 	if strings.Contains(config.Image, ":") {
-		errors = append(errors, ConfigWarning(fmt.Sprintf("Image should not contain the version: %s", config.Image)))
+		// It is possible that the : is there because we do not use a standard registry port, so we remove the port from the config.Image and
+		// check again if there is still a : in the image name before returning a warning
+		portRemoved := regexp.MustCompile(`.*:\d+/`).ReplaceAllString(config.Image, "")
+		if strings.Contains(portRemoved, ":") {
+			errors = append(errors, ConfigWarning(fmt.Sprintf("Image should not contain the version: %s", config.Image)))
+		}
 	}
 
 	if config.ImageVersion != nil && strings.ContainsAny(*config.ImageVersion, ":-") {
