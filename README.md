@@ -40,20 +40,20 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.19.2/tgf_1.19.2_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
+curl -sL https://github.com/coveo/tgf/releases/download/v1.19.4/tgf_1.19.4_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.19.2/tgf_1.19.2_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.19.4/tgf_1.19.4_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.19.2/tgf_1.19.2_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.19.4/tgf_1.19.4_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -150,7 +150,7 @@ IMPORTANT: Most of the tgf command line arguments are in uppercase to avoid pote
 
 It is also possible to specify additional arguments through environment variable TGF_ARGS or enable debugging mode through TGF_DEBUG.
 
-VERSION: 1.19.2
+VERSION: 1.19.4
 
 AUTHOR: Coveo
 
