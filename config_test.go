@@ -181,6 +181,7 @@ func TestParseAliases(t *testing.T) {
 			"to_replace": "one two three,four",
 			"other_arg1": "will not be replaced",
 			"with_quote": `quoted arg1 "arg 2" -D -it --rm`,
+			"recursive":  "to_replace five",
 		},
 	}
 
@@ -191,11 +192,12 @@ func TestParseAliases(t *testing.T) {
 		want   []string
 	}{
 		{"Nil", config, nil, nil},
-		{"Empty", config, []string{}, nil},
-		{"Unchanged", config, strings.Split("whatever the args are", " "), nil},
+		{"Empty", config, []string{}, []string{}},
+		{"Unchanged", config, strings.Split("whatever the args are", " "), []string{"whatever", "the", "args", "are"}},
 		{"Replaced", config, strings.Split("to_replace with some args", " "), []string{"one", "two", "three,four", "with", "some", "args"}},
 		{"Replaced 2", config, strings.Split("to_replace other_arg1", " "), []string{"one", "two", "three,four", "other_arg1"}},
 		{"Replaced with quote", config, strings.Split("with_quote 1 2 3", " "), []string{"quoted", "arg1", "arg 2", "-D", "-it", "--rm", "1", "2", "3"}},
+		{"Recursive", config, strings.Split("recursive", " "), []string{"one", "two", "three,four", "five"}},
 	}
 
 	for _, tt := range tests {

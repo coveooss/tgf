@@ -328,10 +328,10 @@ func (config *TGFConfig) ParseAliases(args []string) []string {
 					result[i] = result[i].RestoreProtected(quoted).Trim(`"`)
 				}
 			}
-			return append(result.Strings(), args[1:]...)
+			return append(config.ParseAliases(result.Strings()), args[1:]...)
 		}
 	}
-	return nil
+	return args
 }
 
 func readSSMParameterStore(ssmParameterFolder string) map[string]string {
