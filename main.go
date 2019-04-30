@@ -197,7 +197,7 @@ func main() {
 	must(app.Parse(managed))
 	config.SetDefaultValues(*psPath, *configLocation, *configFiles)
 
-	if alias := config.ParseAliases(unmanaged); alias != nil {
+	if alias := config.ParseAliases(unmanaged); alias[0] != unmanaged[0] {
 		if managed, unmanaged = app.SplitManaged(append(os.Args[:1], alias...)); len(managed) != 0 {
 			must(app.Parse(managed))
 		}
