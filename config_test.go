@@ -92,6 +92,7 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	`).UnIndent().TrimSpace())
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
+	_, cliOptions, unmanagedArgs = NewApplicationWithOptions()
 	config := InitConfig()
 	config.SetDefaultValues(testSSMParameterFolder, "", "")
 

@@ -36,7 +36,7 @@ const (
 	maxDockerTagLength   = 128
 )
 
-func callDocker(withCurrentUser bool, withDockerMount bool, args ...string) int {
+func callDocker(args ...string) int {
 	command := append([]string{config.EntryPoint}, args...)
 
 	// Change the default log level for terragrunt
@@ -57,41 +57,41 @@ func callDocker(withCurrentUser bool, withDockerMount bool, args ...string) int 
 		}
 	}
 
-	if flushCache && filepath.Base(config.EntryPoint) == "terragrunt" {
+	if *cliOptions.FlushCache && filepath.Base(config.EntryPoint) == "terragrunt" {
 		command = append(command, "--terragrunt-source-update")
 	}
 
 	imageName := getImage()
 
-	if getImageName {
+	if *cliOptions.GetImageName {
 		Println(imageName)
 		return 0
 	}
 
 	cwd := filepath.ToSlash(must(filepath.EvalSymlinks(must(os.Getwd()).(string))).(string))
 	currentDrive := fmt.Sprintf("%s/", filepath.VolumeName(cwd))
-	sourceFolder := filepath.ToSlash(filepath.Join("/", mountPoint, strings.TrimPrefix(cwd, currentDrive)))
+	sourceFolder := filepath.ToSlash(filepath.Join("/", *cliOptions.MountPoint, strings.TrimPrefix(cwd, currentDrive)))
 	rootFolder := strings.Split(strings.TrimPrefix(cwd, currentDrive), "/")[0]
 
 	dockerArgs := []string{
 		"run",
 	}
-	if dockerInteractive {
+	if *cliOptions.DockerInteractive {
 		dockerArgs = append(dockerArgs, "-it")
 	}
-	dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:%s", convertDrive(currentDrive), rootFolder, filepath.ToSlash(filepath.Join("/", mountPoint, rootFolder))), "-w", sourceFolder)
+	dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:%s", convertDrive(currentDrive), rootFolder, filepath.ToSlash(filepath.Join("/", *cliOptions.MountPoint, rootFolder))), "-w", sourceFolder)
 
-	if withDockerMount {
+	if *cliOptions.WithDockerMount {
 		withDockerMountArgs := []string{"-v", fmt.Sprintf(dockerSocketMountPattern, dockerSocketFile), "--group-add", getDockerGroup()}
 		dockerArgs = append(dockerArgs, withDockerMountArgs...)
 	}
 
-	if withCurrentUser {
+	if *cliOptions.WithCurrentUser {
 		currentUser := must(user.Current()).(*user.User)
 		dockerArgs = append(dockerArgs, fmt.Sprintf("--user=%s:%s", currentUser.Uid, currentUser.Gid))
 	}
 
-	if !noHome {
+	if !*cliOptions.NoHome {
 		currentUser := must(user.Current()).(*user.User)
 		home := filepath.ToSlash(currentUser.HomeDir)
 		homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
@@ -104,7 +104,7 @@ func callDocker(withCurrentUser bool, withDockerMount bool, args ...string) int 
 		dockerArgs = append(dockerArgs, config.DockerOptions...)
 	}
 
-	if !noTemp {
+	if !*cliOptions.NoTemp {
 		temp := filepath.ToSlash(filepath.Join(must(filepath.EvalSymlinks(os.TempDir())).(string), "tgf-cache"))
 		tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
 		tempFolder := strings.TrimPrefix(temp, tempDrive)
@@ -139,7 +139,7 @@ func callDocker(withCurrentUser bool, withDockerMount bool, args ...string) int 
 		debugPrint("export %v=%v", key, val)
 	}
 
-	for _, do := range dockerOptions {
+	for _, do := range *cliOptions.DockerOptions {
 		dockerArgs = append(dockerArgs, strings.Split(do, " ")...)
 	}
 
@@ -148,7 +148,7 @@ func callDocker(withCurrentUser bool, withDockerMount bool, args ...string) int 
 		dockerArgs = append(dockerArgs, "--rm")
 	}
 
-	dockerArgs = append(dockerArgs, getEnviron(!noHome)...)
+	dockerArgs = append(dockerArgs, getEnviron(!*cliOptions.NoHome)...)
 	dockerArgs = append(dockerArgs, imageName)
 	dockerArgs = append(dockerArgs, command...)
 	dockerCmd := exec.Command("docker", dockerArgs...)
@@ -182,7 +182,7 @@ func callDocker(withCurrentUser bool, withDockerMount bool, args ...string) int 
 }
 
 func debugPrint(format string, args ...interface{}) {
-	if debugMode {
+	if *cliOptions.DebugMode {
 		ErrPrintf(color.HiBlackString(format+"\n", args...))
 	}
 }
@@ -258,10 +258,10 @@ func getImage() (name string) {
 		if image, tag := Split2(name, ":"); len(tag) > maxDockerTagLength {
 			name = image + ":" + tag[0:maxDockerTagLength]
 		}
-		if refresh || getImageHash(name) != ib.hash() {
+		if *cliOptions.Refresh || getImageHash(name) != ib.hash() {
 			label := fmt.Sprintf("hash=%s", ib.hash())
 			args := []string{"build", ".", "-f", dockerfilePattern, "--quiet", "--force-rm", "--label", label}
-			if i == 0 && refresh && !useLocalImage {
+			if i == 0 && *cliOptions.Refresh && !*cliOptions.UseLocalImage {
 				args = append(args, "--pull")
 			}
 			if dockerFile != "" {
@@ -412,9 +412,9 @@ func checkImage(image string) bool {
 var reECR = regexp.MustCompile(`(?P<account>[0-9]+)\.dkr\.ecr\.(?P<region>[a-z0-9\-]+)\.amazonaws\.com`)
 
 func refreshImage(image string) {
-	refresh = true // Setting this to true will ensure that dependant built images will also be refreshed
+	*cliOptions.Refresh = true // Setting this to true will ensure that dependant built images will also be refreshed
 
-	if useLocalImage {
+	if *cliOptions.UseLocalImage {
 		ErrPrintf("Not refreshing %v because `local-image` is set\n", image)
 		return
 	}

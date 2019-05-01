@@ -12,7 +12,7 @@ require (
 	github.com/aws/aws-sdk-go v1.16.12
 	github.com/blang/semver v0.0.0-20180723201105-3c1074078d32
 	github.com/cheekybits/is v0.0.0-20150225183255-68e9c0620927 // indirect
-	github.com/coveo/gotemplate v2.7.6+incompatible // indirect
+	github.com/coveo/gotemplate v2.7.6+incompatible
 	github.com/coveo/gotemplate/v3 v3.0.0
 	github.com/docker/distribution v2.7.0+incompatible // indirect
 	github.com/docker/docker v0.0.0-20190103100053-3f7898cfcd53

@@ -417,7 +417,7 @@ func parseSsmConfig(parameterValues map[string]string) string {
 // We call this function before trying to init an AWS session. This avoid trying to init a session in a non AWS context
 // and having to wait for metadata resolution or generating an error.
 func awsConfigExist() bool {
-	if noAWS {
+	if *cliOptions.NoAWS {
 		return false
 	}
 
@@ -446,7 +446,7 @@ func awsConfigExist() bool {
 // Return the list of configuration files found from the current working directory up to the root folder
 func findConfigFiles(folder string) (result []string) {
 	configFiles := []string{userConfigFile, configFile}
-	if disableUserConfig {
+	if *cliOptions.DisableUserConfig {
 		configFiles = []string{configFile}
 	}
 	for _, file := range configFiles {
