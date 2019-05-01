@@ -37,7 +37,7 @@ const (
 )
 
 func callDocker(args ...string) int {
-	command := append([]string{config.EntryPoint}, args...)
+	command := append(strings.Split(config.EntryPoint, " "), args...)
 
 	// Change the default log level for terragrunt
 	const logLevelArg = "--terragrunt-logging-level"
