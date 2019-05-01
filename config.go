@@ -325,7 +325,7 @@ func (config *TGFConfig) ParseAliases(args []string) []string {
 			result = replace.Fields()
 			if len(quoted) > 0 {
 				for i := range result {
-					result[i] = result[i].RestoreProtected(quoted).Trim(`"`)
+					result[i] = result[i].RestoreProtected(quoted).ReplaceN(`="`, "=", 1).Trim(`"`)
 				}
 			}
 			return append(config.ParseAliases(result.Strings()), args[1:]...)
