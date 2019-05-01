@@ -161,6 +161,7 @@ func main() {
 		getAllVersions    = app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool()
 		pruneImages       = app.Switch("prune", "Remove all previous versions of the targeted image").Bool()
 		getCurrentVersion = app.Switch("current-version", "Get current version information (alias --cv)").Bool()
+		withCurrentUser   = app.Switch("with-current-user", "Runs the docker command with the current user, using the --user arg (alias --cu)").Bool()
 		withDockerMount   = app.Switch("with-docker-mount", "Mounts the docker socket to the image so the host's docker api is usable (alias --wd)").Bool()
 		entrypoint        = app.Argument("entrypoint", "Override the entry point for docker", 'E').PlaceHolder("terragrunt").String()
 		image             = app.Argument("image", "Use the specified image instead of the default one").PlaceHolder("coveo/tgf").String()
@@ -180,7 +181,8 @@ func main() {
 	app.Switch("na", "alias for no-aws").Hidden().BoolVar(&noAWS)
 	app.Switch("cv", "alias for current-version").Hidden().BoolVar(getCurrentVersion)
 	app.Switch("av", "alias for all-versions").Hidden().BoolVar(getAllVersions)
-	app.Switch("wd", "alias for with-docker").Hidden().BoolVar(withDockerMount)
+	app.Switch("cu", "alias for with-current-user").Hidden().BoolVar(withCurrentUser)
+	app.Switch("wd", "alias for with-docker-mount").Hidden().BoolVar(withDockerMount)
 	app.Switch("li", "alias for local-image").Hidden().BoolVar(&useLocalImage)
 	app.Switch("it", "alias for interactive").Hidden().BoolVar(&dockerInteractive)
 	app.Argument("da", "alias for docker-arg").Hidden().StringsVar(&dockerOptions)
@@ -271,7 +273,7 @@ func main() {
 		}
 	}
 
-	os.Exit(callDocker(*withDockerMount, unmanaged...))
+	os.Exit(callDocker(*withCurrentUser, *withDockerMount, unmanaged...))
 }
 
 func validateVersion(version string) bool {

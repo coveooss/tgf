@@ -36,7 +36,7 @@ const (
 	maxDockerTagLength   = 128
 )
 
-func callDocker(withDockerMount bool, args ...string) int {
+func callDocker(withCurrentUser bool, withDockerMount bool, args ...string) int {
 	command := append([]string{config.EntryPoint}, args...)
 
 	// Change the default log level for terragrunt
@@ -84,6 +84,11 @@ func callDocker(withDockerMount bool, args ...string) int {
 	if withDockerMount {
 		withDockerMountArgs := []string{"-v", fmt.Sprintf(dockerSocketMountPattern, dockerSocketFile), "--group-add", getDockerGroup()}
 		dockerArgs = append(dockerArgs, withDockerMountArgs...)
+	}
+
+	if withCurrentUser {
+		currentUser := must(user.Current()).(*user.User)
+		dockerArgs = append(dockerArgs, fmt.Sprintf("--user=%s:%s", currentUser.Uid, currentUser.Gid))
 	}
 
 	if !noHome {
