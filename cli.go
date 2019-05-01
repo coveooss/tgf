@@ -93,8 +93,12 @@ type CliOptions struct {
 // ApplicationArguments allows proper management between managed and non managed arguments provided to kingpin
 type ApplicationArguments struct {
 	*kingpin.Application
+
 	longs  map[string]bool // true if it is a switch (bool), false otherwise
 	shorts map[rune]bool   // true if it is a switch (bool), false otherwise
+
+	managedArgs   []string
+	unmanagedArgs []string
 }
 
 func (app ApplicationArguments) add(name, description string, isSwitch bool, shorts ...rune) *kingpin.FlagClause {
@@ -188,7 +192,7 @@ Arg:
 	return
 }
 
-func (app *ApplicationArguments) parseArguments() (*CliOptions, []string) {
+func (app *ApplicationArguments) parseArguments() *CliOptions {
 	opt := &CliOptions{
 		GetAllVersions:    app.Switch("all-versions", "Get versions of TGF & all others underlying utilities (alias --av)").Bool(),
 		GetCurrentVersion: app.Switch("current-version", "Get current version information (alias --cv)").Bool(),
@@ -240,20 +244,20 @@ func (app *ApplicationArguments) parseArguments() (*CliOptions, []string) {
 	if extraArgs, ok := os.LookupEnv(envArgs); ok {
 		os.Args = append(os.Args, strings.Split(extraArgs, " ")...)
 	}
-	managed, unmanaged := app.SplitManaged(os.Args)
-	must(app.Parse(managed))
+	app.managedArgs, app.unmanagedArgs = app.SplitManaged(os.Args)
+	must(app.Parse(app.managedArgs))
 
-	return opt, unmanaged
+	return opt
 }
 
-func (app *ApplicationArguments) parseAliases(tgfConfig *TGFConfig, unmanagedArgs []string) []string {
-	var managedArgs []string
-	if alias := tgfConfig.ParseAliases(unmanagedArgs); len(alias) > 0 && len(unmanagedArgs) > 0 && alias[0] != unmanagedArgs[0] {
-		if managedArgs, unmanagedArgs = app.SplitManaged(append(os.Args[:1], alias...)); len(managedArgs) != 0 {
-			must(app.Parse(managedArgs))
+func (app *ApplicationArguments) parseAliases(tgfConfig *TGFConfig) {
+	var newManagedArgs []string
+	if alias := tgfConfig.ParseAliases(app.unmanagedArgs); len(alias) > 0 && len(app.unmanagedArgs) > 0 && alias[0] != app.unmanagedArgs[0] {
+		if newManagedArgs, app.unmanagedArgs = app.SplitManaged(append(os.Args[:1], alias...)); len(newManagedArgs) != 0 {
+			app.managedArgs = append(app.managedArgs, newManagedArgs...)
+			must(app.Parse(app.managedArgs))
 		}
 	}
-	return unmanagedArgs
 }
 
 // NewApplication returns an initialized copy of ApplicationArguments
@@ -272,7 +276,7 @@ func NewApplication(app *kingpin.Application) ApplicationArguments {
 }
 
 // NewApplicationWithOptions returns an initialized copy of ApplicationArguments along with the parsed CLI arguments
-func NewApplicationWithOptions() (*ApplicationArguments, *CliOptions, []string) {
+func NewApplicationWithOptions() (*ApplicationArguments, *CliOptions) {
 	const gitSource = "https://github.com/coveo/tgf"
 	var descriptionBuffer bytes.Buffer
 	descriptionTemplate, _ := template.New("usage").Parse(description)
@@ -303,6 +307,6 @@ func NewApplicationWithOptions() (*ApplicationArguments, *CliOptions, []string) 
 	app.HelpFlag.Bool()
 	kingpin.CommandLine = app.Application
 
-	opt, unmanaged := app.parseArguments()
-	return &app, opt, unmanaged
+	opt := app.parseArguments()
+	return &app, opt
 }

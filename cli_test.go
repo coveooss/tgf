@@ -14,7 +14,7 @@ func TestNewApplicationWithOptionsAndAliases(t *testing.T) {
 	config := &TGFConfig{
 		Aliases: map[string]string{
 			"my_alias":           "--ri --li --stuff3",
-			"my_recursive_alias": "my_alias --with-docker-mount --no-interactive",
+			"my_recursive_alias": "my_alias --with-docker-mount",
 		},
 	}
 
@@ -45,8 +45,14 @@ func TestNewApplicationWithOptionsAndAliases(t *testing.T) {
 		},
 		{
 			"WithAliases",
-			config, []string{"my_recursive_alias"},
-			map[string]interface{}{"DockerInteractive": false, "Refresh": true, "UseLocalImage": true, "WithDockerMount": true},
+			config, []string{"my_recursive_alias", "--stuff4"},
+			map[string]interface{}{"Refresh": true, "UseLocalImage": true, "WithDockerMount": true},
+			[]string{"--stuff3", "--stuff4"},
+		},
+		{
+			"WithAliasesAndArgs",
+			config, []string{"my_recursive_alias", "--no-interactive"},
+			map[string]interface{}{"DockerInteractive": false},
 			[]string{"--stuff3"},
 		},
 	}
@@ -57,10 +63,10 @@ func TestNewApplicationWithOptionsAndAliases(t *testing.T) {
 			defer func() { os.Args = oldArgs }()
 			os.Args = append([]string{"tgf"}, tt.args...)
 
-			app, cliOptions, unmanaged := NewApplicationWithOptions()
-			unmanaged = app.parseAliases(config, unmanaged)
+			app, cliOptions := NewApplicationWithOptions()
+			app.parseAliases(config)
 			assert.NotNil(t, cliOptions)
-			assert.Equal(t, tt.wantUnmanaged, unmanaged)
+			assert.Equal(t, tt.wantUnmanaged, app.unmanagedArgs)
 
 			for wantField, wantValueInt := range tt.wantOptions {
 				if wantValue, ok := wantValueInt.(bool); ok {

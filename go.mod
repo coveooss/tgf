@@ -19,6 +19,7 @@ require (
 	github.com/hashicorp/terraform v0.11.13 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
+	github.com/stretchr/testify v1.3.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/matryer/try.v1 v1.0.0-20150601225556-312d2599e12e // indirect
 	gopkg.in/yaml.v2 v2.2.2

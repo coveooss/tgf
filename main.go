@@ -20,9 +20,8 @@ type (
 )
 
 var (
-	config        = InitConfig()
-	cliOptions    *CliOptions
-	unmanagedArgs []string
+	config     = InitConfig()
+	cliOptions *CliOptions
 
 	// function Aliases
 	must       = errors.Must
@@ -50,10 +49,10 @@ func main() {
 		}
 	}()
 	var app *ApplicationArguments
-	app, cliOptions, unmanagedArgs = NewApplicationWithOptions()
+	app, cliOptions = NewApplicationWithOptions()
 
 	config.SetDefaultValues(*cliOptions.PsPath, *cliOptions.ConfigLocation, *cliOptions.ConfigFiles)
-	unmanagedArgs = app.parseAliases(config, unmanagedArgs)
+	app.parseAliases(config)
 
 	// If AWS profile is supplied, we freeze the current session
 	if *cliOptions.AwsProfile != "" {
@@ -92,7 +91,7 @@ func main() {
 			os.Exit(1)
 		}
 		Println("TGF version", version)
-		unmanagedArgs = []string{"get-versions"}
+		app.unmanagedArgs = []string{"get-versions"}
 	}
 
 	imageName := config.GetImageName()
@@ -109,7 +108,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if config.EntryPoint == "terragrunt" && unmanagedArgs == nil && !*cliOptions.DebugMode && !*cliOptions.GetImageName {
+	if config.EntryPoint == "terragrunt" && app.unmanagedArgs == nil && !*cliOptions.DebugMode && !*cliOptions.GetImageName {
 		title := color.New(color.FgYellow, color.Underline).SprintFunc()
 		ErrPrintln(title("\nTGF Usage\n"))
 		app.Usage(nil)
@@ -123,7 +122,7 @@ func main() {
 		}
 	}
 
-	os.Exit(callDocker(unmanagedArgs...))
+	os.Exit(callDocker(app.unmanagedArgs...))
 }
 
 func validateVersion(version string) bool {
