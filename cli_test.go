@@ -63,16 +63,15 @@ func TestNewApplicationWithOptionsAndAliases(t *testing.T) {
 			defer func() { os.Args = oldArgs }()
 			os.Args = append([]string{"tgf"}, tt.args...)
 
-			app, cliOptions := NewApplicationWithOptions()
-			app.parseAliases(config)
-			assert.NotNil(t, cliOptions)
-			assert.Equal(t, tt.wantUnmanaged, app.unmanagedArgs)
+			app := NewTGFApplication()
+			app.ParseAliases(config)
+			assert.Equal(t, tt.wantUnmanaged, app.UnmanagedArgs)
 
 			for wantField, wantValueInt := range tt.wantOptions {
 				if wantValue, ok := wantValueInt.(bool); ok {
-					assert.Equal(t, wantValue, *reflect.ValueOf(cliOptions).Elem().FieldByName(wantField).Interface().(*bool), wantField)
+					assert.Equal(t, wantValue, reflect.ValueOf(app).Elem().FieldByName(wantField).Interface().(bool), wantField)
 				} else if wantValue, ok := wantValueInt.(string); ok {
-					assert.Equal(t, wantValue, *reflect.ValueOf(cliOptions).Elem().FieldByName(wantField).Interface().(*string), wantField)
+					assert.Equal(t, wantValue, reflect.ValueOf(app).Elem().FieldByName(wantField).Interface().(string), wantField)
 				} else {
 					t.Error("The wanted value can only be bool or string")
 				}

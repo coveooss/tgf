@@ -12,27 +12,26 @@ import (
 )
 
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
-var version = "1.19.5"
+var version = "1.20.0"
 
 type (
 	// String is imported from gotemplate/collections
 	String = collections.String
 )
 
+var config = InitConfig()
+var app *TGFApplication
+
+// Function Aliases
 var (
-	config     = InitConfig()
-	cliOptions *CliOptions
-
-	// function Aliases
-	must       = errors.Must
-	Print      = utils.ColorPrint
-	Printf     = utils.ColorPrintf
-	Println    = utils.ColorPrintln
-	ErrPrintf  = utils.ColorErrorPrintf
-	ErrPrintln = utils.ColorErrorPrintln
-	ErrPrint   = utils.ColorErrorPrint
-	Split2     = collections.Split2
-
+	must          = errors.Must
+	Print         = utils.ColorPrint
+	Printf        = utils.ColorPrintf
+	Println       = utils.ColorPrintln
+	ErrPrintf     = utils.ColorErrorPrintf
+	ErrPrintln    = utils.ColorErrorPrintln
+	ErrPrint      = utils.ColorErrorPrint
+	Split2        = collections.Split2
 	warningString = color.New(color.FgYellow).SprintfFunc()
 	errorString   = color.New(color.FgRed).SprintfFunc()
 )
@@ -48,67 +47,66 @@ func main() {
 			os.Exit(1)
 		}
 	}()
-	var app *ApplicationArguments
-	app, cliOptions = NewApplicationWithOptions()
 
-	config.SetDefaultValues(*cliOptions.PsPath, *cliOptions.ConfigLocation, *cliOptions.ConfigFiles)
-	app.parseAliases(config)
+	app = NewTGFApplication()
+	config.SetDefaultValues(app.PsPath, app.ConfigLocation, app.ConfigFiles)
+	app.ParseAliases(config)
 
 	// If AWS profile is supplied, we freeze the current session
-	if *cliOptions.AwsProfile != "" {
-		must(config.InitAWS(*cliOptions.AwsProfile))
+	if app.AwsProfile != "" {
+		must(config.InitAWS(app.AwsProfile))
 	}
 
-	if *cliOptions.Image != "" {
-		config.Image = *cliOptions.Image
+	if app.Image != "" {
+		config.Image = app.Image
 		config.RecommendedImageVersion = ""
 		config.RequiredVersionRange = ""
 		config.ImageVersion = nil
 		config.ImageTag = nil
 	}
-	if *cliOptions.ImageVersion != "-" {
-		config.ImageVersion = cliOptions.ImageVersion
+	if app.ImageVersion != "-" {
+		config.ImageVersion = &app.ImageVersion
 	}
-	if *cliOptions.ImageTag != "-" {
-		config.ImageTag = cliOptions.ImageTag
+	if app.ImageTag != "-" {
+		config.ImageTag = &app.ImageTag
 	}
-	if *cliOptions.Entrypoint != "" {
-		config.EntryPoint = *cliOptions.Entrypoint
+	if app.Entrypoint != "" {
+		config.EntryPoint = app.Entrypoint
 	}
 
-	if !validateVersion(*cliOptions.ImageVersion) {
+	if !validateVersion(app.ImageVersion) {
 		os.Exit(1)
 	}
 
-	if *cliOptions.GetCurrentVersion {
+	if app.GetCurrentVersion {
 		Printf("tgf v%s\n", version)
 		os.Exit(0)
 	}
 
-	if *cliOptions.GetAllVersions {
+	if app.GetAllVersions {
 		if filepath.Base(config.EntryPoint) != "terragrunt" {
 			printError(("--all-version works only with terragrunt as the entrypoint"))
 			os.Exit(1)
 		}
 		Println("TGF version", version)
-		app.unmanagedArgs = []string{"get-versions"}
+		app.UnmanagedArgs = []string{"get-versions"}
 	}
 
 	imageName := config.GetImageName()
-	if lastRefresh(imageName) > config.Refresh || config.IsPartialVersion() || !checkImage(imageName) || *cliOptions.Refresh {
+	if lastRefresh(imageName) > config.Refresh || config.IsPartialVersion() || !checkImage(imageName) || app.Refresh {
 		refreshImage(imageName)
 	}
 
-	if *cliOptions.LoggingLevel != "" {
-		config.LogLevel = *cliOptions.LoggingLevel
+	if app.LoggingLevel != "" {
+		config.LogLevel = app.LoggingLevel
 	}
 
-	if *cliOptions.PruneImages {
+	if app.PruneImages {
 		prune(config.Image)
 		os.Exit(0)
 	}
 
-	if config.EntryPoint == "terragrunt" && app.unmanagedArgs == nil && !*cliOptions.DebugMode && !*cliOptions.GetImageName {
+	if config.EntryPoint == "terragrunt" && app.UnmanagedArgs == nil && !app.DebugMode && !app.GetImageName {
 		title := color.New(color.FgYellow, color.Underline).SprintFunc()
 		ErrPrintln(title("\nTGF Usage\n"))
 		app.Usage(nil)
@@ -117,12 +115,12 @@ func main() {
 	if config.ImageVersion == nil {
 		actualVersion := GetActualImageVersion()
 		config.ImageVersion = &actualVersion
-		if !validateVersion(*cliOptions.ImageVersion) {
+		if !validateVersion(app.ImageVersion) {
 			os.Exit(2)
 		}
 	}
 
-	os.Exit(callDocker(app.unmanagedArgs...))
+	os.Exit(callDocker(app.UnmanagedArgs...))
 }
 
 func validateVersion(version string) bool {

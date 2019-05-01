@@ -57,41 +57,41 @@ func callDocker(args ...string) int {
 		}
 	}
 
-	if *cliOptions.FlushCache && filepath.Base(config.EntryPoint) == "terragrunt" {
+	if app.FlushCache && filepath.Base(config.EntryPoint) == "terragrunt" {
 		command = append(command, "--terragrunt-source-update")
 	}
 
 	imageName := getImage()
 
-	if *cliOptions.GetImageName {
+	if app.GetImageName {
 		Println(imageName)
 		return 0
 	}
 
 	cwd := filepath.ToSlash(must(filepath.EvalSymlinks(must(os.Getwd()).(string))).(string))
 	currentDrive := fmt.Sprintf("%s/", filepath.VolumeName(cwd))
-	sourceFolder := filepath.ToSlash(filepath.Join("/", *cliOptions.MountPoint, strings.TrimPrefix(cwd, currentDrive)))
+	sourceFolder := filepath.ToSlash(filepath.Join("/", app.MountPoint, strings.TrimPrefix(cwd, currentDrive)))
 	rootFolder := strings.Split(strings.TrimPrefix(cwd, currentDrive), "/")[0]
 
 	dockerArgs := []string{
 		"run",
 	}
-	if *cliOptions.DockerInteractive {
+	if app.DockerInteractive {
 		dockerArgs = append(dockerArgs, "-it")
 	}
-	dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:%s", convertDrive(currentDrive), rootFolder, filepath.ToSlash(filepath.Join("/", *cliOptions.MountPoint, rootFolder))), "-w", sourceFolder)
+	dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:%s", convertDrive(currentDrive), rootFolder, filepath.ToSlash(filepath.Join("/", app.MountPoint, rootFolder))), "-w", sourceFolder)
 
-	if *cliOptions.WithDockerMount {
+	if app.WithDockerMount {
 		withDockerMountArgs := []string{"-v", fmt.Sprintf(dockerSocketMountPattern, dockerSocketFile), "--group-add", getDockerGroup()}
 		dockerArgs = append(dockerArgs, withDockerMountArgs...)
 	}
 
-	if *cliOptions.WithCurrentUser {
+	if app.WithCurrentUser {
 		currentUser := must(user.Current()).(*user.User)
 		dockerArgs = append(dockerArgs, fmt.Sprintf("--user=%s:%s", currentUser.Uid, currentUser.Gid))
 	}
 
-	if !*cliOptions.NoHome {
+	if !app.NoHome {
 		currentUser := must(user.Current()).(*user.User)
 		home := filepath.ToSlash(currentUser.HomeDir)
 		homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
@@ -104,7 +104,7 @@ func callDocker(args ...string) int {
 		dockerArgs = append(dockerArgs, config.DockerOptions...)
 	}
 
-	if !*cliOptions.NoTemp {
+	if !app.NoTemp {
 		temp := filepath.ToSlash(filepath.Join(must(filepath.EvalSymlinks(os.TempDir())).(string), "tgf-cache"))
 		tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
 		tempFolder := strings.TrimPrefix(temp, tempDrive)
@@ -139,7 +139,7 @@ func callDocker(args ...string) int {
 		debugPrint("export %v=%v", key, val)
 	}
 
-	for _, do := range *cliOptions.DockerOptions {
+	for _, do := range app.DockerOptions {
 		dockerArgs = append(dockerArgs, strings.Split(do, " ")...)
 	}
 
@@ -148,7 +148,7 @@ func callDocker(args ...string) int {
 		dockerArgs = append(dockerArgs, "--rm")
 	}
 
-	dockerArgs = append(dockerArgs, getEnviron(!*cliOptions.NoHome)...)
+	dockerArgs = append(dockerArgs, getEnviron(!app.NoHome)...)
 	dockerArgs = append(dockerArgs, imageName)
 	dockerArgs = append(dockerArgs, command...)
 	dockerCmd := exec.Command("docker", dockerArgs...)
@@ -182,7 +182,7 @@ func callDocker(args ...string) int {
 }
 
 func debugPrint(format string, args ...interface{}) {
-	if *cliOptions.DebugMode {
+	if app.DebugMode {
 		ErrPrintf(color.HiBlackString(format+"\n", args...))
 	}
 }
@@ -258,10 +258,10 @@ func getImage() (name string) {
 		if image, tag := Split2(name, ":"); len(tag) > maxDockerTagLength {
 			name = image + ":" + tag[0:maxDockerTagLength]
 		}
-		if *cliOptions.Refresh || getImageHash(name) != ib.hash() {
+		if app.Refresh || getImageHash(name) != ib.hash() {
 			label := fmt.Sprintf("hash=%s", ib.hash())
 			args := []string{"build", ".", "-f", dockerfilePattern, "--quiet", "--force-rm", "--label", label}
-			if i == 0 && *cliOptions.Refresh && !*cliOptions.UseLocalImage {
+			if i == 0 && app.Refresh && !app.UseLocalImage {
 				args = append(args, "--pull")
 			}
 			if dockerFile != "" {
@@ -412,9 +412,9 @@ func checkImage(image string) bool {
 var reECR = regexp.MustCompile(`(?P<account>[0-9]+)\.dkr\.ecr\.(?P<region>[a-z0-9\-]+)\.amazonaws\.com`)
 
 func refreshImage(image string) {
-	*cliOptions.Refresh = true // Setting this to true will ensure that dependant built images will also be refreshed
+	app.Refresh = true // Setting this to true will ensure that dependant built images will also be refreshed
 
-	if *cliOptions.UseLocalImage {
+	if app.UseLocalImage {
 		ErrPrintf("Not refreshing %v because `local-image` is set\n", image)
 		return
 	}
