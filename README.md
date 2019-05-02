@@ -40,20 +40,20 @@ or install it through command line:
 On `OSX`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.19.5/tgf_1.19.5_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
+curl -sL https://github.com/coveo/tgf/releases/download/v1.20.0/tgf_1.20.0_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
 ```
 
 On `Linux`:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.19.5/tgf_1.19.5_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
+curl -sL https://github.com/coveo/tgf/releases/download/v1.20.0/tgf_1.20.0_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.19.5/tgf_1.19.5_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.20.0/tgf_1.20.0_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -159,7 +159,7 @@ point. Any non conflicting argument will be passed to the entry point wherever i
 
 It is also possible to specify additional arguments through environment variable TGF_ARGS or enable debugging mode through TGF_DEBUG.
 
-VERSION: 1.19.5
+VERSION: 1.20.0
 
 AUTHOR: Coveo
 

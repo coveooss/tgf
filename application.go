@@ -1,19 +1,22 @@
 package main
 
 import (
+	"os"
 	"strings"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-// ApplicationArguments allows proper management between managed and non managed arguments provided to kingpin
-type ApplicationArguments struct {
+// Application allows proper management between managed and non managed arguments provided to kingpin
+type Application struct {
 	*kingpin.Application
-	longs  map[string]bool // true if it is a switch (bool), false otherwise
-	shorts map[rune]bool   // true if it is a switch (bool), false otherwise
+
+	longs         map[string]bool // true if it is a switch (bool), false otherwise
+	shorts        map[rune]bool   // true if it is a switch (bool), false otherwise
+	UnmanagedArgs []string
 }
 
-func (app ApplicationArguments) add(name, description string, isSwitch bool, shorts ...rune) *kingpin.FlagClause {
+func (app Application) add(name, description string, isSwitch bool, shorts ...rune) *kingpin.FlagClause {
 	flag := app.Application.Flag(name, description)
 	switch len(shorts) {
 	case 0:
@@ -31,23 +34,25 @@ func (app ApplicationArguments) add(name, description string, isSwitch bool, sho
 
 // Switch adds a switch argument to the application
 // A switch is a boolean flag that do not require additional value
-func (app ApplicationArguments) Switch(name, description string, shorts ...rune) *kingpin.FlagClause {
+func (app Application) Switch(name, description string, shorts ...rune) *kingpin.FlagClause {
 	return app.add(name, description, true, shorts...)
 }
 
 // Argument adds an argument to the application
 // The argument requires additional argument to be complete
-func (app ApplicationArguments) Argument(name, description string, shorts ...rune) *kingpin.FlagClause {
+func (app Application) Argument(name, description string, shorts ...rune) *kingpin.FlagClause {
 	return app.add(name, description, false, shorts...)
 }
 
-// SplitManaged splits the managed by kingpin and unmanaged argument to avoid error
-func (app ApplicationArguments) SplitManaged(args []string) (managed []string, unmanaged []string) {
+// Parse splits the managed by kingpin and unmanaged argument to avoid error
+func (app *Application) Parse(args []string) (command string, err error) {
+	app.UnmanagedArgs = nil
+	var managed []string
 Arg:
 	for i := 1; i < len(args); i++ {
 		arg := args[i]
 		if arg == "--" {
-			unmanaged = append(unmanaged, args[i+1:]...)
+			app.UnmanagedArgs = append(app.UnmanagedArgs, args[i+1:]...)
 			break
 		}
 		if strings.HasPrefix(arg, "--") {
@@ -69,7 +74,7 @@ Arg:
 					}
 				}
 			} else {
-				unmanaged = append(unmanaged, arg)
+				app.UnmanagedArgs = append(app.UnmanagedArgs, arg)
 			}
 		} else if strings.HasPrefix(arg, "-") {
 			withArg := false
@@ -85,7 +90,7 @@ Arg:
 						break
 					}
 				} else {
-					unmanaged = append(unmanaged, arg)
+					app.UnmanagedArgs = append(app.UnmanagedArgs, arg)
 					continue Arg
 				}
 			}
@@ -98,16 +103,16 @@ Arg:
 				}
 			}
 		} else {
-			unmanaged = append(unmanaged, arg)
+			app.UnmanagedArgs = append(app.UnmanagedArgs, arg)
 		}
 	}
-	return
+	return app.Application.Parse(managed)
 }
 
-// NewApplication returns an initialized copy of ApplicationArguments
-func NewApplication(app *kingpin.Application) ApplicationArguments {
-	return ApplicationArguments{
-		Application: app,
+// NewApplication returns an initialized copy of TGFApplication
+func NewApplication(description string) *Application {
+	return &Application{
+		Application: kingpin.New(os.Args[0], description),
 		longs: map[string]bool{
 			"help-man":               true,
 			"help-long":              true,

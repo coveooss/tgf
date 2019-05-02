@@ -61,7 +61,6 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	tempDir, _ := filepath.EvalSymlinks(must(ioutil.TempDir("", "TestGetConfig")).(string))
 	currentDir, _ := os.Getwd()
 	os.Chdir(tempDir)
-	fmt.Println(tempDir)
 	defer func() {
 		os.Chdir(currentDir)
 		os.RemoveAll(tempDir)
@@ -92,6 +91,7 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	`).UnIndent().TrimSpace())
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
+	app = NewTGFApplication()
 	config := InitConfig()
 	config.SetDefaultValues(testSSMParameterFolder, "", "")
 
@@ -122,7 +122,6 @@ func TestTwoLevelsOfTgfConfig(t *testing.T) {
 	tempDir = subFolder
 	currentDir, _ := os.Getwd()
 	os.Chdir(tempDir)
-	fmt.Println(tempDir)
 	defer func() {
 		os.Chdir(currentDir)
 		os.RemoveAll(tempDir)
@@ -153,7 +152,6 @@ func TestWeirdDirName(t *testing.T) {
 	tempDir, _ := ioutil.TempDir("", "bad@(){}-good-_.1234567890ABC")
 	currentDir, _ := os.Getwd()
 	os.Chdir(tempDir)
-	fmt.Println(tempDir)
 	defer func() {
 		os.Chdir(currentDir)
 		os.RemoveAll(tempDir)
