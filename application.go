@@ -58,9 +58,13 @@ Arg:
 		if strings.HasPrefix(arg, "--") {
 			argSplit := strings.Split(args[i][2:], "=")
 			argumentName := argSplit[0]
-			// Handle kingpin negative flags (e.g.: --no-interactive vs --interactive)
-			if strings.HasPrefix(argumentName, "no-") {
-				argumentName = argumentName[3:]
+			// Handle kingpin negative flags (e.g.: --no-interactive vs --interactive) but only if they exist
+			isNegative := strings.HasPrefix(argumentName, "no-")
+			if isNegative {
+				nonNegativeName := argumentName[3:]
+				if _, ok := app.longs[nonNegativeName]; ok {
+					argumentName = nonNegativeName
+				}
 			}
 			if isSwitch, ok := app.longs[argumentName]; ok {
 				managed = append(managed, arg)

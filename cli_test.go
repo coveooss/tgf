@@ -32,28 +32,34 @@ func TestNewApplicationWithOptionsAndAliases(t *testing.T) {
 			nil,
 		},
 		{
-			"Managed Arg",
+			"Managed arg",
 			config, []string{"--ri"},
 			map[string]interface{}{"Refresh": true},
 			nil,
 		},
 		{
-			"Managed and unmanaged Args",
+			"Managed and unmanaged arg",
 			config, []string{"--li", "--stuff"},
 			map[string]interface{}{"UseLocalImage": true},
 			[]string{"--stuff"},
 		},
 		{
-			"WithAliases",
+			"Alias with an unmanaged arg",
 			config, []string{"my_recursive_alias", "--stuff4"},
 			map[string]interface{}{"Refresh": true, "UseLocalImage": true, "WithDockerMount": true},
 			[]string{"--stuff3", "--stuff4"},
 		},
 		{
-			"WithAliasesAndArgs",
+			"Alias with an argument",
 			config, []string{"my_recursive_alias", "--no-interactive"},
 			map[string]interface{}{"DockerInteractive": false},
 			[]string{"--stuff3"},
+		},
+		{
+			"Disable flag (shown as `no` in the help)",
+			config, []string{"--no-aws"},
+			map[string]interface{}{"NoAWS": true},
+			nil,
 		},
 	}
 
