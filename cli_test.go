@@ -61,6 +61,12 @@ func TestNewApplicationWithOptionsAndAliases(t *testing.T) {
 			map[string]interface{}{"NoAWS": true},
 			nil,
 		},
+		{
+			"Disable short flag (shown as `no` in the help)",
+			config, []string{"--na"},
+			map[string]interface{}{"NoAWS": true},
+			nil,
+		},
 	}
 
 	for _, tt := range tests {
