@@ -65,7 +65,7 @@ func TestNewApplicationWithOptionsAndAliases(t *testing.T) {
 
 			app := NewTGFApplication()
 			app.ParseAliases(config)
-			assert.Equal(t, tt.wantUnmanaged, app.UnmanagedArgs)
+			assert.Equal(t, tt.wantUnmanaged, app.UnmanagedArgs, "Unmanaged args are not equal")
 
 			for wantField, wantValueInt := range tt.wantOptions {
 				if wantValue, ok := wantValueInt.(bool); ok {

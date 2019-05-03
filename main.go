@@ -19,7 +19,6 @@ type (
 	String = collections.String
 )
 
-var config = InitConfig()
 var app *TGFApplication
 
 // Function Aliases
@@ -49,6 +48,7 @@ func main() {
 	}()
 
 	app = NewTGFApplication()
+	config := InitConfig()
 	config.SetDefaultValues(app.PsPath, app.ConfigLocation, app.ConfigFiles)
 	app.ParseAliases(config)
 
@@ -74,7 +74,7 @@ func main() {
 		config.EntryPoint = app.Entrypoint
 	}
 
-	if !validateVersion(app.ImageVersion) {
+	if !validateVersion(config, app.ImageVersion) {
 		os.Exit(1)
 	}
 
@@ -102,7 +102,7 @@ func main() {
 	}
 
 	if app.PruneImages {
-		prune(config.Image)
+		prune(config, config.Image)
 		os.Exit(0)
 	}
 
@@ -113,17 +113,17 @@ func main() {
 	}
 
 	if config.ImageVersion == nil {
-		actualVersion := GetActualImageVersion()
+		actualVersion := GetActualImageVersion(config)
 		config.ImageVersion = &actualVersion
-		if !validateVersion(app.ImageVersion) {
+		if !validateVersion(config, app.ImageVersion) {
 			os.Exit(2)
 		}
 	}
 
-	os.Exit(callDocker(app.UnmanagedArgs...))
+	os.Exit(callDocker(config, app.UnmanagedArgs...))
 }
 
-func validateVersion(version string) bool {
+func validateVersion(config *TGFConfig, version string) bool {
 	for _, err := range config.Validate() {
 		switch err := err.(type) {
 		case ConfigWarning:
