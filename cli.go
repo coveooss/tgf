@@ -81,6 +81,7 @@ type TGFApplication struct {
 	LoggingLevel      string
 	MountPoint        string
 	NoAWS             bool
+	NoDockerBuild     bool
 	NoHome            bool
 	NoTemp            bool
 	PruneImages       bool
@@ -99,6 +100,7 @@ func (app *TGFApplication) parse() *TGFApplication {
 	app.Switch("get-image-name", "Just return the resulting image name (alias --gi)").BoolVar(&app.GetImageName)
 	app.Switch("interactive", "On by default, use --no-interactive or --no-it to disable launching Docker in interactive mode or set "+envInteractive+" to 0 or false").Envar(envInteractive).BoolVar(&app.DockerInteractive)
 	app.Switch("local-image", "If set, TGF will not pull the image when refreshing (alias --li)").BoolVar(&app.UseLocalImage)
+	app.Switch("no-docker-build", "Disable docker build instructions configured in the config files (alias --nb)").BoolVar(&app.NoDockerBuild)
 	app.Switch("no-home", "Disable the mapping of the home directory (alias --nh) or set "+envNoHome).Envar(envNoHome).BoolVar(&app.NoHome)
 	app.Switch("no-temp", "Disable the mapping of the temp directory (alias --nt) or set "+envNoTemp).Envar(envNoTemp).BoolVar(&app.NoTemp)
 	app.Switch("no-aws", "Disable use of AWS to get configuration (alias --na) or set "+envNoAWS).Envar(envNoAWS).BoolVar(&app.NoAWS)
@@ -126,6 +128,7 @@ func (app *TGFApplication) parse() *TGFApplication {
 	app.Switch("it", "alias for interactive").Hidden().BoolVar(&app.DockerInteractive)
 	app.Switch("li", "alias for local-image").Hidden().BoolVar(&app.UseLocalImage)
 	app.Switch("na", "alias for no-aws").Hidden().BoolVar(&app.NoAWS)
+	app.Switch("nb", "alias for no-docker-build").Hidden().BoolVar(&app.NoDockerBuild)
 	app.Switch("nh", "alias for no-home").Hidden().BoolVar(&app.NoHome)
 	app.Switch("nt", "alias for no-temp").Hidden().BoolVar(&app.NoTemp)
 	app.Switch("ri", "alias for refresh-image)").Hidden().BoolVar(&app.Refresh)

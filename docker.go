@@ -61,7 +61,7 @@ func callDocker(config *TGFConfig, args ...string) int {
 		command = append(command, "--terragrunt-source-update")
 	}
 
-	imageName := getImage(config)
+	imageName := getImage(config, app.NoDockerBuild, app.Refresh, app.UseLocalImage)
 
 	if app.GetImageName {
 		Println(imageName)
@@ -206,10 +206,14 @@ func runCommands(commands []string) error {
 
 // Returns the image name to use
 // If docker-image-build option has been set, an image is dynamically built and the resulting image digest is returned
-func getImage(config *TGFConfig) (name string) {
+func getImage(config *TGFConfig, noDockerBuild bool, refresh bool, useLocalImage bool) (name string) {
 	name = config.GetImageName()
 	if !strings.Contains(name, ":") {
 		name += ":latest"
+	}
+
+	if noDockerBuild {
+		return
 	}
 
 	lastHash := ""
@@ -258,10 +262,10 @@ func getImage(config *TGFConfig) (name string) {
 		if image, tag := Split2(name, ":"); len(tag) > maxDockerTagLength {
 			name = image + ":" + tag[0:maxDockerTagLength]
 		}
-		if app.Refresh || getImageHash(name) != ib.hash() {
+		if refresh || getImageHash(name) != ib.hash() {
 			label := fmt.Sprintf("hash=%s", ib.hash())
 			args := []string{"build", ".", "-f", dockerfilePattern, "--quiet", "--force-rm", "--label", label}
-			if i == 0 && app.Refresh && !app.UseLocalImage {
+			if i == 0 && refresh && !useLocalImage {
 				args = append(args, "--pull")
 			}
 			if dockerFile != "" {
@@ -279,11 +283,19 @@ func getImage(config *TGFConfig) (name string) {
 			buildCmd.Stderr = os.Stderr
 			buildCmd.Dir = folder
 			must(buildCmd.Output())
-			prune(config)
+			pruneDangling(config)
 		}
 	}
 
 	return
+}
+
+var pruneDangling = func(config *TGFConfig) {
+	cli, ctx := getDockerClient()
+	danglingFilters := filters.NewArgs()
+	danglingFilters.Add("dangling", "true")
+	must(cli.ImagesPrune(ctx, danglingFilters))
+	must(cli.ContainersPrune(ctx, filters.Args{}))
 }
 
 func prune(config *TGFConfig, images ...string) {
@@ -318,11 +330,7 @@ func prune(config *TGFConfig, images ...string) {
 			}
 		}
 	}
-
-	danglingFilters := filters.NewArgs()
-	danglingFilters.Add("dangling", "true")
-	must(cli.ImagesPrune(ctx, danglingFilters))
-	must(cli.ContainersPrune(ctx, filters.Args{}))
+	pruneDangling(config)
 }
 
 func deleteImage(id string) {
@@ -343,7 +351,7 @@ func deleteImage(id string) {
 
 // GetActualImageVersion returns the real image version stored in the environment variable TGF_IMAGE_VERSION
 func GetActualImageVersion(config *TGFConfig) string {
-	return getActualImageVersionInternal(getImage(config))
+	return getActualImageVersionInternal(getImage(config, app.NoDockerBuild, app.Refresh, app.UseLocalImage))
 }
 
 func getDockerClient() (*client.Client, context.Context) {
