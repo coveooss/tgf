@@ -36,7 +36,7 @@ const (
 	maxDockerTagLength   = 128
 )
 
-func callDocker(args ...string) int {
+func callDocker(config *TGFConfig, args ...string) int {
 	command := append(strings.Split(config.EntryPoint, " "), args...)
 
 	// Change the default log level for terragrunt
@@ -61,7 +61,7 @@ func callDocker(args ...string) int {
 		command = append(command, "--terragrunt-source-update")
 	}
 
-	imageName := getImage()
+	imageName := getImage(config)
 
 	if app.GetImageName {
 		Println(imageName)
@@ -206,7 +206,7 @@ func runCommands(commands []string) error {
 
 // Returns the image name to use
 // If docker-image-build option has been set, an image is dynamically built and the resulting image digest is returned
-func getImage() (name string) {
+func getImage(config *TGFConfig) (name string) {
 	name = config.GetImageName()
 	if !strings.Contains(name, ":") {
 		name += ":latest"
@@ -279,17 +279,17 @@ func getImage() (name string) {
 			buildCmd.Stderr = os.Stderr
 			buildCmd.Dir = folder
 			must(buildCmd.Output())
-			prune()
+			prune(config)
 		}
 	}
 
 	return
 }
 
-func prune(images ...string) {
+func prune(config *TGFConfig, images ...string) {
 	cli, ctx := getDockerClient()
 	if len(images) > 0 {
-		current := fmt.Sprintf(">=%s", GetActualImageVersion())
+		current := fmt.Sprintf(">=%s", GetActualImageVersion(config))
 		for _, image := range images {
 			filters := filters.NewArgs()
 			filters.Add("reference", image)
@@ -342,8 +342,8 @@ func deleteImage(id string) {
 }
 
 // GetActualImageVersion returns the real image version stored in the environment variable TGF_IMAGE_VERSION
-func GetActualImageVersion() string {
-	return getActualImageVersionInternal(getImage())
+func GetActualImageVersion(config *TGFConfig) string {
+	return getActualImageVersionInternal(getImage(config))
 }
 
 func getDockerClient() (*client.Client, context.Context) {
