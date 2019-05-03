@@ -12,7 +12,7 @@ import (
 )
 
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
-var version = "1.20.0"
+var version = "1.20.1"
 
 type (
 	// String is imported from gotemplate/collections
