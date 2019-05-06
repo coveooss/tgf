@@ -11,8 +11,6 @@ import (
 func TestGetImage(t *testing.T) {
 	t.Parallel()
 
-	pruneDangling = func(*TGFConfig) {}
-
 	testImageName := "test-image" + strconv.Itoa(randInt())
 	testTag := "test" + strconv.Itoa(randInt())
 

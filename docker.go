@@ -290,12 +290,16 @@ func getImage(config *TGFConfig, noDockerBuild bool, refresh bool, useLocalImage
 	return
 }
 
-var pruneDangling = func(config *TGFConfig) {
+func pruneDangling(config *TGFConfig) {
 	cli, ctx := getDockerClient()
 	danglingFilters := filters.NewArgs()
 	danglingFilters.Add("dangling", "true")
-	must(cli.ImagesPrune(ctx, danglingFilters))
-	must(cli.ContainersPrune(ctx, filters.Args{}))
+	if _, err := cli.ImagesPrune(ctx, danglingFilters); err != nil {
+		printError("Error pruning dangling images (Untagged): %v", err.Error())
+	}
+	if _, err := cli.ContainersPrune(ctx, filters.Args{}); err != nil {
+		printError("Error pruning unused containers: %v", err.Error())
+	}
 }
 
 func prune(config *TGFConfig, images ...string) {
