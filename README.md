@@ -1,6 +1,8 @@
 # TGF
 
 [![Build Status](https://travis-ci.org/coveo/tgf.svg?branch=master)](https://travis-ci.org/coveo/tgf)
+[![Go Report Card](https://goreportcard.com/badge/github.com/coveo/tgf)](https://goreportcard.com/report/github.com/coveo/tgf)
+[![Coverage Status](https://coveralls.io/repos/github/coveo/tgf/badge.svg?branch=master)](https://coveralls.io/github/coveo/tgf?branch=master)
 
 A **T**erra**g**runt **f**rontend that allow execution of Terragrunt/Terraform through Docker.
 
