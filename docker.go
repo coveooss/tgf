@@ -86,7 +86,8 @@ func callDocker(config *TGFConfig, args ...string) int {
 		dockerArgs = append(dockerArgs, withDockerMountArgs...)
 	}
 
-	if app.WithCurrentUser {
+	// No need to map to current user on windows. Files written by docker containers in windows seem to be accessible by the user calling docker
+	if app.WithCurrentUser && runtime.GOOS != "windows" {
 		currentUser := must(user.Current()).(*user.User)
 		dockerArgs = append(dockerArgs, fmt.Sprintf("--user=%s:%s", currentUser.Uid, currentUser.Gid))
 	}
