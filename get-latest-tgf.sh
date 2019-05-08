@@ -26,7 +26,7 @@ get_local_tgf_version;
 get_latest_tgf_version;
 
 echo '- tgf version (local):' $TGF_LOCAL_VERSION;
-echo '- tgf version (lastest):' $TGF_LATEST_VERSION;
+echo '- tgf version (latest):' $TGF_LATEST_VERSION;
 
 if [ "$TGF_LOCAL_VERSION" == "$TGF_LATEST_VERSION" ]
 then echo 'Info: local version is up to date';
