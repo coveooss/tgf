@@ -329,3 +329,9 @@ Build are automatically launched on tagging.
 
 Tags with format image-0.0.0 automatically launch a Docker images build that are available through Docker Hub.
 Tags with format v0.0.0 automatically launch a new release on Github for the TGF executable.
+
+## Update tgf version
+
+On **mac** and **linux**, you can run the `get_latest_version.sh` script to check if you have the latest version of tgf installed and update it if needed.
+
+The **GITHUB_TOKEN** environement variable can be set to make authenticated requests to github.
