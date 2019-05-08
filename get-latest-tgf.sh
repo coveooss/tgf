@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 get_local_tgf_version () {
         TGF_LOCAL_VERSION=$(tgf --current-version | awk -F\  '{print $2}');
 }
