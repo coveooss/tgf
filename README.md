@@ -332,6 +332,7 @@ Tags with format v0.0.0 automatically launch a new release on Github for the TGF
 
 ## Update tgf version
 
-On **mac** and **linux**, you can run the `get_latest_version.sh` script to check if you have the latest version of tgf installed and update it if needed.
+On **mac** and **linux**, you can run the `get-latest-tgf.sh` script to check if you have the latest version of tgf installed and update it if needed:
+curl https://raw.githubusercontent.com/coveo/tgf/master/get-latest-tgf.sh | sh
 
 The **GITHUB_TOKEN** environement variable can be set to make authenticated requests to github.
