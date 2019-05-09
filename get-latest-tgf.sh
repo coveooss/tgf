@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 get_local_tgf_version () {
-        TGF_LOCAL_VERSION=$(tgf --current-version | awk -F\  '{print $2}');
+        TGF_LOCAL_VERSION=$(tgf --current-version | awk -F\  '{print $2}')
 }
 
 get_latest_tgf_version () {
-    if [ -z "$GITHUB_TOKEN" ]; then
+    if [ -z "$GITHUB_TOKEN" ]
+    then
         echo 'GITHUB_TOKEN is not set.';
     fi
-    TGF_LATEST_VERSION=$(curl --silent https://api.github.com/repos/coveo/tgf/releases/latest?access_token=${GITHUB_TOKEN} | grep tag_name | awk -F\" '{print $4}');
+    TGF_LATEST_VERSION=$(curl --silent https://api.github.com/repos/coveo/tgf/releases/latest?access_token=${GITHUB_TOKEN} | grep tag_name | awk -F\" '{print $4}')
 }
 
 done_script () {
@@ -31,14 +32,14 @@ install_latest_tgf () {
         fi
 }
 
-get_local_tgf_version;
-get_latest_tgf_version;
+get_local_tgf_version
+get_latest_tgf_version
 
-echo '- tgf version (local):' $TGF_LOCAL_VERSION;
+echo '- tgf version (local):' $TGF_LOCAL_VERSION
 echo '- tgf version (latest):' $TGF_LATEST_VERSION;
 
 if [ "$TGF_LOCAL_VERSION" == "$TGF_LATEST_VERSION" ]; then 
         echo 'Local version is up to date.';
 else
-        install_latest_tgf;
+        install_latest_tgf
 fi
