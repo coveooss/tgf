@@ -35,21 +35,15 @@ outdated version.
 
 ## Installation
 
-Choose the desired version according to your OS [here](https://github.com/coveo/tgf/releases), unzip it, make tgf executable `chmod +x tgf` and put it somewhere in your PATH.
+On `mac` and `linux`:  
 
-or install it through command line:
-
-On `OSX`:
+You can run the `get-latest-tgf.sh` script to check if you have the latest version of tgf installed and install it if needed:
 
 ```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.20.2/tgf_1.20.2_macOS_64-bits.zip | bsdtar -xf- -C /usr/local/bin
+curl https://raw.githubusercontent.com/coveo/tgf/master/get-latest-tgf.sh | bash
 ```
 
-On `Linux`:
-
-```bash
-curl -sL https://github.com/coveo/tgf/releases/download/v1.20.2/tgf_1.20.2_linux_64-bits.zip | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf
-```
+> PS: The **GITHUB_TOKEN** environement variable can be set to make authenticated requests to github.
 
 On `Windows` with Powershell:
 
@@ -330,9 +324,3 @@ Build are automatically launched on tagging.
 Tags with format image-0.0.0 automatically launch a Docker images build that are available through Docker Hub.
 Tags with format v0.0.0 automatically launch a new release on Github for the TGF executable.
 
-## Update tgf version
-
-On **mac** and **linux**, you can run the `get-latest-tgf.sh` script to check if you have the latest version of tgf installed and update it if needed:
-curl https://raw.githubusercontent.com/coveo/tgf/master/get-latest-tgf.sh | sh
-
-The **GITHUB_TOKEN** environement variable can be set to make authenticated requests to github.
