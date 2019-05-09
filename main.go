@@ -7,50 +7,32 @@ import (
 
 	"github.com/coveo/gotemplate/v3/collections"
 	"github.com/coveo/gotemplate/v3/errors"
+	_ "github.com/coveo/gotemplate/v3/hcl"
+	_ "github.com/coveo/gotemplate/v3/json"
 	"github.com/coveo/gotemplate/v3/utils"
+	_ "github.com/coveo/gotemplate/v3/yaml"
 	"github.com/fatih/color"
 )
 
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
 var version = "1.20.2"
 
-type (
-	// String is imported from gotemplate/collections
-	String = collections.String
-)
-
-var app *TGFApplication
-
-// Function Aliases
-var (
-	must          = errors.Must
-	Print         = utils.ColorPrint
-	Printf        = utils.ColorPrintf
-	Println       = utils.ColorPrintln
-	ErrPrintf     = utils.ColorErrorPrintf
-	ErrPrintln    = utils.ColorErrorPrintln
-	ErrPrint      = utils.ColorErrorPrint
-	Split2        = collections.Split2
-	warningString = color.New(color.FgYellow).SprintfFunc()
-	errorString   = color.New(color.FgRed).SprintfFunc()
-)
-
 func main() {
 	// Handle eventual panic message
 	defer func() {
 		if err := recover(); err != nil {
-			printError("%[1]v (%[1]T)", err)
-			if collections.String(os.Getenv(envDebug)).ParseBool() {
+			if _, isManaged := err.(errors.Managed); String(os.Getenv(envDebug)).ParseBool() || !isManaged {
+				printError("%[1]v (%[1]T)", err)
 				debug.PrintStack()
+			} else {
+				printError("%v", err)
 			}
 			os.Exit(1)
 		}
 	}()
 
-	app = NewTGFApplication()
-	config := InitConfig()
-	config.SetDefaultValues(app.PsPath, app.ConfigLocation, app.ConfigFiles)
-	app.ParseAliases(config)
+	app := NewTGFApplication(os.Args[1:])
+	config := InitConfig(app)
 
 	// If AWS profile is supplied, we freeze the current session
 	if app.AwsProfile != "" {
@@ -73,8 +55,7 @@ func main() {
 	if app.Entrypoint != "" {
 		config.EntryPoint = app.Entrypoint
 	}
-
-	if !validateVersion(config, app.ImageVersion) {
+	if !config.ValidateVersion() {
 		os.Exit(1)
 	}
 
@@ -89,12 +70,13 @@ func main() {
 			os.Exit(1)
 		}
 		Println("TGF version", version)
-		app.UnmanagedArgs = []string{"get-versions"}
+		app.Unmanaged = []string{"get-versions"}
 	}
 
+	docker := dockerConfig{config}
 	imageName := config.GetImageName()
 	if lastRefresh(imageName) > config.Refresh || config.IsPartialVersion() || !checkImage(imageName) || app.Refresh {
-		refreshImage(imageName)
+		docker.refreshImage(imageName)
 	}
 
 	if app.LoggingLevel != "" {
@@ -102,45 +84,45 @@ func main() {
 	}
 
 	if app.PruneImages {
-		prune(config, config.Image)
+		docker.prune(config.Image)
 		os.Exit(0)
 	}
 
-	if config.EntryPoint == "terragrunt" && app.UnmanagedArgs == nil && !app.DebugMode && !app.GetImageName {
+	if config.EntryPoint == "terragrunt" && app.Unmanaged == nil && !app.DebugMode && !app.GetImageName {
 		title := color.New(color.FgYellow, color.Underline).SprintFunc()
 		ErrPrintln(title("\nTGF Usage\n"))
 		app.Usage(nil)
 	}
 
 	if config.ImageVersion == nil {
-		actualVersion := GetActualImageVersion(config)
+		actualVersion := docker.GetActualImageVersion()
 		config.ImageVersion = &actualVersion
-		if !validateVersion(config, app.ImageVersion) {
+		if !config.ValidateVersion() {
 			os.Exit(2)
 		}
 	}
 
-	os.Exit(callDocker(config, app.UnmanagedArgs...))
-}
-
-func validateVersion(config *TGFConfig, version string) bool {
-	for _, err := range config.Validate() {
-		switch err := err.(type) {
-		case ConfigWarning:
-			printWarning("%v", err)
-		case VersionMistmatchError:
-			printError("%v", err)
-			if version == "-" {
-				// We consider this as a fatal error only if the version has not been explicitly specified on the command line
-				return false
-			}
-		default:
-			printError("%v", err)
-			return false
-		}
-	}
-	return true
+	os.Exit(docker.call())
 }
 
 func printError(format string, args ...interface{})   { ErrPrintln(errorString(format, args...)) }
 func printWarning(format string, args ...interface{}) { ErrPrintln(warningString(format, args...)) }
+
+type (
+	// String is imported from gotemplate/collections
+	String = collections.String
+)
+
+// Function Aliases
+var (
+	must          = errors.Must
+	Print         = utils.ColorPrint
+	Printf        = utils.ColorPrintf
+	Println       = utils.ColorPrintln
+	ErrPrintf     = utils.ColorErrorPrintf
+	ErrPrintln    = utils.ColorErrorPrintln
+	ErrPrint      = utils.ColorErrorPrint
+	Split2        = collections.Split2
+	warningString = color.New(color.FgYellow).SprintfFunc()
+	errorString   = color.New(color.FgRed).SprintfFunc()
+)

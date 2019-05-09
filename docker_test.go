@@ -1,9 +1,13 @@
 package main
 
 import (
+	"bytes"
+	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -13,30 +17,25 @@ func TestGetImage(t *testing.T) {
 
 	testImageName := "test-image" + strconv.Itoa(randInt())
 	testTag := "test" + strconv.Itoa(randInt())
+	testImageNameTagged := testImageName + ":" + testTag
 
 	// build test image
-	c1 := exec.Command("echo", "-e", "FROM scratch\nLABEL name="+testTag)
-	c2 := exec.Command("docker", "build", "-", "-t", testImageName+":"+testTag)
-	c2.Stdin, _ = c1.StdoutPipe()
+	defer func() { assert.NoError(t, exec.Command("docker", "rmi", testImageNameTagged).Run()) }()
+	c2 := exec.Command("docker", "build", "-", "-t", testImageNameTagged)
+	c2.Stdin, c2.Stdout, c2.Stderr = bytes.NewBufferString("FROM scratch\nLABEL name="+testTag), os.Stdout, os.Stderr
 	c2.Start()
-	c1.Run()
-	c2.Wait()
+	time.Sleep(1 * time.Second) // We have to wait a bit because test may fail if executed to quickly after this initial image build
 
 	tests := []struct {
-		name          string
-		config        *TGFConfig
-		noDockerBuild bool
-		refresh       bool
-		useLocalImage bool
-		result        string
+		name   string
+		args   []string
+		config *TGFConfig
+		result string
 	}{
 		{
-			name:          "Without build configs and tag",
-			config:        &TGFConfig{Image: testImageName},
-			noDockerBuild: false,
-			refresh:       false,
-			useLocalImage: false,
-			result:        testImageName + ":latest",
+			name:   "Without build configs and tag",
+			config: &TGFConfig{Image: testImageName},
+			result: testImageName + ":latest",
 		},
 		{
 			name: "Without build configs but with a tag",
@@ -44,13 +43,11 @@ func TestGetImage(t *testing.T) {
 				Image:    testImageName,
 				ImageTag: &testTag,
 			},
-			noDockerBuild: false,
-			refresh:       false,
-			useLocalImage: false,
-			result:        testImageName + ":" + testTag,
+			result: testImageNameTagged,
 		},
 		{
 			name: "With build config",
+			args: []string{"--li", "-D"},
 			config: &TGFConfig{
 				ImageTag: &testTag,
 				Image:    testImageName,
@@ -61,13 +58,11 @@ func TestGetImage(t *testing.T) {
 					},
 				},
 			},
-			noDockerBuild: false,
-			refresh:       false,
-			useLocalImage: true,
-			result:        testImageName + ":" + testTag + "-" + "buildtag",
+			result: testImageNameTagged + "-" + "buildtag",
 		},
 		{
 			name: "With build config and no build flag",
+			args: []string{"--li", "--ndb", "-D"},
 			config: &TGFConfig{
 				ImageTag: &testTag,
 				Image:    testImageName,
@@ -78,17 +73,21 @@ func TestGetImage(t *testing.T) {
 					},
 				},
 			},
-			noDockerBuild: true,
-			refresh:       false,
-			useLocalImage: true,
-			result:        testImageName + ":" + testTag,
+			result: testImageNameTagged,
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			app = NewTGFApplication()
-			assert.Equal(t, tt.result, getImage(tt.config, tt.noDockerBuild, tt.refresh, tt.useLocalImage), "The result image tag is not correct")
+		assert.NotPanics(t, func() {
+			tt.config.tgf = NewTestApplication(tt.args)
+			docker := dockerConfig{tt.config}
+			assert.Equal(t, tt.result, docker.getImage(), "The result image tag is not correct")
+			if tt.result != testImageName+":latest" && tt.result != testImageNameTagged {
+				time.Sleep(1 * time.Second)
+				command := exec.Command("docker", "rmi", tt.result)
+				t.Log("Running:", strings.Join(command.Args, " "))
+				assert.NoError(t, command.Run())
+			}
 		})
 	}
 }

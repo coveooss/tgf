@@ -60,10 +60,10 @@ func TestCheckVersionRange(t *testing.T) {
 func TestSetConfigDefaultValues(t *testing.T) {
 	tempDir, _ := filepath.EvalSymlinks(must(ioutil.TempDir("", "TestGetConfig")).(string))
 	currentDir, _ := os.Getwd()
-	os.Chdir(tempDir)
+	assert.NoError(t, os.Chdir(tempDir))
 	defer func() {
-		os.Chdir(currentDir)
-		os.RemoveAll(tempDir)
+		assert.NoError(t, os.Chdir(currentDir))
+		assert.NoError(t, os.RemoveAll(tempDir))
 	}()
 
 	testTgfConfigFile := fmt.Sprintf("%s/.tgf.config", tempDir)
@@ -91,9 +91,9 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	`).UnIndent().TrimSpace())
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
-	app = NewTGFApplication()
-	config := InitConfig()
-	config.SetDefaultValues(testSSMParameterFolder, "", "")
+	app := NewTestApplication(nil)
+	app.PsPath = testSSMParameterFolder
+	config := InitConfig(app)
 
 	assert.Len(t, config.imageBuildConfigs, 2)
 
@@ -117,18 +117,17 @@ func TestSetConfigDefaultValues(t *testing.T) {
 
 func TestTwoLevelsOfTgfConfig(t *testing.T) {
 	tempDir, _ := filepath.EvalSymlinks(must(ioutil.TempDir("", "TestGetConfig")).(string))
-	subFolder := path.Join(tempDir, "sub-folder")
-	must(os.Mkdir(subFolder, os.ModePerm))
-	tempDir = subFolder
 	currentDir, _ := os.Getwd()
-	os.Chdir(tempDir)
+	subFolder := path.Join(tempDir, "sub-folder")
 	defer func() {
-		os.Chdir(currentDir)
-		os.RemoveAll(tempDir)
+		assert.NoError(t, os.Chdir(currentDir))
+		assert.NoError(t, os.RemoveAll(tempDir))
 	}()
+	assert.NoError(t, os.Mkdir(subFolder, os.ModePerm))
+	assert.NoError(t, os.Chdir(subFolder))
 
-	testParentTgfConfigFile := fmt.Sprintf("%s/../.tgf.config", tempDir)
-	testTgfConfigFile := fmt.Sprintf("%s/.tgf.config", tempDir)
+	testParentTgfConfigFile := fmt.Sprintf("%s/../.tgf.config", subFolder)
+	testTgfConfigFile := fmt.Sprintf("%s/.tgf.config", subFolder)
 	testSSMParameterFolder := fmt.Sprintf("/test/tgf-%v", randInt())
 
 	parentTgfConfig := []byte(String(`
@@ -141,8 +140,9 @@ func TestTwoLevelsOfTgfConfig(t *testing.T) {
 	tgfConfig := []byte(String(`docker-image-version: 2.0.2`))
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
-	config := InitConfig()
-	config.SetDefaultValues(testSSMParameterFolder, "", "")
+	app := NewTestApplication(nil)
+	app.PsPath = testSSMParameterFolder
+	config := InitConfig(app)
 
 	assert.Equal(t, "coveo/stuff", config.Image)
 	assert.Equal(t, "2.0.2", *config.ImageVersion)
@@ -151,10 +151,10 @@ func TestTwoLevelsOfTgfConfig(t *testing.T) {
 func TestWeirdDirName(t *testing.T) {
 	tempDir, _ := ioutil.TempDir("", "bad@(){}-good-_.1234567890ABC")
 	currentDir, _ := os.Getwd()
-	os.Chdir(tempDir)
+	assert.NoError(t, os.Chdir(tempDir))
 	defer func() {
-		os.Chdir(currentDir)
-		os.RemoveAll(tempDir)
+		assert.NoError(t, os.Chdir(currentDir))
+		assert.NoError(t, os.RemoveAll(tempDir))
 	}()
 	testSSMParameterFolder := fmt.Sprintf("/test/tgf-%v", randInt())
 	testTgfConfigFile := fmt.Sprintf("%s/.tgf.config", tempDir)
@@ -165,8 +165,9 @@ func TestWeirdDirName(t *testing.T) {
 	`).UnIndent().TrimSpace())
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
-	config := InitConfig()
-	config.SetDefaultValues(testSSMParameterFolder, "", "")
+	app := NewTestApplication(nil)
+	app.PsPath = testSSMParameterFolder
+	config := InitConfig(app)
 
 	assert.True(t, strings.HasPrefix(config.imageBuildConfigs[0].GetTag(), "bad-good-_.1234567890ABC"))
 }
@@ -200,8 +201,8 @@ func TestParseAliases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.config.ParseAliases(tt.args); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("TGFConfig.ParseAliases() = %v, want %v", got, tt.want)
+			if got := tt.config.parseAliases(tt.args); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("TGFConfig.parseAliases() = %v, want %v", got, tt.want)
 			}
 		})
 	}
