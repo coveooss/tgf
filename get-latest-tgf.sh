@@ -20,11 +20,11 @@ done_script () {
 install_latest_tgf () {
         VERSION=$(echo $TGF_LATEST_VERSION | cut -d'v' -f 2)
         
-        if [[ $OSTYPE == linux* ]]
+        if [[ $(uname -s) == Linux ]]
         then
                 echo 'Installing latest tgf version for Linux...'
                 curl -sL "https://github.com/coveo/tgf/releases/download/v"$VERSION"/tgf_"$VERSION"_linux_64-bits.zip" | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf && done_script
-        elif [[ $OSTYPE == darwin* ]]
+        elif [[ $(uname -s) == Darwin ]]
         then
                 echo 'Installing latest tgf for OSX...'
                 curl -sL "https://github.com/coveo/tgf/releases/download/v"$VERSION"/tgf_"$VERSION"_macOS_64-bits.zip" | bsdtar -xf- -C /usr/local/bin && done_script
