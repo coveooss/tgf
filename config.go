@@ -19,9 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/blang/semver"
 	"github.com/coveo/gotemplate/v3/collections"
-	_ "github.com/coveo/gotemplate/v3/hcl"
-	_ "github.com/coveo/gotemplate/v3/json"
-	_ "github.com/coveo/gotemplate/v3/yaml"
+	"github.com/fatih/color"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
 	"github.com/hashicorp/go-getter"
 	yaml "gopkg.in/yaml.v2"
@@ -65,6 +63,7 @@ type TGFConfig struct {
 
 	runBeforeCommands, runAfterCommands []string
 	imageBuildConfigs                   []TGFConfigBuild // List of config built from previous build configs
+	tgf                                 *TGFApplication
 }
 
 // TGFConfigBuild contains an entry specifying how to customize the current docker image
@@ -115,14 +114,18 @@ func (cb TGFConfigBuild) GetTag() string {
 }
 
 // InitConfig returns a properly initialized TGF configuration struct
-func InitConfig() *TGFConfig {
-	return &TGFConfig{Image: "coveo/tgf",
+func InitConfig(app *TGFApplication) *TGFConfig {
+	config := TGFConfig{Image: "coveo/tgf",
+		tgf:               app,
 		Refresh:           1 * time.Hour,
 		EntryPoint:        "terragrunt",
 		LogLevel:          "notice",
 		Environment:       make(map[string]string),
 		imageBuildConfigs: []TGFConfigBuild{},
 	}
+	config.setDefaultValues()
+	config.ParseAliases()
+	return &config
 }
 
 func (config TGFConfig) String() string {
@@ -152,13 +155,16 @@ func (config *TGFConfig) InitAWS(profile string) error {
 	return nil
 }
 
-// SetDefaultValues sets the uninitialized values from the config files and the parameter store
+// setDefaultValues sets the uninitialized values from the config files and the parameter store
 // Priorities (Higher overwrites lower values):
 // 1. Configuration location files
 // 2. SSM Parameter Config
 // 3. tgf.user.config
 // 4. .tgf.config
-func (config *TGFConfig) SetDefaultValues(ssmParameterFolder, location, files string) {
+func (config *TGFConfig) setDefaultValues() {
+	app := config.tgf
+
+	//app.PsPath, app.ConfigLocation, app.ConfigFiles
 	type configData struct {
 		Name   string
 		Raw    string
@@ -167,35 +173,37 @@ func (config *TGFConfig) SetDefaultValues(ssmParameterFolder, location, files st
 	configsData := []configData{}
 
 	// Fetch SSM configs
-	if awsConfigExist() {
+	if config.awsConfigExist() {
 		if err := config.InitAWS(""); err != nil {
 			printError("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err)
 		} else {
-			if location == "" {
-				values := readSSMParameterStore(ssmParameterFolder)
-				location = values[remoteConfigLocationParameter]
-				if files == "" {
-					files = values[remoteConfigPathsParameter]
-				}
-			}
-
-			for _, configFile := range findRemoteConfigFiles(location, files) {
-				configsData = append(configsData, configData{Name: "RemoteConfigFile", Raw: configFile})
-			}
-
-			// Only fetch SSM parameters if no ConfigFile was found
-			if len(configsData) == 0 {
-				ssmConfig := parseSsmConfig(readSSMParameterStore(ssmParameterFolder))
-				if ssmConfig != "" {
-					configsData = append(configsData, configData{Name: "AWS/ParametersStore", Raw: ssmConfig})
+			if app.ConfigLocation == "" {
+				values := config.readSSMParameterStore(app.PsPath)
+				app.ConfigLocation = values[remoteConfigLocationParameter]
+				if app.ConfigFiles == "" {
+					app.ConfigFiles = values[remoteConfigPathsParameter]
 				}
 			}
 		}
 	}
 
+	for _, configFile := range config.findRemoteConfigFiles(app.ConfigLocation, app.ConfigFiles) {
+		configsData = append(configsData, configData{Name: "RemoteConfigFile", Raw: configFile})
+	}
+
+	if config.awsConfigExist() {
+		// Only fetch SSM parameters if no ConfigFile was found
+		if len(configsData) == 0 {
+			ssmConfig := parseSsmConfig(config.readSSMParameterStore(app.PsPath))
+			if ssmConfig != "" {
+				configsData = append(configsData, configData{Name: "AWS/ParametersStore", Raw: ssmConfig})
+			}
+		}
+	}
+
 	// Fetch file configs
-	for _, configFile := range findConfigFiles(must(os.Getwd()).(string)) {
-		debugPrint("# Reading configuration from %s\n", configFile)
+	for _, configFile := range config.findConfigFiles(must(os.Getwd()).(string)) {
+		app.Debug("# Reading configuration from %s\n", configFile)
 		bytes, err := ioutil.ReadFile(configFile)
 
 		if err != nil {
@@ -242,8 +250,7 @@ var reVersionWithEndMarkers = regexp.MustCompile(`^` + reVersion.String() + `$`)
 // https://regex101.com/r/ZKt4OP/5
 var reImage = regexp.MustCompile(`^(?P<image>.*?)(?::(?:` + reVersion.String() + `(?:(?P<sep>[\.-])(?P<spec>.+))?|(?P<fix>.+)))?$`)
 
-// Validate ensure that the current version is compliant with the setting (mainly those in the parameter store1)
-func (config *TGFConfig) Validate() (errors []error) {
+func (config *TGFConfig) validate() (errors []error) {
 	if strings.Contains(config.Image, ":") {
 		// It is possible that the : is there because we do not use a standard registry port, so we remove the port from the config.Image and
 		// check again if there is still a : in the image name before returning a warning
@@ -290,6 +297,27 @@ func (config *TGFConfig) Validate() (errors []error) {
 	return
 }
 
+// ValidateVersion ensures that the current version is compliant with the setting (mainly those in the parameter store1)
+func (config *TGFConfig) ValidateVersion() bool {
+	version := config.tgf.ImageVersion
+	for _, err := range config.validate() {
+		switch err := err.(type) {
+		case ConfigWarning:
+			printWarning("%v", err)
+		case VersionMistmatchError:
+			printError("%v", err)
+			if version == "-" {
+				// We consider this as a fatal error only if the version has not been explicitly specified on the command line
+				return false
+			}
+		default:
+			printError("%v", err)
+			return false
+		}
+	}
+	return true
+}
+
 // IsPartialVersion returns true if the given version is partial (x.x instead of semver's x.x.x)
 func (config *TGFConfig) IsPartialVersion() bool {
 	return config.ImageVersion != nil &&
@@ -316,8 +344,8 @@ func (config *TGFConfig) GetImageName() string {
 	return config.Image
 }
 
-// ParseAliases will parse the original argument list and replace aliases only in the first argument.
-func (config *TGFConfig) ParseAliases(args []string) []string {
+// parseAliases will parse the original argument list and replace aliases only in the first argument.
+func (config *TGFConfig) parseAliases(args []string) []string {
 	if len(args) > 0 {
 		if replace := String(config.Aliases[args[0]]); replace != "" {
 			var result collections.StringArray
@@ -328,28 +356,32 @@ func (config *TGFConfig) ParseAliases(args []string) []string {
 					result[i] = result[i].RestoreProtected(quoted).ReplaceN(`="`, "=", 1).Trim(`"`)
 				}
 			}
-			return append(config.ParseAliases(result.Strings()), args[1:]...)
+			return append(config.parseAliases(result.Strings()), args[1:]...)
 		}
 	}
 	return args
 }
 
-func readSSMParameterStore(ssmParameterFolder string) map[string]string {
-	debugPrint("# Reading configuration from SSM %s\n", ssmParameterFolder)
-	parameters := must(aws_helper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter)
-	return extractMapFromParameters(ssmParameterFolder, parameters)
+// ParseAliases checks if the actual command matches an alias and set the options according to the configuration
+func (config *TGFConfig) ParseAliases() {
+	args := config.tgf.Unmanaged
+	if alias := config.parseAliases(args); len(alias) > 0 && len(args) > 0 && alias[0] != args[0] {
+		config.tgf.Unmanaged = nil
+		must(config.tgf.Application.Parse(alias))
+	}
 }
 
-func extractMapFromParameters(ssmParameterFolder string, parameters []*ssm.Parameter) map[string]string {
+func (config *TGFConfig) readSSMParameterStore(ssmParameterFolder string) map[string]string {
+	config.tgf.Debug("# Reading configuration from SSM %s\n", ssmParameterFolder)
 	values := make(map[string]string)
-	for _, parameter := range parameters {
+	for _, parameter := range must(aws_helper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter) {
 		key := strings.TrimLeft(strings.Replace(*parameter.Name, ssmParameterFolder, "", 1), "/")
 		values[key] = *parameter.Value
 	}
 	return values
 }
 
-func findRemoteConfigFiles(location, files string) []string {
+func (config *TGFConfig) findRemoteConfigFiles(location, files string) []string {
 	if location == "" {
 		return []string{}
 	}
@@ -370,7 +402,7 @@ func findRemoteConfigFiles(location, files string) []string {
 	for _, configPath := range configPaths {
 		fullConfigPath := location + configPath
 		destConfigPath := path.Join(tempDir, configPath)
-		debugPrint("# Reading configuration from %s\n", fullConfigPath)
+		config.tgf.Debug("# Reading configuration from %s\n", fullConfigPath)
 		source := must(getter.Detect(fullConfigPath, must(os.Getwd()).(string), getter.Detectors)).(string)
 
 		err := getter.Get(destConfigPath, source)
@@ -416,8 +448,9 @@ func parseSsmConfig(parameterValues map[string]string) string {
 //
 // We call this function before trying to init an AWS session. This avoid trying to init a session in a non AWS context
 // and having to wait for metadata resolution or generating an error.
-func awsConfigExist() bool {
-	if app.NoAWS {
+func (config TGFConfig) awsConfigExist() bool {
+	app := config.tgf
+	if !app.UseAWS {
 		return false
 	}
 
@@ -444,7 +477,8 @@ func awsConfigExist() bool {
 }
 
 // Return the list of configuration files found from the current working directory up to the root folder
-func findConfigFiles(folder string) (result []string) {
+func (config TGFConfig) findConfigFiles(folder string) (result []string) {
+	app := config.tgf
 	configFiles := []string{userConfigFile, configFile}
 	if app.DisableUserConfig {
 		configFiles = []string{configFile}
@@ -457,7 +491,7 @@ func findConfigFiles(folder string) (result []string) {
 	}
 
 	if parent := filepath.Dir(folder); parent != folder {
-		result = append(findConfigFiles(parent), result...)
+		result = append(config.findConfigFiles(parent), result...)
 	}
 
 	return
@@ -469,7 +503,7 @@ func getTgfConfigFields() []string {
 	for i := 0; i < classType.NumField(); i++ {
 		tagValue := classType.Field(i).Tag.Get("yaml")
 		if tagValue != "" {
-			fields = append(fields, strings.Replace(tagValue, ",omitempty", "", -1))
+			fields = append(fields, color.GreenString(strings.Replace(tagValue, ",omitempty", "", -1)))
 		}
 	}
 	return fields

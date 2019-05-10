@@ -24,7 +24,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	"github.com/fatih/color"
 	"github.com/gruntwork-io/terragrunt/util"
 )
 
@@ -36,7 +35,11 @@ const (
 	maxDockerTagLength   = 128
 )
 
-func callDocker(config *TGFConfig, args ...string) int {
+type dockerConfig struct{ *TGFConfig }
+
+func (docker *dockerConfig) call() int {
+	app, config := docker.tgf, docker.TGFConfig
+	args := app.Unmanaged
 	command := append(strings.Split(config.EntryPoint, " "), args...)
 
 	// Change the default log level for terragrunt
@@ -61,7 +64,7 @@ func callDocker(config *TGFConfig, args ...string) int {
 		command = append(command, "--terragrunt-source-update")
 	}
 
-	imageName := getImage(config, app.NoDockerBuild, app.Refresh, app.UseLocalImage)
+	imageName := docker.getImage()
 
 	if app.GetImageName {
 		Println(imageName)
@@ -92,7 +95,7 @@ func callDocker(config *TGFConfig, args ...string) int {
 		dockerArgs = append(dockerArgs, fmt.Sprintf("--user=%s:%s", currentUser.Uid, currentUser.Gid))
 	}
 
-	if !app.NoHome {
+	if app.MountHomeDir {
 		currentUser := must(user.Current()).(*user.User)
 		home := filepath.ToSlash(currentUser.HomeDir)
 		homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
@@ -105,7 +108,7 @@ func callDocker(config *TGFConfig, args ...string) int {
 		dockerArgs = append(dockerArgs, config.DockerOptions...)
 	}
 
-	if !app.NoTemp {
+	if app.MountTempDir {
 		temp := filepath.ToSlash(filepath.Join(must(filepath.EvalSymlinks(os.TempDir())).(string), "tgf-cache"))
 		tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
 		tempFolder := strings.TrimPrefix(temp, tempDrive)
@@ -137,7 +140,7 @@ func callDocker(config *TGFConfig, args ...string) int {
 
 	for key, val := range config.Environment {
 		os.Setenv(key, val)
-		debugPrint("export %v=%v", key, val)
+		app.Debug("export %v=%v", key, val)
 	}
 
 	for _, do := range app.DockerOptions {
@@ -149,7 +152,7 @@ func callDocker(config *TGFConfig, args ...string) int {
 		dockerArgs = append(dockerArgs, "--rm")
 	}
 
-	dockerArgs = append(dockerArgs, getEnviron(!app.NoHome)...)
+	dockerArgs = append(dockerArgs, getEnviron(app.MountHomeDir)...)
 	dockerArgs = append(dockerArgs, imageName)
 	dockerArgs = append(dockerArgs, command...)
 	dockerCmd := exec.Command("docker", dockerArgs...)
@@ -158,9 +161,9 @@ func callDocker(config *TGFConfig, args ...string) int {
 	dockerCmd.Stderr = &stderr
 
 	if len(config.Environment) > 0 {
-		debugPrint("")
+		app.Debug("")
 	}
-	debugPrint("%s\n", strings.Join(dockerCmd.Args, " "))
+	app.Debug("%s\n", strings.Join(dockerCmd.Args, " "))
 
 	if err := runCommands(config.runBeforeCommands); err != nil {
 		return -1
@@ -182,12 +185,6 @@ func callDocker(config *TGFConfig, args ...string) int {
 	return dockerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 }
 
-func debugPrint(format string, args ...interface{}) {
-	if app.DebugMode {
-		ErrPrintf(color.HiBlackString(format+"\n", args...))
-	}
-}
-
 func runCommands(commands []string) error {
 	for _, script := range commands {
 		cmd, tempFile, err := utils.GetCommandFromString(script)
@@ -207,18 +204,19 @@ func runCommands(commands []string) error {
 
 // Returns the image name to use
 // If docker-image-build option has been set, an image is dynamically built and the resulting image digest is returned
-func getImage(config *TGFConfig, noDockerBuild bool, refresh bool, useLocalImage bool) (name string) {
-	name = config.GetImageName()
+func (docker *dockerConfig) getImage() (name string) {
+	app := docker.tgf
+	name = docker.GetImageName()
 	if !strings.Contains(name, ":") {
 		name += ":latest"
 	}
 
-	if noDockerBuild {
+	if !app.DockerBuild {
 		return
 	}
 
 	lastHash := ""
-	for i, ib := range config.imageBuildConfigs {
+	for i, ib := range docker.imageBuildConfigs {
 		var temp, folder, dockerFile string
 		var out *os.File
 		if ib.Folder == "" {
@@ -243,7 +241,7 @@ func getImage(config *TGFConfig, noDockerBuild bool, refresh bool, useLocalImage
 
 		if temp != "" {
 			// A temporary file of folder has been created, we register functions to ensure proper cleanup
-			cleanup := func() { os.Remove(temp) }
+			cleanup := func() { os.RemoveAll(temp) }
 			defer cleanup()
 			c := make(chan os.Signal, 1)
 			signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -263,10 +261,10 @@ func getImage(config *TGFConfig, noDockerBuild bool, refresh bool, useLocalImage
 		if image, tag := Split2(name, ":"); len(tag) > maxDockerTagLength {
 			name = image + ":" + tag[0:maxDockerTagLength]
 		}
-		if refresh || getImageHash(name) != ib.hash() {
+		if app.Refresh || getImageHash(name) != ib.hash() {
 			label := fmt.Sprintf("hash=%s", ib.hash())
 			args := []string{"build", ".", "-f", dockerfilePattern, "--quiet", "--force-rm", "--label", label}
-			if i == 0 && refresh && !useLocalImage {
+			if i == 0 && app.Refresh && !app.UseLocalImage {
 				args = append(args, "--pull")
 			}
 			if dockerFile != "" {
@@ -277,21 +275,21 @@ func getImage(config *TGFConfig, noDockerBuild bool, refresh bool, useLocalImage
 			args = append(args, "--tag", name)
 			buildCmd := exec.Command("docker", args...)
 
-			debugPrint("%s", strings.Join(buildCmd.Args, " "))
+			app.Debug("%s", strings.Join(buildCmd.Args, " "))
 			if ib.Instructions != "" {
-				debugPrint("%s", ib.Instructions)
+				app.Debug("%s", ib.Instructions)
 			}
 			buildCmd.Stderr = os.Stderr
 			buildCmd.Dir = folder
 			must(buildCmd.Output())
-			pruneDangling(config)
+			pruneDangling()
 		}
 	}
 
 	return
 }
 
-func pruneDangling(config *TGFConfig) {
+var pruneDangling = func() {
 	cli, ctx := getDockerClient()
 	danglingFilters := filters.NewArgs()
 	danglingFilters.Add("dangling", "true")
@@ -303,10 +301,10 @@ func pruneDangling(config *TGFConfig) {
 	}
 }
 
-func prune(config *TGFConfig, images ...string) {
+func (docker *dockerConfig) prune(images ...string) {
 	cli, ctx := getDockerClient()
 	if len(images) > 0 {
-		current := fmt.Sprintf(">=%s", GetActualImageVersion(config))
+		current := fmt.Sprintf(">=%s", docker.GetActualImageVersion())
 		for _, image := range images {
 			filters := filters.NewArgs()
 			filters.Add("reference", image)
@@ -335,7 +333,7 @@ func prune(config *TGFConfig, images ...string) {
 			}
 		}
 	}
-	pruneDangling(config)
+	pruneDangling()
 }
 
 func deleteImage(id string) {
@@ -355,8 +353,8 @@ func deleteImage(id string) {
 }
 
 // GetActualImageVersion returns the real image version stored in the environment variable TGF_IMAGE_VERSION
-func GetActualImageVersion(config *TGFConfig) string {
-	return getActualImageVersionInternal(getImage(config, app.NoDockerBuild, app.Refresh, app.UseLocalImage))
+func (docker *dockerConfig) GetActualImageVersion() string {
+	return getActualImageVersionInternal(docker.getImage())
 }
 
 func getDockerClient() (*client.Client, context.Context) {
@@ -424,7 +422,8 @@ func checkImage(image string) bool {
 // ECR Regex: https://regex101.com/r/GRxU06/1
 var reECR = regexp.MustCompile(`(?P<account>[0-9]+)\.dkr\.ecr\.(?P<region>[a-z0-9\-]+)\.amazonaws\.com`)
 
-func refreshImage(image string) {
+func (docker *dockerConfig) refreshImage(image string) {
+	app := docker.tgf
 	app.Refresh = true // Setting this to true will ensure that dependant built images will also be refreshed
 
 	if app.UseLocalImage {
@@ -438,7 +437,7 @@ func refreshImage(image string) {
 		matches, _ := utils.MultiMatch(image, reECR)
 		account, accountOk := matches["account"]
 		region, regionOk := matches["region"]
-		if accountOk && regionOk && awsConfigExist() {
+		if accountOk && regionOk && docker.awsConfigExist() {
 			ErrPrintf("Failed to pull %v. It is an ECR image, trying again after a login.\n", image)
 			loginToECR(account, region)
 			must(getDockerUpdateCmd(image).Run())
