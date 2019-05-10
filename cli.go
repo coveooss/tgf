@@ -71,30 +71,30 @@ const (
 // TGFApplication allows proper management between managed and non managed arguments provided to kingpin
 type TGFApplication struct {
 	*kingpin.Application
-	AWS               bool
 	AwsProfile        string
 	ConfigFiles       string
 	ConfigLocation    string
 	DebugMode         bool
 	DisableUserConfig bool
-	DockerInteractive bool
 	DockerBuild       bool
+	DockerInteractive bool
 	DockerOptions     []string
 	Entrypoint        string
 	FlushCache        bool
 	GetAllVersions    bool
 	GetCurrentVersion bool
 	GetImageName      bool
-	Home              bool
 	Image             string
 	ImageTag          string
 	ImageVersion      string
 	LoggingLevel      string
+	MountHomeDir      bool
 	MountPoint        string
+	MountTempDir      bool
 	PruneImages       bool
 	PsPath            string
 	Refresh           bool
-	Temp              bool
+	UseAWS            bool
 	UseLocalImage     bool
 	WithCurrentUser   bool
 	WithDockerMount   bool
@@ -122,15 +122,15 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache").Short('F').BoolVar(&app.FlushCache)
 	swFlagON("interactive", "Launch Docker in interactive mode").Alias("it").BoolVar(&app.DockerInteractive)
 	swFlagON("docker-build", "Enable docker build instructions configured in the config files").BoolVar(&app.DockerBuild)
-	swFlagON("home", "Enable mapping of the home directory").BoolVar(&app.Home)
-	swFlagON("temp", "Map the temp folder to a local folder").BoolVar(&app.Temp)
+	swFlagON("home", "Enable mapping of the home directory").BoolVar(&app.MountHomeDir)
+	swFlagON("temp", "Map the temp folder to a local folder").BoolVar(&app.MountTempDir)
 	app.Flag("mount-point", "Specify a mount point for the current folder").PlaceHolder("<folder>").StringVar(&app.MountPoint)
 	app.Flag("prune", "Remove all previous versions of the targeted image").BoolVar(&app.PruneImages)
 	app.Flag("docker-arg", "Supply extra argument to Docker").PlaceHolder("<opt>").StringsVar(&app.DockerOptions)
 	app.Flag("with-current-user", "Runs the docker command with the current user, using the --user arg").Alias("cu").BoolVar(&app.WithCurrentUser)
 	app.Flag("with-docker-mount", "Mounts the docker socket to the image so the host's docker api is usable").Alias("wd", "dm").BoolVar(&app.WithDockerMount)
 	app.Flag("ignore-user-config", "Ignore all tgf.user.config files").Alias("iu", "iuc").NoAutoShortcut().BoolVar(&app.DisableUserConfig)
-	swFlagON("aws", "Use AWS Parameter store to get configuration").BoolVar(&app.AWS)
+	swFlagON("aws", "Use AWS Parameter store to get configuration").BoolVar(&app.UseAWS)
 	app.Flag("profile", "Set the AWS profile configuration to use").Short('P').NoAutoShortcut().PlaceHolder("<AWS profile>").StringVar(&app.AwsProfile)
 	app.Flag("ssm-path", "Parameter Store path used to find AWS common configuration shared by a team").PlaceHolder("<path>").Default(defaultSSMParameterFolder).StringVar(&app.PsPath)
 	app.Flag("config-files", "Set the files to look for (default: "+remoteDefaultConfigPath+")").PlaceHolder("<files>").StringVar(&app.ConfigFiles)

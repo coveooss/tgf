@@ -27,15 +27,18 @@ func TestGetImage(t *testing.T) {
 	time.Sleep(1 * time.Second) // We have to wait a bit because test may fail if executed to quickly after this initial image build
 
 	tests := []struct {
-		name   string
-		args   []string
-		config *TGFConfig
-		result string
+		name          string
+		config        *TGFConfig
+		result        string
+		dockerBuild   bool
+		refresh       bool
+		useLocalImage bool
 	}{
 		{
-			name:   "Without build configs and tag",
-			config: &TGFConfig{Image: testImageName},
-			result: testImageName + ":latest",
+			name:        "Without build configs and tag",
+			config:      &TGFConfig{Image: testImageName},
+			result:      testImageName + ":latest",
+			dockerBuild: true,
 		},
 		{
 			name: "Without build configs but with a tag",
@@ -43,11 +46,11 @@ func TestGetImage(t *testing.T) {
 				Image:    testImageName,
 				ImageTag: &testTag,
 			},
-			result: testImageNameTagged,
+			result:      testImageNameTagged,
+			dockerBuild: true,
 		},
 		{
 			name: "With build config",
-			args: []string{"--li", "-D"},
 			config: &TGFConfig{
 				ImageTag: &testTag,
 				Image:    testImageName,
@@ -58,11 +61,12 @@ func TestGetImage(t *testing.T) {
 					},
 				},
 			},
-			result: testImageNameTagged + "-" + "buildtag",
+			useLocalImage: true,
+			dockerBuild:   true,
+			result:        testImageNameTagged + "-" + "buildtag",
 		},
 		{
 			name: "With build config and no build flag",
-			args: []string{"--li", "--ndb", "-D"},
 			config: &TGFConfig{
 				ImageTag: &testTag,
 				Image:    testImageName,
@@ -73,13 +77,18 @@ func TestGetImage(t *testing.T) {
 					},
 				},
 			},
-			result: testImageNameTagged,
+			useLocalImage: true,
+			result:        testImageNameTagged,
 		},
 	}
 
 	for _, tt := range tests {
 		assert.NotPanics(t, func() {
-			tt.config.tgf = NewTestApplication(tt.args)
+			app := NewTestApplication(nil)
+			tt.config.tgf = app
+			app.DockerBuild = tt.dockerBuild
+			app.Refresh = tt.refresh
+			app.UseLocalImage = tt.useLocalImage
 			docker := dockerConfig{tt.config}
 			assert.Equal(t, tt.result, docker.getImage(), "The result image tag is not correct")
 			if tt.result != testImageName+":latest" && tt.result != testImageNameTagged {

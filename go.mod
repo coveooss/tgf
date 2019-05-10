@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go v1.19.27
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/coveo/gotemplate/v3 v3.1.0-test
-	github.com/coveo/kingpin/v2 v2.3.0-beta1
+	github.com/coveo/kingpin/v2 v2.3.0
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v1.13.1
 	github.com/docker/go-connections v0.4.0 // indirect

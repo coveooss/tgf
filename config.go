@@ -450,7 +450,7 @@ func parseSsmConfig(parameterValues map[string]string) string {
 // and having to wait for metadata resolution or generating an error.
 func (config TGFConfig) awsConfigExist() bool {
 	app := config.tgf
-	if !app.AWS {
+	if !app.UseAWS {
 		return false
 	}
 

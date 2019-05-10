@@ -63,6 +63,8 @@ github.com/coveo/kingpin/v2 v2.3.0-beta1 h1:OsuH+jnPWAPgluLw43GMGmjBh6sxKsabpZos
 github.com/coveo/kingpin/v2 v2.3.0-beta1/go.mod h1:aHHVz6IntRz3/1OcRwTQ9GCJVe35Boy+ZpFZHDXF+eQ=
 github.com/coveo/kingpin/v2 v2.3.0-test h1:R2SYpigc0VsPYOzQafvCnT8fOchmV8x+cP96LjiP3bE=
 github.com/coveo/kingpin/v2 v2.3.0-test/go.mod h1:aHHVz6IntRz3/1OcRwTQ9GCJVe35Boy+ZpFZHDXF+eQ=
+github.com/coveo/kingpin/v2 v2.3.0 h1:9Z/c/2zNEyFi/7yn2FR8neeCgt4u5dBpLVU27bKrWB8=
+github.com/coveo/kingpin/v2 v2.3.0/go.mod h1:aHHVz6IntRz3/1OcRwTQ9GCJVe35Boy+ZpFZHDXF+eQ=
 github.com/coveo/terragrunt v1.4.0-beta1 h1:90KcrwF/DKd53uib3ZJEArHFasXpc4FrsmwYWmzb8mo=
 github.com/coveo/terragrunt v1.4.0-beta1/go.mod h1:zI6d2saPYO/BLT9wpmL0av+AGLkXzuYYqybb2eA4B+U=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

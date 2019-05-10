@@ -50,7 +50,7 @@ func TestNewApplicationWithOptionsAndAliases(t *testing.T) {
 		{
 			"Alias with an unmanaged arg",
 			[]string{"my_recursive_alias", "--stuff4"},
-			map[string]interface{}{"Refresh": true, "UseLocalImage": true, "DockerInteractive": true},
+			map[string]interface{}{"Refresh": true, "UseLocalImage": true, "WithDockerMount": true},
 			[]string{"--stuff3", "--stuff4"},
 		},
 		{
@@ -62,13 +62,13 @@ func TestNewApplicationWithOptionsAndAliases(t *testing.T) {
 		{
 			"Disable flag (shown as `no` in the help)",
 			[]string{"--no-aws"},
-			map[string]interface{}{"AWS": false, "DockerInteractive": true},
+			map[string]interface{}{"UseAWS": false, "DockerInteractive": true},
 			nil,
 		},
 		{
 			"Disable short flag (shown as `no` in the help)",
 			[]string{"--na"},
-			map[string]interface{}{"AWS": false, "DockerInteractive": true},
+			map[string]interface{}{"UseAWS": false, "DockerInteractive": true},
 			nil,
 		},
 	}

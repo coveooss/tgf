@@ -95,7 +95,7 @@ func (docker *dockerConfig) call() int {
 		dockerArgs = append(dockerArgs, fmt.Sprintf("--user=%s:%s", currentUser.Uid, currentUser.Gid))
 	}
 
-	if app.Home {
+	if app.MountHomeDir {
 		currentUser := must(user.Current()).(*user.User)
 		home := filepath.ToSlash(currentUser.HomeDir)
 		homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
@@ -108,7 +108,7 @@ func (docker *dockerConfig) call() int {
 		dockerArgs = append(dockerArgs, config.DockerOptions...)
 	}
 
-	if app.Temp {
+	if app.MountTempDir {
 		temp := filepath.ToSlash(filepath.Join(must(filepath.EvalSymlinks(os.TempDir())).(string), "tgf-cache"))
 		tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
 		tempFolder := strings.TrimPrefix(temp, tempDrive)
@@ -152,7 +152,7 @@ func (docker *dockerConfig) call() int {
 		dockerArgs = append(dockerArgs, "--rm")
 	}
 
-	dockerArgs = append(dockerArgs, getEnviron(app.Home)...)
+	dockerArgs = append(dockerArgs, getEnviron(app.MountHomeDir)...)
 	dockerArgs = append(dockerArgs, imageName)
 	dockerArgs = append(dockerArgs, command...)
 	dockerCmd := exec.Command("docker", dockerArgs...)
