@@ -9,13 +9,14 @@ env:
 sudo: false
 
 before_install:
-  -  GO111MODULE=off go get github.com/mattn/goveralls
+  - GO111MODULE=off go get github.com/mattn/goveralls
 
 before_script:
   - go test ./...
 
 script:
   - if [ "${TRAVIS_TAG::1}" = "v" ]; then
+        git diff;
         curl -sL https://git.io/goreleaser | bash;
     fi
   
