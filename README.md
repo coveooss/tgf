@@ -43,7 +43,7 @@ You can run the `get-latest-tgf.sh` script to check if you have the latest versi
 curl https://raw.githubusercontent.com/coveo/tgf/master/get-latest-tgf.sh | bash
 ```
 
-> PS: The **GITHUB_TOKEN** environement variable can be set to make authenticated requests to github; as well as the **TGF_PATH** variable to set the directory of installation.
+> PS: The **GITHUB_TOKEN** environement variable can be set to make authenticated requests to github; as well as the **TGF_PATH** variable to set the directory of installation. By default, TGF_PATH is `/usr/local/bin`.
 
 On `Windows` with Powershell:
 
