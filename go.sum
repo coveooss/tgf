@@ -74,7 +74,7 @@ github.com/coreos/pkg v0.0.0-20160727233714-3ac0863d7acf/go.mod h1:E3G3o1h8I7cfc
 github.com/coveo/gotemplate/v3 v3.0.2/go.mod h1:1tiHwBWrorN2fKWQsGJogu5eLCOXbuyprBxa1RCx5VA=
 github.com/coveo/gotemplate/v3 v3.1.0-test h1:bV3V2b8+OLk+mrsnJNzmQm1zxTR4w+C7guvNV6td0gk=
 github.com/coveo/gotemplate/v3 v3.1.0-test/go.mod h1:1tiHwBWrorN2fKWQsGJogu5eLCOXbuyprBxa1RCx5VA=
-github.com/coveo/kingpin/v2 v2.3.0 h1:hb/Tbwg68OwinP9bgMip4Ummb/KmbyRDdBp/omGq8a0=
+github.com/coveo/kingpin/v2 v2.3.0 h1:ephgk1vFy89ewZgtOI6Xo+FB2mEaeWJ5CVZm5uo4YZI=
 github.com/coveo/kingpin/v2 v2.3.0/go.mod h1:aHHVz6IntRz3/1OcRwTQ9GCJVe35Boy+ZpFZHDXF+eQ=
 github.com/coveo/terragrunt v1.4.0-beta1 h1:90KcrwF/DKd53uib3ZJEArHFasXpc4FrsmwYWmzb8mo=
 github.com/coveo/terragrunt v1.4.0-beta1/go.mod h1:zI6d2saPYO/BLT9wpmL0av+AGLkXzuYYqybb2eA4B+U=
