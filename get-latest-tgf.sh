@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+TGF_PATH=${TGF_PATH:-/usr/local/bin}
+
 get_local_tgf_version () {
     TGF_LOCAL_VERSION=$($TGF_PATH/tgf --current-version | awk -F\  '{print $2}')
 }
@@ -26,7 +29,7 @@ script_end () {
 
 install_latest_tgf () {
     VERSION=$(echo $TGF_LATEST_VERSION | cut -d'v' -f 2)
-    TGF_PATH=${TGF_PATH:-/usr/local/bin}
+
     if [[ $(uname -s) == Linux ]]
     then
         echo 'Installing latest tgf version for Linux in' $TGF_PATH '...'
