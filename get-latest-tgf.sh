@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 TGF_PATH=${TGF_PATH:-/usr/local/bin}
+TGF=$TGF_PATH/tgf
 
 if [ ! -d "$TGF_PATH" ]; then
   echo "creating "$TGF_PATH" directory..."
@@ -8,7 +9,7 @@ if [ ! -d "$TGF_PATH" ]; then
 fi
 
 get_local_tgf_version () {
-    TGF_LOCAL_VERSION=$($TGF_PATH/tgf --current-version | awk -F\  '{print $2}')
+    TGF_LOCAL_VERSION=$($TGF --current-version | awk -F\  '{print $2}')
 }
 
 get_latest_tgf_version () {
@@ -28,7 +29,7 @@ get_latest_tgf_version () {
 
 script_end () {
     echo 'Done.'
-    $TGF_PATH/tgf --current-version
+    $TGF --current-version
     exit 0
 }
 
@@ -38,7 +39,7 @@ install_latest_tgf () {
     if [[ $(uname -s) == Linux ]]
     then
         echo 'Installing latest tgf version for Linux in' $TGF_PATH '...'
-        curl -sL "https://github.com/coveo/tgf/releases/download/v"$VERSION"/tgf_"$VERSION"_linux_64-bits.zip" | gzip -d > $TGF_PATH/tgf && chmod +x $TGF_PATH/tgf && script_end
+        curl -sL "https://github.com/coveo/tgf/releases/download/v"$VERSION"/tgf_"$VERSION"_linux_64-bits.zip" | gzip -d > $TGF && chmod +x $TGF && script_end
     elif [[ $(uname -s) == Darwin ]]
     then
         echo 'Installing latest tgf for OSX in' $TGF_PATH '...'
