@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-TGF_PATH=${TGF_PATH:-/usr/local/bin}
-TGF=$TGF_PATH/tgf
+TGF=${TGF_PATH:=/usr/local/bin}/tgf
 
 if [ ! -d "$TGF_PATH" ]; then
   echo "creating "$TGF_PATH" directory..."
