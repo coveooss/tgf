@@ -32,6 +32,12 @@ func main() {
 	}()
 
 	app := NewTGFApplication(os.Args[1:])
+
+	if app.GetCurrentVersion {
+		Printf("tgf v%s\n", version)
+		os.Exit(0)
+	}
+	
 	config := InitConfig(app)
 
 	// If AWS profile is supplied, we freeze the current session
@@ -57,11 +63,6 @@ func main() {
 	}
 	if !config.ValidateVersion() {
 		os.Exit(1)
-	}
-
-	if app.GetCurrentVersion {
-		Printf("tgf v%s\n", version)
-		os.Exit(0)
 	}
 
 	if app.GetAllVersions {
