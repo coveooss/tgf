@@ -2,6 +2,11 @@
 
 TGF_PATH=${TGF_PATH:-/usr/local/bin}
 
+if [ ! -d "$TGF_PATH" ]; then
+  echo "creating "$TGF_PATH" directory..."
+  mkdir -p $TGF_PATH
+fi
+
 get_local_tgf_version () {
     TGF_LOCAL_VERSION=$($TGF_PATH/tgf --current-version | awk -F\  '{print $2}')
 }
