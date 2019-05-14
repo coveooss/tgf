@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
+
+TGF=${TGF_PATH:=/usr/local/bin}/tgf
+
+if [ ! -d "$TGF_PATH" ]; then
+  echo "creating "$TGF_PATH" directory..."
+  mkdir -p $TGF_PATH
+fi
+
 get_local_tgf_version () {
-    TGF_LOCAL_VERSION=$(tgf --current-version | awk -F\  '{print $2}')
+    TGF_LOCAL_VERSION=$($TGF --current-version | awk -F\  '{print $2}')
 }
 
 get_latest_tgf_version () {
@@ -20,21 +28,21 @@ get_latest_tgf_version () {
 
 script_end () {
     echo 'Done.'
-    tgf --current-version
+    $TGF --current-version
     exit 0
 }
 
 install_latest_tgf () {
     VERSION=$(echo $TGF_LATEST_VERSION | cut -d'v' -f 2)
-    
+
     if [[ $(uname -s) == Linux ]]
     then
-        echo 'Installing latest tgf version for Linux...'
-        curl -sL "https://github.com/coveo/tgf/releases/download/v"$VERSION"/tgf_"$VERSION"_linux_64-bits.zip" | gzip -d > /usr/local/bin/tgf && chmod +x /usr/local/bin/tgf && script_end
+        echo 'Installing latest tgf version for Linux in' $TGF_PATH '...'
+        curl -sL "https://github.com/coveo/tgf/releases/download/v"$VERSION"/tgf_"$VERSION"_linux_64-bits.zip" | gzip -d > $TGF && chmod +x $TGF && script_end
     elif [[ $(uname -s) == Darwin ]]
     then
-        echo 'Installing latest tgf for OSX...'
-        curl -sL "https://github.com/coveo/tgf/releases/download/v"$VERSION"/tgf_"$VERSION"_macOS_64-bits.zip" | bsdtar -xf- -C /usr/local/bin && script_end
+        echo 'Installing latest tgf for OSX in' $TGF_PATH '...'
+        curl -sL "https://github.com/coveo/tgf/releases/download/v"$VERSION"/tgf_"$VERSION"_macOS_64-bits.zip" | bsdtar -xf- -C $TGF_PATH && script_end
     else 
         echo 'OS not supported.'
         exit 1
