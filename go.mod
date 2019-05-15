@@ -16,6 +16,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/gruntwork-io/terragrunt v0.0.0-00010101000000-000000000000
 	github.com/hashicorp/go-getter v1.2.0
+	github.com/mdempsky/gocode v0.0.0-20190203001940-7fb65232883f // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/stretchr/testify v1.3.0
 	gopkg.in/yaml.v2 v2.2.2
