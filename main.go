@@ -31,20 +31,20 @@ func main() {
 		}
 	}()
 	app := NewTGFApplication(os.Args[1:])
-	runTgf(app)
+	os.Exit(runTgf(app))
 }
 
-func runTgf(app *TGFApplication) {
+func runTgf(app *TGFApplication) int {
 
 	if app.GetCurrentVersion {
 		Printf("tgf v%s\n", version)
-		os.Exit(0)
+		return 0
 	}
 	config := InitConfig(app)
-	runTgfWithConfig(app, config)
+	return runTgfWithConfig(app, config)
 }
 
-func runTgfWithConfig(app *TGFApplication, config *TGFConfig) {
+func runTgfWithConfig(app *TGFApplication, config *TGFConfig) int {
 
 	// If AWS profile is supplied, we freeze the current session
 	if app.AwsProfile != "" {
@@ -68,13 +68,13 @@ func runTgfWithConfig(app *TGFApplication, config *TGFConfig) {
 		config.EntryPoint = app.Entrypoint
 	}
 	if !config.ValidateVersion() {
-		os.Exit(1)
+		return 1
 	}
 
 	if app.GetAllVersions {
 		if filepath.Base(config.EntryPoint) != "terragrunt" {
 			printError(("--all-version works only with terragrunt as the entrypoint"))
-			os.Exit(1)
+			return 1
 		}
 		Println("TGF version", version)
 		app.Unmanaged = []string{"get-versions"}
@@ -92,7 +92,7 @@ func runTgfWithConfig(app *TGFApplication, config *TGFConfig) {
 
 	if app.PruneImages {
 		docker.prune(config.Image)
-		os.Exit(0)
+		return 0
 	}
 
 	if config.EntryPoint == "terragrunt" && app.Unmanaged == nil && !app.DebugMode && !app.GetImageName {
@@ -105,11 +105,11 @@ func runTgfWithConfig(app *TGFApplication, config *TGFConfig) {
 		actualVersion := docker.GetActualImageVersion()
 		config.ImageVersion = &actualVersion
 		if !config.ValidateVersion() {
-			os.Exit(2)
+			return 2
 		}
 	}
 
-	os.Exit(docker.call())
+	return docker.call()
 }
 
 func printError(format string, args ...interface{})   { ErrPrintln(errorString(format, args...)) }
