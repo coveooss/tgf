@@ -188,3 +188,12 @@ func (app *TGFApplication) Debug(format string, args ...interface{}) {
 		ErrPrintf(color.HiBlackString(format+"\n", args...))
 	}
 }
+
+// Run execute the application
+func (app *TGFApplication) Run() int {
+	if app.GetCurrentVersion {
+		Printf("tgf v%s\n", version)
+		return 0
+	}
+	return InitConfig(app).Run()
+}
