@@ -104,10 +104,13 @@ type TGFApplication struct {
 func NewTGFApplication(args []string) *TGFApplication {
 	d := formatDescription()
 	base := kingpin.New("tgf", d).Author("Coveo").AllowUnmanaged().AutoShortcut().InitOnlyOnce().DefaultEnvars().UsageWriter(color.Output)
+	base.DeleteFlag("help")
+	base.DeleteFlag("help-long")
 	app := TGFApplication{Application: base}
 	swFlagON := func(name, description string) *kingpin.FlagClause {
 		return app.Flag(name, fmt.Sprintf("ON by default: %s, use --no-%s to disable", description, name)).Default(true)
 	}
+	app.Flag("help-tgf", "Show context-sensitive help (also try --help-man)").Short('H').Action(app.ShowHelp).Bool()
 	app.Flag("image", "Use the specified image instead of the default one").PlaceHolder("coveo/tgf").NoAutoShortcut().StringVar(&app.Image)
 	app.Flag("image-version", "Use a different version of docker image instead of the default one").PlaceHolder("version").Default("-").StringVar(&app.ImageVersion)
 	app.Flag("tag", "Use a different tag of docker image instead of the default one").Short('T').NoAutoShortcut().PlaceHolder("latest").Default("-").StringVar(&app.ImageTag)
@@ -136,9 +139,8 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("config-files", "Set the files to look for (default: "+remoteDefaultConfigPath+")").PlaceHolder("<files>").StringVar(&app.ConfigFiles)
 	app.Flag("config-location", "Set the configuration location").PlaceHolder("<path>").StringVar(&app.ConfigLocation)
 
-	app.HelpFlag.Help("Show context-sensitive help (also try --help-man).").Short('H').NoAutoShortcut()
 	kingpin.CommandLine = app.Application
-	app.UsageTemplate(strings.Replace(kingpin.DefaultUsageTemplate, "{{.Help|Wrap 0}}", "{{.Help}}", -1))
+	kingpin.HelpFlag = app.GetFlag("help-tgf")
 
 	app.Parse(args)
 	return &app
@@ -187,6 +189,17 @@ func (app *TGFApplication) Debug(format string, args ...interface{}) {
 	if app.DebugMode {
 		ErrPrintf(color.HiBlackString(format+"\n", args...))
 	}
+}
+
+// ShowHelp simply display the help context and quit execution
+func (app *TGFApplication) ShowHelp(c *kingpin.ParseContext) error {
+	app.Writer(os.Stdout)
+	usage := strings.Replace(kingpin.DefaultUsageTemplate, "{{.Help|Wrap 0}}", "{{.Help}}", -1)
+	if err := app.UsageForContextWithTemplate(c, 2, usage); err != nil {
+		return err
+	}
+	os.Exit(0)
+	return nil
 }
 
 // Run execute the application
