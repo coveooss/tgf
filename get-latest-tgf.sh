@@ -8,7 +8,6 @@ if [ ! -d "$TGF_PATH" ]; then
 fi
 
 get_local_tgf_version () {
-    TGF_LOCAL_VERSION=$($TGF --current-version | awk -F\  '{print $2}')
     if [ -z "$TGF_LOCAL_VERSION" ]; then
         TGF_LOCAL_VERSION=$($TGF --current-version | awk -F\  '{print $2}')
     else
