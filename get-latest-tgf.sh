@@ -8,7 +8,7 @@ if [ ! -d "$TGF_PATH" ]; then
 fi
 
 get_local_tgf_version () {
-	echo "get local tgf : " $TGF
+    TGF_LOCAL_VERSION=$($TGF --current-version | awk -F\  '{print $2}')
     if [ -z "$TGF_LOCAL_VERSION" ]; then
         TGF_LOCAL_VERSION=$($TGF --current-version | awk -F\  '{print $2}')
     else
@@ -20,12 +20,12 @@ get_latest_tgf_version () {
     if [ -z "$GITHUB_TOKEN" ]
     then
         echo 'GITHUB_TOKEN is not set.'
-    fi
-
+    fi    
+    
     TGF_LATEST_VERSION=$(curl --silent https://api.github.com/repos/coveo/tgf/releases/latest?access_token=${GITHUB_TOKEN} | grep tag_name | awk -F\" '{print $4}')
-
+    
     if [ -z "$TGF_LATEST_VERSION" ]
-    then
+    then 
         echo "Could not obtain tgf latest version. (check your GITHUB_TOKEN)"
         exit 1
     fi
@@ -48,7 +48,7 @@ install_latest_tgf () {
     then
         echo 'Installing latest tgf for OSX in' $TGF_PATH '...'
         curl -sL "https://github.com/coveo/tgf/releases/download/v"$VERSION"/tgf_"$VERSION"_macOS_64-bits.zip" | bsdtar -xf- -C $TGF_PATH && script_end
-    else
+    else 
         echo 'OS not supported.'
         exit 1
     fi
@@ -61,7 +61,7 @@ echo '- tgf version (local):' $TGF_LOCAL_VERSION
 echo '- tgf version (latest):' $TGF_LATEST_VERSION
 
 if [[ $TGF_LOCAL_VERSION == $TGF_LATEST_VERSION ]]
-then
+then 
     echo 'Local version is up to date.'
 else
     install_latest_tgf
