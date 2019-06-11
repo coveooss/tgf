@@ -15,7 +15,7 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/gruntwork-io/terragrunt v0.0.0-00010101000000-000000000000
-	github.com/hashicorp/go-getter v1.2.0
+	github.com/hashicorp/go-getter v1.3.0
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/stretchr/testify v1.3.0
 	gopkg.in/yaml.v2 v2.2.2
