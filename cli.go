@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/coveo/gotemplate/v3/errors"
@@ -98,6 +99,7 @@ type TGFApplication struct {
 	UseLocalImage     bool
 	WithCurrentUser   bool
 	WithDockerMount   bool
+	NoUpdate          bool
 }
 
 // NewTGFApplication returns an initialized copy of TGFApplication along with the parsed CLI arguments
@@ -138,6 +140,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("ssm-path", "Parameter Store path used to find AWS common configuration shared by a team").PlaceHolder("<path>").Default(defaultSSMParameterFolder).StringVar(&app.PsPath)
 	app.Flag("config-files", "Set the files to look for (default: "+remoteDefaultConfigPath+")").PlaceHolder("<files>").StringVar(&app.ConfigFiles)
 	app.Flag("config-location", "Set the configuration location").PlaceHolder("<path>").StringVar(&app.ConfigLocation)
+	app.Flag("no-update", "Skip the default auto update step").BoolVar(&app.NoUpdate)
 
 	kingpin.CommandLine = app.Application
 	kingpin.HelpFlag = app.GetFlag("help-tgf")
@@ -208,5 +211,23 @@ func (app *TGFApplication) Run() int {
 		Printf("tgf v%s\n", version)
 		return 0
 	}
+
+	if !app.NoUpdate {
+		didUpdate := RunUpdate()
+
+		if didUpdate {
+			Println("tgf updated !")
+			// Proceed, forwarding arguments
+			cmd := exec.Command(os.Args[0], os.Args[1:]...)
+			cmd.Stdout = os.Stdout
+			cmd.Stdin = os.Stdin
+			cmd.Stderr = os.Stderr
+			cmd.Run()
+			return 0 // Exit because the execution happened
+		}
+
+		Println("tgf up to date.")
+	}
+
 	return InitConfig(app).Run()
 }
