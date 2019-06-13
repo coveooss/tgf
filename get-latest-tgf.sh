@@ -12,17 +12,14 @@ get_local_tgf_version () {
 }
 
 get_latest_tgf_version () {
-    if [ -z "$GITHUB_TOKEN" ]
-    then
-        echo 'GITHUB_TOKEN is not set.'
-    fi    
-    
-    TGF_LATEST_VERSION=$(curl --silent https://api.github.com/repos/coveo/tgf/releases/latest?access_token=${GITHUB_TOKEN} | grep tag_name | awk -F\" '{print $4}')
+    TGF_LATEST_VERSION=$(curl --silent https://coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf_version.txt)
     
     if [ -z "$TGF_LATEST_VERSION" ]
     then 
-        echo "Could not obtain tgf latest version. (check your GITHUB_TOKEN)"
+        echo "Could not obtain tgf latest version."
         exit 1
+    else 
+        TGF_LATEST_VERSION=v$TGF_LATEST_VERSION # Appending a v in front of the version number for consistency
     fi
 }
 
