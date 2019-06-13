@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/coveo/gotemplate/v3/errors"
@@ -212,21 +211,8 @@ func (app *TGFApplication) Run() int {
 		return 0
 	}
 
-	if app.DoUpdate {
-		didUpdate := RunUpdate()
-
-		if didUpdate {
-			Println("tgf updated !")
-			// Proceed, forwarding arguments
-			cmd := exec.Command(os.Args[0], os.Args[1:]...)
-			cmd.Stdout = os.Stdout
-			cmd.Stdin = os.Stdin
-			cmd.Stderr = os.Stderr
-			cmd.Run()
-			return 0 // Exit because the execution happened
-		}
-
-		Println("tgf up to date.")
+	if app.DoUpdate && Update() {
+		return 0
 	}
 
 	return InitConfig(app).Run()
