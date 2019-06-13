@@ -5,6 +5,7 @@ go 1.12
 replace github.com/gruntwork-io/terragrunt => github.com/coveo/terragrunt v1.4.0-beta1
 
 require (
+	github.com/Microsoft/go-winio v0.4.12 // indirect
 	github.com/aws/aws-sdk-go v1.19.47
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/coveo/gotemplate/v3 v3.1.0-test

@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-// RunUpdateUnix runs the update on the current tgf executable
-func RunUpdateUnix() bool {
+// RunUpdate runs the update on the current tgf executable
+func RunUpdate() bool {
 	executablePath, err := os.Executable()
 	if err != nil {
 		log.Fatal(err)
@@ -22,7 +22,7 @@ func RunUpdateUnix() bool {
 	os.Setenv("TGF_PATH", currentDir)
 	os.Setenv("TGF_LOCAL_VERSION", version)
 
-	updateScript, fetchErr := fetchUpdateScriptUnix()
+	updateScript, fetchErr := fetchUpdateScript()
 	if fetchErr != nil {
 		log.Fatal("Fetching update script: ", fetchErr)
 	}
@@ -37,7 +37,7 @@ func RunUpdateUnix() bool {
 	return strings.Contains(string(output), "Installing latest tgf")
 }
 
-func fetchUpdateScriptUnix() (string, error) {
+func fetchUpdateScript() (string, error) {
 	resp, err := http.Get("https://raw.githubusercontent.com/coveo/tgf/master/get-latest-tgf.sh")
 	if err != nil {
 		log.Fatal("Error fetching update script", err)
@@ -53,8 +53,8 @@ func fetchUpdateScriptUnix() (string, error) {
 	return updateScript, err
 }
 
-// ForwardCommandUnix calls tgf with the provided arguments on Unix
-func ForwardCommandUnix() {
+// ForwardCommand calls tgf with the provided arguments on Unix
+func ForwardCommand() {
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
