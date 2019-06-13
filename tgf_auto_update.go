@@ -5,16 +5,16 @@ import (
 )
 
 // Update runs the update on the current tgf executable for unix systems
-func Update() bool {
+func Update(app *TGFApplication) bool {
 	currentOs := runtime.GOOS
 
 	if currentOs == "linux" || currentOs == "darwin" && RunUpdateUnix() {
-		Println("tgf updated !")
+		app.Debug("tgf updated !")
 		ForwardCommandUnix()
 		return true
 	}
 
-	Println("Auto update is only implemented on unix systems")
+	app.Debug("Auto update is only implemented on unix systems")
 
 	return false
 }

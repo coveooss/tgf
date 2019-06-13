@@ -24,14 +24,14 @@ func RunUpdateUnix() bool {
 
 	updateScript, fetchErr := fetchUpdateScriptUnix()
 	if fetchErr != nil {
-		Println("Fetching update script: ", fetchErr)
+		log.Fatal("Fetching update script: ", fetchErr)
 	}
 
 	output, errc := exec.Command("bash", "-c", updateScript).Output()
 
 	if errc != nil {
-		Println("Error running update script: ", errc.Error())
-		Println(string(output))
+		log.Fatal("Error running update script: ", errc.Error())
+		log.Fatal(string(output))
 	}
 
 	return strings.Contains(string(output), "Installing latest tgf")
@@ -40,12 +40,12 @@ func RunUpdateUnix() bool {
 func fetchUpdateScriptUnix() (string, error) {
 	resp, err := http.Get("https://raw.githubusercontent.com/coveo/tgf/master/get-latest-tgf.sh")
 	if err != nil {
-		Print("Error fetching update script", err)
+		log.Fatal("Error fetching update script", err)
 	}
 
 	textResponse, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		Print("Error fetching reading request body", err)
+		log.Fatal("Error fetching reading request body", err)
 	}
 
 	updateScript := string(textResponse)

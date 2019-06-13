@@ -211,7 +211,7 @@ func (app *TGFApplication) Run() int {
 		return 0
 	}
 
-	if app.DoUpdate && Update() {
+	if app.DoUpdate && Update(app) { // Passing app for logging only
 		return 0
 	}
 
