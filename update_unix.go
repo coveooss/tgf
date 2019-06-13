@@ -14,7 +14,7 @@ import (
 func RunUpdate() bool {
 	executablePath, err := os.Executable()
 	if err != nil {
-		log.Fatal(err)
+		printWarning("Error getting executable path", err)
 	}
 
 	currentDir := filepath.Dir(executablePath)
@@ -24,7 +24,7 @@ func RunUpdate() bool {
 
 	updateScript, fetchErr := fetchUpdateScript()
 	if fetchErr != nil {
-		log.Fatal("Fetching update script: ", fetchErr)
+		printWarning("Error fetching update script: ", fetchErr)
 	}
 
 	output, errc := exec.Command("bash", "-c", updateScript).Output()
@@ -40,12 +40,12 @@ func RunUpdate() bool {
 func fetchUpdateScript() (string, error) {
 	resp, err := http.Get("https://raw.githubusercontent.com/coveo/tgf/master/get-latest-tgf.sh")
 	if err != nil {
-		log.Fatal("Error fetching update script", err)
+		printWarning("Error fetching update script", err)
 	}
 
 	textResponse, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("Error fetching reading request body", err)
+		printWarning("Error reading request body", err)
 	}
 
 	updateScript := string(textResponse)

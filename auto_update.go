@@ -6,7 +6,7 @@ import (
 
 var updateInterval = 2 * time.Hour
 
-// Update runs the update on the current tgf executable for unix systems
+// Update runs the update on the current tgf executable
 func Update(app *TGFApplication) bool {
 	if lastRefresh("update") < updateInterval {
 		return false
