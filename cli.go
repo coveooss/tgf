@@ -99,7 +99,7 @@ type TGFApplication struct {
 	UseLocalImage     bool
 	WithCurrentUser   bool
 	WithDockerMount   bool
-	NoUpdate          bool
+	DoUpdate          bool
 }
 
 // NewTGFApplication returns an initialized copy of TGFApplication along with the parsed CLI arguments
@@ -140,7 +140,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("ssm-path", "Parameter Store path used to find AWS common configuration shared by a team").PlaceHolder("<path>").Default(defaultSSMParameterFolder).StringVar(&app.PsPath)
 	app.Flag("config-files", "Set the files to look for (default: "+remoteDefaultConfigPath+")").PlaceHolder("<files>").StringVar(&app.ConfigFiles)
 	app.Flag("config-location", "Set the configuration location").PlaceHolder("<path>").StringVar(&app.ConfigLocation)
-	app.Flag("no-update", "Skip the default auto update step").BoolVar(&app.NoUpdate)
+	app.Flag("update", "Run the update ").Default(true).BoolVar(&app.DoUpdate)
 
 	kingpin.CommandLine = app.Application
 	kingpin.HelpFlag = app.GetFlag("help-tgf")
@@ -212,7 +212,7 @@ func (app *TGFApplication) Run() int {
 		return 0
 	}
 
-	if !app.NoUpdate {
+	if app.DoUpdate {
 		didUpdate := RunUpdate()
 
 		if didUpdate {
