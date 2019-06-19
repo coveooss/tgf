@@ -8,20 +8,15 @@ if [ ! -d "$TGF_PATH" ]; then
 fi
 
 get_local_tgf_version () {
-    TGF_LOCAL_VERSION=$($TGF --current-version | awk -F\  '{print $2}')
+    TGF_LOCAL_VERSION=$($TGF --current-version | awk -F\  '{print $2}' | cut -d'v' -f 2)
 }
 
 get_latest_tgf_version () {
-    if [ -z "$GITHUB_TOKEN" ]
-    then
-        echo 'GITHUB_TOKEN is not set.'
-    fi    
-    
-    TGF_LATEST_VERSION=$(curl --silent https://api.github.com/repos/coveo/tgf/releases/latest?access_token=${GITHUB_TOKEN} | grep tag_name | awk -F\" '{print $4}')
+    TGF_LATEST_VERSION=$(curl --silent https://coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf_version.txt)
     
     if [ -z "$TGF_LATEST_VERSION" ]
     then 
-        echo "Could not obtain tgf latest version. (check your GITHUB_TOKEN)"
+        echo "Could not obtain tgf latest version."
         exit 1
     fi
 }
@@ -33,16 +28,14 @@ script_end () {
 }
 
 install_latest_tgf () {
-    VERSION=$(echo $TGF_LATEST_VERSION | cut -d'v' -f 2)
-
     if [[ $(uname -s) == Linux ]]
     then
         echo 'Installing latest tgf version for Linux in' $TGF_PATH '...'
-        curl -sL "https://github.com/coveo/tgf/releases/download/v"$VERSION"/tgf_"$VERSION"_linux_64-bits.zip" | gzip -d > $TGF && chmod +x $TGF && script_end
+        curl -sL "https://github.com/coveo/tgf/releases/download/v"$TGF_LATEST_VERSION"/tgf_"$TGF_LATEST_VERSION"_linux_64-bits.zip" | gzip -d > $TGF && chmod +x $TGF && script_end
     elif [[ $(uname -s) == Darwin ]]
     then
         echo 'Installing latest tgf for OSX in' $TGF_PATH '...'
-        curl -sL "https://github.com/coveo/tgf/releases/download/v"$VERSION"/tgf_"$VERSION"_macOS_64-bits.zip" | bsdtar -xf- -C $TGF_PATH && script_end
+        curl -sL "https://github.com/coveo/tgf/releases/download/v"$TGF_LATEST_VERSION"/tgf_"$TGF_LATEST_VERSION"_macOS_64-bits.zip" | bsdtar -xf- -C $TGF_PATH && script_end
     else 
         echo 'OS not supported.'
         exit 1
