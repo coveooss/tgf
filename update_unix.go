@@ -18,7 +18,6 @@ func RunUpdate() bool {
 	currentDir := filepath.Dir(executablePath)
 
 	os.Setenv("TGF_PATH", currentDir)
-	os.Setenv("TGF_LOCAL_VERSION", version)
 
 	updateScript, err := fetchUpdateScript()
 	if err != nil {
