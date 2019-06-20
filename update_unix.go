@@ -2,7 +2,6 @@ package main
 
 import (
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -30,8 +29,8 @@ func RunUpdate() bool {
 	output, errc := exec.Command("bash", "-c", updateScript).Output()
 
 	if errc != nil {
-		log.Fatal("Error running update script: ", errc.Error())
-		log.Fatal(string(output))
+		printWarning("Error running update script: ", errc.Error())
+		printWarning(string(output))
 	}
 
 	return strings.Contains(string(output), "Installing latest tgf")
