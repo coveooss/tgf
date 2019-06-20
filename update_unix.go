@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 )
 
 // RunUpdate runs the update on the current tgf executable
@@ -21,19 +20,18 @@ func RunUpdate() bool {
 	os.Setenv("TGF_PATH", currentDir)
 	os.Setenv("TGF_LOCAL_VERSION", version)
 
-	updateScript, fetchErr := fetchUpdateScript()
-	if fetchErr != nil {
-		printWarning("Error fetching update script: ", fetchErr)
+	updateScript, err := fetchUpdateScript()
+	if err != nil {
+		printWarning("Error fetching update script: ", err)
 	}
 
-	output, errc := exec.Command("bash", "-c", updateScript).Output()
-
-	if errc != nil {
-		printWarning("Error running update script: ", errc.Error())
-		printWarning(string(output))
+	output, err := exec.Command("bash", "-c", updateScript).Output()
+	if err != nil {
+		printWarning("Error running update script: ", err)
+		Println(string(output))
 	}
 
-	return strings.Contains(string(output), "Installing latest tgf")
+	return err == nil
 }
 
 func fetchUpdateScript() (string, error) {
