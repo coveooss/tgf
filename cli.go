@@ -103,6 +103,7 @@ type TGFApplication struct {
 	WithDockerMount   bool
 	DoUpdate          bool
 	SelfCopy          string
+	DeleteExecutable  string
 }
 
 // NewTGFApplication returns an initialized copy of TGFApplication along with the parsed CLI arguments
@@ -144,7 +145,8 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("config-files", "Set the files to look for (default: "+remoteDefaultConfigPath+")").PlaceHolder("<files>").StringVar(&app.ConfigFiles)
 	app.Flag("config-location", "Set the configuration location").PlaceHolder("<path>").StringVar(&app.ConfigLocation)
 	app.Flag("update", "Run the update ").Default(true).BoolVar(&app.DoUpdate)
-	app.Flag("self-copy", "Replace the executable at the provided path with the currently running one").PlaceHolder("<path>").StringVar(&app.SelfCopy)
+	app.Flag("self-copy", "Copy the running executable at the provided path").PlaceHolder("<path>").StringVar(&app.SelfCopy)
+	app.Flag("delete-executable", "Replace the executable at the provided path").PlaceHolder("<path>").StringVar(&app.DeleteExecutable)
 
 	kingpin.CommandLine = app.Application
 	kingpin.HelpFlag = app.GetFlag("help-tgf")
@@ -216,8 +218,15 @@ func (app *TGFApplication) Run() int {
 		return 0
 	}
 
+	if app.DeleteExecutable != "" {
+		DeleteExtraExecutable(app.DeleteExecutable)
+		return 0
+	}
+
 	if app.SelfCopy != "" {
-		CopyExecutable(app.SelfCopy)
+		if CopyExecutable(app.SelfCopy) {
+			ReRunDelete(app.SelfCopy)
+		}
 	}
 
 	var dueForUpdate = lastRefresh(autoUpdateFileName) > 2*time.Hour
