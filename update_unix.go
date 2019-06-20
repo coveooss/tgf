@@ -5,19 +5,28 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"path"
+	"strings"
 )
 
 // RunUpdate runs the update on the current tgf executable
 func RunUpdate() bool {
-	executablePath, err := os.Executable()
+	currentExecutablePath, err := os.Executable()
 	if err != nil {
 		printWarning("Error getting executable path", err)
 	}
 
-	currentDir := filepath.Dir(executablePath)
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		printWarning("Error getting home directory", err)
+	}
+	homeExecutableDir := path.Join(homeDir, ".tgf")
 
-	os.Setenv("TGF_PATH", currentDir)
+	currentExecutableContent, err := ioutil.ReadFile(currentExecutablePath)
+	ioutil.WriteFile(homeExecutableDir, currentExecutableContent, 755)
+
+	Println("pathss", homeExecutableDir, currentExecutablePath)
+	os.Setenv("TGF_PATH", homeExecutableDir)
 
 	updateScript, err := fetchUpdateScript()
 	if err != nil {
@@ -27,8 +36,8 @@ func RunUpdate() bool {
 	output, err := exec.Command("bash", "-c", updateScript).CombinedOutput()
 	if err != nil {
 		printWarning("Error running update script: ", err)
-		Println(string(output))
 	}
+	Println(string(output))
 
 	return err == nil
 }
@@ -50,10 +59,30 @@ func fetchUpdateScript() (string, error) {
 }
 
 // ReRun calls tgf with the provided arguments on Unix
-func ReRun() {
-	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+func ReRun(pathToSwap string) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		printWarning("Error getting home directory", err)
+	}
+	homeExecutablePath := path.Join(homeDir, ".tgf", "tgf")
+
+	cmd := exec.Command(homeExecutablePath, strings.Join(os.Args[1:], " "), "--swap", pathToSwap)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	cmd.Run()
+}
+
+// SwapExecutables Swaps the current executable with the one at the provided path
+func SwapExecutables(pathToSwap string) bool {
+	currentExecutablePath, err := os.Executable()
+	if err != nil {
+		printWarning("Error getting executable path", err)
+	}
+
+	Println("swaping : ", pathToSwap, "with", currentExecutablePath)
+	currentExecutableContent, err := ioutil.ReadFile(currentExecutablePath)
+	ioutil.WriteFile(pathToSwap, currentExecutableContent, 755)
+
+	return true
 }
