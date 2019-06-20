@@ -24,7 +24,7 @@ func RunUpdate() bool {
 		printWarning("Error fetching update script: ", err)
 	}
 
-	output, err := exec.Command("bash", "-c", updateScript).Output()
+	output, err := exec.Command("bash", "-c", updateScript).CombinedOutput()
 	if err != nil {
 		printWarning("Error running update script: ", err)
 		Println(string(output))
