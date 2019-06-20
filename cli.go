@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/coveo/gotemplate/v3/errors"
 	"github.com/coveo/gotemplate/v3/hcl"
@@ -211,7 +212,11 @@ func (app *TGFApplication) Run() int {
 		return 0
 	}
 
-	if app.DoUpdate && Update(app) { // Passing app for logging only
+	longTimePassed := lastRefresh("auto-update") > 2*time.Hour
+	if app.DoUpdate && longTimePassed && RunUpdate() { // Passing app for logging only
+		app.Debug("got latest version")
+		touchImageRefresh("auto-update")
+		ForwardCommand()
 		return 0
 	}
 
