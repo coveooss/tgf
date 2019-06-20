@@ -69,6 +69,10 @@ const (
 	envDebug = "TGF_DEBUG"
 )
 
+const autoUpdateFileName = "auto-update"
+
+var dueForUpdate = lastRefresh(autoUpdateFileName) > 2*time.Hour
+
 // TGFApplication allows proper management between managed and non managed arguments provided to kingpin
 type TGFApplication struct {
 	*kingpin.Application
@@ -212,11 +216,10 @@ func (app *TGFApplication) Run() int {
 		return 0
 	}
 
-	longTimePassed := lastRefresh("auto-update") > 2*time.Hour
-	if app.DoUpdate && longTimePassed && RunUpdate() { // Passing app for logging only
+	if app.DoUpdate && dueForUpdate && RunUpdate() { // Passing app for logging only
 		app.Debug("got latest version")
-		touchImageRefresh("auto-update")
-		ForwardCommand()
+		touchImageRefresh(autoUpdateFileName)
+		ReRun()
 		return 0
 	}
 

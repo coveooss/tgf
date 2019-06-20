@@ -13,8 +13,8 @@ func RunUpdate() bool {
 	return false
 }
 
-// ForwardCommand calls tgf with the provided arguments on windows
-func ForwardCommand() {
+// ReRun calls tgf with the provided arguments on windows
+func ReRun() {
 	cmd := exec.Command("cmd", "/C", os.Args[0], os.Args[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin

@@ -49,8 +49,8 @@ func fetchUpdateScript() (string, error) {
 	return updateScript, err
 }
 
-// ForwardCommand calls tgf with the provided arguments on Unix
-func ForwardCommand() {
+// ReRun calls tgf with the provided arguments on Unix
+func ReRun() {
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
