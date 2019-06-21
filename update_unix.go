@@ -25,6 +25,7 @@ func RunUpdate() bool {
 	currentExecutableContent, err := ioutil.ReadFile(currentExecutablePath)
 	ioutil.WriteFile(homeExecutableDir, currentExecutableContent, 755)
 
+	Println("pathss", homeExecutableDir, currentExecutablePath)
 	os.Setenv("TGF_PATH", homeExecutableDir)
 
 	updateScript, err := fetchUpdateScript()
@@ -65,20 +66,21 @@ func ReRun(pathToSwap string) {
 	}
 	homeExecutablePath := path.Join(homeDir, ".tgf", "tgf")
 
-	cmd := exec.Command(homeExecutablePath, strings.Join(os.Args[1:], " "), "--self-copy", pathToSwap)
+	cmd := exec.Command(homeExecutablePath, strings.Join(os.Args[1:], " "), "--swap", pathToSwap)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	cmd.Run()
 }
 
-// CopyExecutable Swaps the current executable with the one at the provided path
-func CopyExecutable(pathToSwap string) bool {
+// SwapExecutables Swaps the current executable with the one at the provided path
+func SwapExecutables(pathToSwap string) bool {
 	currentExecutablePath, err := os.Executable()
 	if err != nil {
 		printWarning("Error getting executable path", err)
 	}
 
+	Println("swaping : ", pathToSwap, "with", currentExecutablePath)
 	currentExecutableContent, err := ioutil.ReadFile(currentExecutablePath)
 	ioutil.WriteFile(pathToSwap, currentExecutableContent, 755)
 
