@@ -35,8 +35,8 @@ func RunUpdate() bool {
 	output, err := exec.Command("bash", "-c", updateScript).CombinedOutput()
 	if err != nil {
 		printWarning("Error running update script: ", err)
-		Println(string(output))
 	}
+	Println(string(output))
 
 	return err == nil
 }
@@ -72,22 +72,7 @@ func ReRun(pathToSwap string) {
 	cmd.Run()
 }
 
-// ReRunDelete calls tgf with the provided arguments on Unix
-func ReRunDelete(pathToDelete string) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		printWarning("Error getting home directory", err)
-	}
-	homeExecutablePath := path.Join(homeDir, ".tgf", "tgf")
-
-	cmd := exec.Command(pathToDelete, strings.Join(os.Args[1:], " "), "--delete-executable", homeExecutablePath)
-	cmd.Stdout = os.Stdout
-	cmd.Stdin = os.Stdin
-	cmd.Stderr = os.Stderr
-	cmd.Run()
-}
-
-// CopyExecutable copy the current executable at the provided path
+// CopyExecutable Swaps the current executable with the one at the provided path
 func CopyExecutable(pathToSwap string) bool {
 	currentExecutablePath, err := os.Executable()
 	if err != nil {
@@ -98,16 +83,4 @@ func CopyExecutable(pathToSwap string) bool {
 	ioutil.WriteFile(pathToSwap, currentExecutableContent, 755)
 
 	return true
-}
-
-// DeleteExtraExecutable delete the current executable at the provided path
-func DeleteExtraExecutable(pathToDelete string) bool {
-	err := os.Remove(pathToDelete)
-	if err != nil {
-		printWarning("Error deleting", err)
-	} else {
-		printWarning("Deleted")
-	}
-
-	return err == nil
 }
