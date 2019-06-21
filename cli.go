@@ -102,7 +102,6 @@ type TGFApplication struct {
 	WithCurrentUser   bool
 	WithDockerMount   bool
 	DoUpdate          bool
-	Swap              string
 }
 
 // NewTGFApplication returns an initialized copy of TGFApplication along with the parsed CLI arguments
@@ -144,7 +143,6 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("config-files", "Set the files to look for (default: "+remoteDefaultConfigPath+")").PlaceHolder("<files>").StringVar(&app.ConfigFiles)
 	app.Flag("config-location", "Set the configuration location").PlaceHolder("<path>").StringVar(&app.ConfigLocation)
 	app.Flag("update", "Run the update ").Default(true).BoolVar(&app.DoUpdate)
-	app.Flag("swap", "Replace the executable at the provided path with the currently running one").PlaceHolder("<path>").StringVar(&app.Swap)
 
 	kingpin.CommandLine = app.Application
 	kingpin.HelpFlag = app.GetFlag("help-tgf")
@@ -216,15 +214,11 @@ func (app *TGFApplication) Run() int {
 		return 0
 	}
 
-	if app.Swap != "" {
-		SwapExecutables(app.Swap)
-	}
-
 	var dueForUpdate = lastRefresh(autoUpdateFileName) > 2*time.Hour
-	if app.Swap == "" && app.DoUpdate && dueForUpdate && RunUpdate() { // Passing app for logging only
+	if app.DoUpdate && dueForUpdate && RunUpdate() { // Passing app for logging only
 		app.Debug("got latest version")
 		touchImageRefresh(autoUpdateFileName)
-		ReRun(app.Swap)
+		ReRun()
 		return 0
 	}
 
