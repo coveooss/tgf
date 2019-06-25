@@ -5,19 +5,16 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/user"
+	"path"
 	"path/filepath"
 )
 
 // RunUpdate runs the update on the current tgf executable
 func RunUpdate() bool {
-	executablePath, err := os.Executable()
-	if err != nil {
-		printWarning("Error getting executable path", err)
-	}
+	cloneExecutableAt(filepath.Join(getTgfHomeDirectory(), "tgf"))
 
-	currentDir := filepath.Dir(executablePath)
-
-	os.Setenv("TGF_PATH", currentDir)
+	os.Setenv("TGF_PATH", getTgfHomeDirectory())
 
 	updateScript, err := fetchUpdateScript()
 	if err != nil {
@@ -49,11 +46,63 @@ func fetchUpdateScript() (string, error) {
 	return updateScript, err
 }
 
-// ReRun calls tgf with the provided arguments on Unix
-func ReRun() {
-	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+// ReRunCopy calls tgf with the provided arguments on Unix
+func ReRunCopy() {
+	homeExecutablePath := getTgfHomeExecutable()
+	currentExecutablePath := getCurrentExecutablePath()
+
+	newArgs := append(os.Args[1:], "--copy-executable", currentExecutablePath)
+
+	cmd := exec.Command(homeExecutablePath, newArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	cmd.Run()
+	cmd.Process.Release()
+}
+
+// SelfCopy clones the executable at the provided path
+func SelfCopy(copyingPath string) {
+	cloneExecutableAt(copyingPath)
+}
+
+func cloneExecutableAt(newExecutablePath string) string {
+	os.Mkdir(path.Dir(newExecutablePath), 0755)
+
+	currentExecutableContent := getCurrentExecutableContent()
+
+	ioutil.WriteFile(newExecutablePath, currentExecutableContent, 755)
+
+	return newExecutablePath
+}
+
+func getCurrentExecutablePath() string {
+	executablePath, err := os.Executable()
+	if err != nil {
+		printWarning("Error getting executable path", err)
+	}
+
+	return executablePath
+}
+
+func getExecutableContent(executablePath string) []byte {
+	executableContent, err := ioutil.ReadFile(executablePath)
+	if err != nil {
+		printWarning("Error reading executable", err)
+	}
+
+	return executableContent
+}
+
+func getCurrentExecutableContent() []byte {
+	return getExecutableContent(getCurrentExecutablePath())
+}
+
+func getTgfHomeDirectory() string {
+	return path.Dir(getTgfHomeExecutable())
+}
+
+func getTgfHomeExecutable() string {
+	usr, _ := user.Current()
+	return path.Join(usr.HomeDir, ".tgf", "tgf")
 }
