@@ -103,6 +103,7 @@ type TGFApplication struct {
 	WithDockerMount   bool
 	DoUpdate          bool
 	CopyPath          string
+	DeleteCopy        bool
 }
 
 // NewTGFApplication returns an initialized copy of TGFApplication along with the parsed CLI arguments
@@ -144,6 +145,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("config-files", "Set the files to look for (default: "+remoteDefaultConfigPath+")").PlaceHolder("<files>").StringVar(&app.ConfigFiles)
 	app.Flag("config-location", "Set the configuration location").PlaceHolder("<path>").StringVar(&app.ConfigLocation)
 	app.Flag("update", "Run the update ").Default(true).BoolVar(&app.DoUpdate)
+	app.Flag("delete-copy", "Delete tgf copy from .tgf/").Default(true).BoolVar(&app.DeleteCopy)
 	app.Flag("copy-executable", "Copy the running executable to the provided path.").PlaceHolder("<path>").StringVar(&app.CopyPath)
 
 	kingpin.CommandLine = app.Application
@@ -214,6 +216,10 @@ func (app *TGFApplication) Run() int {
 	if app.GetCurrentVersion {
 		Printf("tgf v%s\n", version)
 		return 0
+	}
+
+	if app.DeleteCopy {
+		os.Remove(getHomeFileName("tgf"))
 	}
 
 	if app.CopyPath != "" {

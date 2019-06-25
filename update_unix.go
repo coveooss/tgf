@@ -50,14 +50,13 @@ func ReRunCopy() {
 	homeExecutablePath := getHomeFileName("tgf")
 	currentExecutablePath := getCurrentExecutablePath()
 
-	newArgs := append(os.Args[1:], "--copy-executable", currentExecutablePath)
+	newArgs := append(os.Args[1:], "--copy-executable", currentExecutablePath, "--no-delete-copy")
 
 	cmd := exec.Command(homeExecutablePath, newArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
 	cmd.Run()
-	cmd.Process.Release()
 }
 
 func cloneExecutableAt(newExecutablePath string) string {
