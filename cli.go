@@ -144,7 +144,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("config-files", "Set the files to look for (default: "+remoteDefaultConfigPath+")").PlaceHolder("<files>").StringVar(&app.ConfigFiles)
 	app.Flag("config-location", "Set the configuration location").PlaceHolder("<path>").StringVar(&app.ConfigLocation)
 	app.Flag("update", "Run the update ").Default(true).BoolVar(&app.DoUpdate)
-	app.Flag("copy-executable", "Copy the running executable at the provided path.").PlaceHolder("<path>").StringVar(&app.CopyPath)
+	app.Flag("copy-executable", "Copy the running executable to the provided path.").PlaceHolder("<path>").StringVar(&app.CopyPath)
 
 	kingpin.CommandLine = app.Application
 	kingpin.HelpFlag = app.GetFlag("help-tgf")
@@ -217,15 +217,13 @@ func (app *TGFApplication) Run() int {
 	}
 
 	if app.CopyPath != "" {
-		SelfCopy(app.CopyPath)
+		cloneExecutableAt(app.CopyPath)
 	}
 
 	var dueForUpdate = lastRefresh(autoUpdateFileName) > 2*time.Hour
 	if app.DoUpdate && dueForUpdate && RunUpdate() {
 		touchImageRefresh(autoUpdateFileName)
-
 		ReRunCopy()
-
 		return 0
 	}
 

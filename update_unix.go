@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"os/user"
 	"path"
 	"path/filepath"
 )
@@ -48,7 +47,7 @@ func fetchUpdateScript() (string, error) {
 
 // ReRunCopy calls tgf with the provided arguments on Unix
 func ReRunCopy() {
-	homeExecutablePath := getTgfHomeExecutable()
+	homeExecutablePath := getHomeFileName("tgf")
 	currentExecutablePath := getCurrentExecutablePath()
 
 	newArgs := append(os.Args[1:], "--copy-executable", currentExecutablePath)
@@ -61,18 +60,10 @@ func ReRunCopy() {
 	cmd.Process.Release()
 }
 
-// SelfCopy clones the executable at the provided path
-func SelfCopy(copyingPath string) {
-	cloneExecutableAt(copyingPath)
-}
-
 func cloneExecutableAt(newExecutablePath string) string {
-	os.Mkdir(path.Dir(newExecutablePath), 0755)
-
+	createPathDir(newExecutablePath)
 	currentExecutableContent := getCurrentExecutableContent()
-
 	ioutil.WriteFile(newExecutablePath, currentExecutableContent, 755)
-
 	return newExecutablePath
 }
 
@@ -99,10 +90,5 @@ func getCurrentExecutableContent() []byte {
 }
 
 func getTgfHomeDirectory() string {
-	return path.Dir(getTgfHomeExecutable())
-}
-
-func getTgfHomeExecutable() string {
-	usr, _ := user.Current()
-	return path.Join(usr.HomeDir, ".tgf", "tgf")
+	return path.Dir(getHomeFileName("tgf"))
 }

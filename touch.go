@@ -10,8 +10,12 @@ import (
 )
 
 func getTouchFilename(image string) string {
+	return getHomeFileName(util.EncodeBase64Sha1(image))
+}
+
+func getHomeFileName(file string) string {
 	usr := must(user.Current()).(*user.User)
-	return filepath.Join(usr.HomeDir, ".tgf", util.EncodeBase64Sha1(image))
+	return filepath.Join(usr.HomeDir, ".tgf", file)
 }
 
 func getLastRefresh(image string) time.Time {
@@ -23,12 +27,15 @@ func getLastRefresh(image string) time.Time {
 	return time.Time{}
 }
 
-func touchImageRefresh(image string) {
-	filename := getTouchFilename(image)
+func createPathDir(filename string) {
 	if _, err := os.Stat(filepath.Dir(filename)); os.IsNotExist(err) {
 		os.Mkdir(filepath.Dir(filename), 0755)
 	}
+}
 
+func touchImageRefresh(image string) {
+	filename := getTouchFilename(image)
+	createPathDir(filename)
 	if util.FileExists(filename) {
 		must(os.Chtimes(filename, time.Now(), time.Now()))
 	} else {
