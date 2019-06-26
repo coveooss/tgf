@@ -206,12 +206,14 @@ func (app *TGFApplication) ShowHelp(c *kingpin.ParseContext) error {
 
 // Run execute the application
 func (app *TGFApplication) Run() int {
-	if app.AutoUpdate {
-		RunUpdater()
-	}
 	if app.GetCurrentVersion {
 		Printf("tgf v%s\n", version)
 		return 0
 	}
+
+	if app.AutoUpdate {
+		RunUpdater()
+	}
+
 	return InitConfig(app).Run()
 }
