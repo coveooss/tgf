@@ -98,6 +98,7 @@ type TGFApplication struct {
 	UseLocalImage     bool
 	WithCurrentUser   bool
 	WithDockerMount   bool
+	AutoUpdate        bool
 }
 
 // NewTGFApplication returns an initialized copy of TGFApplication along with the parsed CLI arguments
@@ -138,6 +139,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("ssm-path", "Parameter Store path used to find AWS common configuration shared by a team").PlaceHolder("<path>").Default(defaultSSMParameterFolder).StringVar(&app.PsPath)
 	app.Flag("config-files", "Set the files to look for (default: "+remoteDefaultConfigPath+")").PlaceHolder("<files>").StringVar(&app.ConfigFiles)
 	app.Flag("config-location", "Set the configuration location").PlaceHolder("<path>").StringVar(&app.ConfigLocation)
+	app.Flag("update", "Run auto update script").Default(true).BoolVar(&app.AutoUpdate)
 
 	kingpin.CommandLine = app.Application
 	kingpin.HelpFlag = app.GetFlag("help-tgf")
@@ -204,8 +206,9 @@ func (app *TGFApplication) ShowHelp(c *kingpin.ParseContext) error {
 
 // Run execute the application
 func (app *TGFApplication) Run() int {
-	RunUpdater()
-
+	if app.AutoUpdate {
+		RunUpdater()
+	}
 	if app.GetCurrentVersion {
 		Printf("tgf v%s\n", version)
 		return 0
