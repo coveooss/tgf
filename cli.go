@@ -5,10 +5,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/coveo/gotemplate/v3/errors"
-	"github.com/coveo/gotemplate/v3/hcl"
-	"github.com/coveo/gotemplate/v3/template"
-	"github.com/coveo/kingpin/v2"
+	"github.com/coveooss/gotemplate/v3/errors"
+	"github.com/coveooss/gotemplate/v3/hcl"
+	"github.com/coveooss/gotemplate/v3/template"
+	"github.com/coveord/kingpin/v2"
 	"github.com/fatih/color"
 )
 
@@ -147,7 +147,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 }
 
 func formatDescription() string {
-	const gitSource = "https://github.com/coveo/tgf"
+	const gitSource = "https://github.com/coveooss/tgf"
 
 	link := color.New(color.FgHiBlue, color.Italic).SprintfFunc()
 	bold := color.New(color.Bold).SprintfFunc()

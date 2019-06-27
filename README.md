@@ -1,8 +1,8 @@
 # TGF
 
-[![Build Status](https://travis-ci.org/coveo/tgf.svg?branch=master)](https://travis-ci.org/coveo/tgf)
-[![Go Report Card](https://goreportcard.com/badge/github.com/coveo/tgf)](https://goreportcard.com/report/github.com/coveo/tgf)
-[![Coverage Status](https://coveralls.io/repos/github/coveo/tgf/badge.svg?branch=master)](https://coveralls.io/github/coveo/tgf?branch=master)
+[![Build Status](https://travis-ci.org/coveooss/tgf.svg?branch=master)](https://travis-ci.org/coveooss/tgf)
+[![Go Report Card](https://goreportcard.com/badge/github.com/coveooss/tgf)](https://goreportcard.com/report/github.com/coveooss/tgf)
+[![Coverage Status](https://coveralls.io/repos/github/coveooss/tgf/badge.svg?branch=master)](https://coveralls.io/github/coveooss/tgf?branch=master)
 
 A **T**erra**g**runt **f**rontend that allow execution of Terragrunt/Terraform through Docker.
 
@@ -40,14 +40,14 @@ On `mac` and `linux`:
 You can run the `get-latest-tgf.sh` script to check if you have the latest version of tgf installed and install it if needed:
 
 ```bash
-curl https://raw.githubusercontent.com/coveo/tgf/master/get-latest-tgf.sh | bash
+curl https://raw.githubusercontent.com/coveooss/tgf/master/get-latest-tgf.sh | bash
 ```
 
 On `Windows` with Powershell:
 
 ```powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest https://github.com/coveo/tgf/releases/download/v1.20.2/tgf_1.20.2_windows_64-bits.zip -OutFile tgf.zip
+Invoke-WebRequest https://github.com/coveooss/tgf/releases/download/v1.20.2/tgf_1.20.2_windows_64-bits.zip -OutFile tgf.zip
 ```
 
 ## Configuration
@@ -136,8 +136,8 @@ Configurable values are: docker-image, docker-image-version, docker-image-tag, d
 docker-image-build-tag, logging-level, entry-point, docker-refresh, docker-options, recommended-image-version, required-image-version,
 tgf-recommended-version, environment, run-before, run-after, alias.
 
-You can get the full documentation at https://github.com/coveo/tgf/blob/master/README.md and check for new version at
-https://github.com/coveo/tgf/releases/latest.
+You can get the full documentation at https://github.com/coveooss/tgf/blob/master/README.md and check for new version at
+https://github.com/coveooss/tgf/releases/latest.
 
 Any docker image could be used, but TGF specialized images could be found at: https://hub.docker.com/r/coveo/tgf/tags.
 
@@ -220,7 +220,7 @@ Returns the version of `Terraform` since we specified the entry point to be terr
 
 * [Terraform](https://www.terraform.io/)
 * [Terragrunt](https://github.com/coveo/terragrunt)
-* [Go Template](https://github.com/coveo/gotemplate)
+* [Go Template](https://github.com/coveooss/gotemplate)
 * Shells & tools
   * `sh`
   * `openssl`

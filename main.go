@@ -4,12 +4,12 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/coveo/gotemplate/v3/collections"
-	"github.com/coveo/gotemplate/v3/errors"
-	_ "github.com/coveo/gotemplate/v3/hcl"
-	_ "github.com/coveo/gotemplate/v3/json"
-	"github.com/coveo/gotemplate/v3/utils"
-	_ "github.com/coveo/gotemplate/v3/yaml"
+	"github.com/coveooss/gotemplate/v3/collections"
+	"github.com/coveooss/gotemplate/v3/errors"
+	_ "github.com/coveooss/gotemplate/v3/hcl"
+	_ "github.com/coveooss/gotemplate/v3/json"
+	"github.com/coveooss/gotemplate/v3/utils"
+	_ "github.com/coveooss/gotemplate/v3/yaml"
 	"github.com/fatih/color"
 )
 

@@ -31,11 +31,11 @@ install_latest_tgf () {
     if [[ $(uname -s) == Linux ]]
     then
         echo 'Installing latest tgf version for Linux in' $TGF_PATH '...'
-        curl -sL "https://github.com/coveo/tgf/releases/download/v"$TGF_LATEST_VERSION"/tgf_"$TGF_LATEST_VERSION"_linux_64-bits.zip" | gzip -d > $TGF && chmod +x $TGF && script_end
+        curl -sL "https://github.com/coveooss/tgf/releases/download/v"$TGF_LATEST_VERSION"/tgf_"$TGF_LATEST_VERSION"_linux_64-bits.zip" | gzip -d > $TGF && chmod +x $TGF && script_end
     elif [[ $(uname -s) == Darwin ]]
     then
         echo 'Installing latest tgf for OSX in' $TGF_PATH '...'
-        curl -sL "https://github.com/coveo/tgf/releases/download/v"$TGF_LATEST_VERSION"/tgf_"$TGF_LATEST_VERSION"_macOS_64-bits.zip" | bsdtar -xf- -C $TGF_PATH && script_end
+        curl -sL "https://github.com/coveooss/tgf/releases/download/v"$TGF_LATEST_VERSION"/tgf_"$TGF_LATEST_VERSION"_macOS_64-bits.zip" | bsdtar -xf- -C $TGF_PATH && script_end
     else 
         echo 'OS not supported.'
         exit 1

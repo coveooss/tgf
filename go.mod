@@ -1,14 +1,15 @@
-module github.com/coveo/tgf
+module github.com/coveooss/tgf
 
 go 1.12
 
-replace github.com/gruntwork-io/terragrunt => github.com/coveo/terragrunt v1.4.0-beta1
+replace github.com/gruntwork-io/terragrunt => github.com/coveooss/terragrunt v1.4.0
 
 require (
+	github.com/Microsoft/go-winio v0.4.12 // indirect
 	github.com/aws/aws-sdk-go v1.20.2
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/coveo/gotemplate/v3 v3.1.0-test
-	github.com/coveo/kingpin/v2 v2.3.0
+	github.com/coveooss/gotemplate/v3 v3.2.0
+	github.com/coveord/kingpin/v2 v2.3.1
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v1.13.1
 	github.com/docker/go-connections v0.4.0 // indirect
