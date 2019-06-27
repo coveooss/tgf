@@ -211,8 +211,8 @@ func (app *TGFApplication) Run() int {
 		return 0
 	}
 
-	if app.AutoUpdate {
-		RunUpdater()
+	if app.AutoUpdate && RunUpdater() {
+		return Restart()
 	}
 
 	return InitConfig(app).Run()

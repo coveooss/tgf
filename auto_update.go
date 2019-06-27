@@ -7,7 +7,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"os/exec"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/blang/semver"
@@ -16,45 +19,47 @@ import (
 )
 
 // RunUpdater check if an update is due, check if current version is outdated and perform update if needed
-func RunUpdater() {
+func RunUpdater() bool {
 	var autoUpdateFile = "tgfautoupdate"
 	var dueForUpdate = lastRefresh(autoUpdateFile) > 2*time.Hour
 	if !dueForUpdate {
 		printWarning("update not due")
-		return
+		return false
 	}
 	touchImageRefresh(autoUpdateFile)
 
 	v, err := getLatestVersion()
 	if err != nil {
 		printWarning("update aborted", err)
-		return
+		return false
 	}
 
 	latestVersion, err := semver.Make(v)
 	if err != nil {
 		printWarning("update aborted", err)
-		return
+		return false
 	}
 
 	currentVersion, err := semver.Make(version)
 	if err != nil {
 		printWarning("update aborted", err)
-		return
+		return false
 	}
 
 	if !currentVersion.LT(latestVersion) {
 		printWarning("tgf up to date")
-		return
+		return false
 	}
 
 	url := getPlatformZipURL(v)
 
-	if uerr := doUpdate(url); uerr != nil {
-		printWarning("failed update ! : %v", uerr)
-	} else {
-		printWarning("updated")
+	if err := doUpdate(url); err != nil {
+		printWarning("failed update ! : %v", err)
+		return false
 	}
+
+	printWarning("updated")
+	return true
 }
 
 func doUpdate(url string) error {
@@ -115,4 +120,18 @@ func getLatestVersion() (string, error) {
 
 	latestVersion, err := ioutil.ReadAll(resp.Body)
 	return string(latestVersion), nil
+}
+
+// Restart re runs the app with all the arguments passed
+func Restart() int {
+	cmd := exec.Command(strings.Join(os.Args, " "))
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		printWarning("Rerun failed")
+		return 1
+	}
+	return 0
 }
