@@ -71,12 +71,14 @@ func doUpdate(url string) error {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		printWarning(err)
+		printWarning("Error reading response body")
+		return err
 	}
 
 	zipReader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	if err != nil {
-		printWarning(err)
+		printWarning("Error reading zip file")
+		return err
 	}
 
 	tgfFile, err := zipReader.File[0].Open()
@@ -85,7 +87,9 @@ func doUpdate(url string) error {
 	if err != nil {
 		if rerr := update.RollbackError(err); rerr != nil {
 			printWarning("Failed to rollback from bad update: %v", rerr)
+			return err
 		}
+		return err
 	}
 	return err
 }
