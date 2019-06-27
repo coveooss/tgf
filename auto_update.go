@@ -19,46 +19,46 @@ import (
 )
 
 // RunUpdater check if an update is due, check if current version is outdated and perform update if needed
-func RunUpdater() bool {
+func RunUpdater(app *TGFApplication) bool {
 	var autoUpdateFile = "tgfautoupdate"
 	var dueForUpdate = lastRefresh(autoUpdateFile) > 2*time.Hour
 	if !dueForUpdate {
-		printWarning("update not due")
+		app.Debug("Update not due")
 		return false
 	}
 	touchImageRefresh(autoUpdateFile)
 
 	v, err := getLatestVersion()
 	if err != nil {
-		printWarning("update aborted", err)
+		app.Debug("Unable to fetch latest version from S3", err)
 		return false
 	}
 
 	latestVersion, err := semver.Make(v)
 	if err != nil {
-		printWarning("update aborted", err)
+		app.Debug("Semver error", err)
 		return false
 	}
 
 	currentVersion, err := semver.Make(version)
 	if err != nil {
-		printWarning("update aborted", err)
+		app.Debug("Semver error", err)
 		return false
 	}
 
 	if !currentVersion.LT(latestVersion) {
-		printWarning("tgf up to date")
+		app.Debug("Up to date", err)
 		return false
 	}
 
 	url := getPlatformZipURL(v)
 
 	if err := doUpdate(url); err != nil {
-		printWarning("failed update ! : %v", err)
+		app.Debug("Failed update ! : %v", err)
 		return false
 	}
 
-	printWarning("updated")
+	app.Debug("Updated")
 	return true
 }
 
@@ -76,13 +76,11 @@ func doUpdate(url string) error {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		printWarning("Error reading response body")
 		return err
 	}
 
 	zipReader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	if err != nil {
-		printWarning("Error reading zip file")
 		return err
 	}
 
@@ -130,7 +128,6 @@ func Restart() int {
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		printWarning("Rerun failed")
 		return 1
 	}
 	return 0

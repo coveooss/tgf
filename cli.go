@@ -211,7 +211,7 @@ func (app *TGFApplication) Run() int {
 		return 0
 	}
 
-	if app.AutoUpdate && RunUpdater() {
+	if app.AutoUpdate && RunUpdater(app) { // Passing app for logging
 		return Restart()
 	}
 
