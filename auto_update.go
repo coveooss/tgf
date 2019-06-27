@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"runtime"
 	"time"
@@ -72,12 +71,12 @@ func doUpdate(url string) error {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		printWarning(err)
 	}
 
 	zipReader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	if err != nil {
-		log.Fatal(err)
+		printWarning(err)
 	}
 
 	tgfFile, err := zipReader.File[0].Open()
