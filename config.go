@@ -18,7 +18,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/blang/semver"
-	"github.com/coveo/gotemplate/v3/collections"
+	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/fatih/color"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
 	"github.com/hashicorp/go-getter"
