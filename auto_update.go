@@ -71,7 +71,8 @@ func doUpdate(url string) error {
 	if url == "" {
 		return errors.New("Empty url")
 	}
-	// request the new  zip file
+
+	// request the new zip file
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
