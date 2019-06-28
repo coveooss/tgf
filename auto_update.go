@@ -26,13 +26,13 @@ func RunUpdater(app *TGFApplication) bool {
 
 	v, err := getLatestVersion()
 	if err != nil {
-		printWarning("Error getting latest version", err)
+		printError("Error getting latest version", err)
 		return false
 	}
 
 	latestVersion, err := semver.Make(v)
 	if err != nil {
-		printWarning("Semver error", err)
+		printError("Semver error", err)
 		return false
 	}
 
@@ -50,13 +50,13 @@ func RunUpdater(app *TGFApplication) bool {
 	url := getPlatformZipURL(v)
 
 	if err := doUpdate(url); err != nil {
-		printWarning("Failed update: %v", err)
+		printError("Failed update: %v", err)
 		return false
 	}
 
 	executablePath, err := os.Executable()
 	if err != nil {
-		printWarning("Executable path error: %v", err)
+		printError("Executable path error: %v", err)
 	}
 
 	printWarning("Updated the executable at %v from version %v to version %v \nThe process will restart with the new version...", executablePath, version, v)
