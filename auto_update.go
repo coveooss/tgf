@@ -45,19 +45,24 @@ func RunUpdater(app *TGFApplication) bool {
 		return false
 	}
 
-	if !currentVersion.LT(latestVersion) {
-		app.Debug("Up to date", err)
+	if currentVersion.GTE(latestVersion) {
+		app.Debug("Up to date")
 		return false
 	}
 
 	url := getPlatformZipURL(v)
 
 	if err := doUpdate(url); err != nil {
-		app.Debug("Failed update ! : %v", err)
+		printWarning("Failed update: %v", err)
 		return false
 	}
 
-	app.Debug("Updated")
+	executablePath, err := os.Executable()
+	if err != nil {
+		printWarning("Executable path error: %v", err)
+	}
+
+	printWarning("Updated the executable at %v from version %v to version %v \nThe process will restart with the new version...", executablePath, version, v)
 	return true
 }
 
@@ -97,16 +102,16 @@ func doUpdate(url string) error {
 }
 
 func getPlatformZipURL(version string) string {
+	url := ""
 	switch runtime.GOOS {
 	case "linux":
-		return fmt.Sprintf("https://github.com/coveo/tgf/releases/download/v%[1]s/tgf_%[1]s_linux_64-bits.zip", version)
+		url = "https://github.com/coveo/tgf/releases/download/v%[1]s/tgf_%[1]s_linux_64-bits.zip"
 	case "darwin":
-		return fmt.Sprintf("https://github.com/coveo/tgf/releases/download/v%[1]s/tgf_%[1]s_macOS_64-bits.zip", version)
+		url = "https://github.com/coveo/tgf/releases/download/v%[1]s/tgf_%[1]s_macOS_64-bits.zip"
 	case "windows":
-		return fmt.Sprintf("https://github.com/coveo/tgf/releases/download/v%[1]s/tgf_%[1]s_windows_64-bits.zip", version)
-	default:
-		return ""
+		url = "https://github.com/coveo/tgf/releases/download/v%[1]s/tgf_%[1]s_windows_64-bits.zip"
 	}
+	return fmt.Sprintf(url, version)
 }
 
 func getLatestVersion() (string, error) {
