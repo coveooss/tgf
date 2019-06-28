@@ -22,7 +22,7 @@ import (
 func RunUpdater(app *TGFApplication) bool {
 	const autoUpdateFile = "tgfautoupdate"
 	var dueForUpdate = lastRefresh(autoUpdateFile) > 2*time.Hour
-	if !dueForUpdate {
+	if lastRefresh(autoUpdateFile) < 2*time.Hour {
 		app.Debug("Update not due")
 		return false
 	}
