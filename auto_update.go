@@ -21,7 +21,6 @@ import (
 // RunUpdater checks if an update is due, checks if current version is outdated and performs update if needed
 func RunUpdater(app *TGFApplication) bool {
 	const autoUpdateFile = "tgfautoupdate"
-	var dueForUpdate = lastRefresh(autoUpdateFile) > 2*time.Hour
 	if lastRefresh(autoUpdateFile) < 2*time.Hour {
 		app.Debug("Update not due")
 		return false
