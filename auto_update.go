@@ -29,19 +29,19 @@ func RunUpdater(app *TGFApplication) bool {
 
 	v, err := getLatestVersion()
 	if err != nil {
-		app.Debug("Unable to fetch latest version from S3", err)
+		printWarning("Error getting latest version", err)
 		return false
 	}
 
 	latestVersion, err := semver.Make(v)
 	if err != nil {
-		app.Debug("Semver error", err)
+		printWarning("Semver error", err)
 		return false
 	}
 
 	currentVersion, err := semver.Make(version)
 	if err != nil {
-		app.Debug("Semver error", err)
+		printWarning("Semver error", err)
 		return false
 	}
 
@@ -122,6 +122,9 @@ func getLatestVersion() (string, error) {
 	}
 
 	latestVersion, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
 	return string(latestVersion), nil
 }
 
