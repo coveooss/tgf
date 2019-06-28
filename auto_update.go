@@ -18,7 +18,7 @@ import (
 	"github.com/inconshreveable/go-update"
 )
 
-// RunUpdater check if an update is due, check if current version is outdated and perform update if needed
+// RunUpdater checks if an update is due, checks if current version is outdated and performs update if needed
 func RunUpdater(app *TGFApplication) bool {
 	var autoUpdateFile = "tgfautoupdate"
 	var dueForUpdate = lastRefresh(autoUpdateFile) > 2*time.Hour
