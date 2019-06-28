@@ -14,7 +14,7 @@ import (
 )
 
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
-var version = "1.20.0"
+var version = "1.22.0"
 
 func main() {
 	// Handle eventual panic message
