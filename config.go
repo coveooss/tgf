@@ -268,7 +268,7 @@ func (config *TGFConfig) validate() (errors []error) {
 		errors = append(errors, ConfigWarning(fmt.Sprintf("Image tag parameter should not contain the image name: %s", *config.ImageTag)))
 	}
 
-	if config.RecommendedTGFVersion != "" {
+	if config.RecommendedTGFVersion != "" && version != locallyBuilt {
 		if valid, err := CheckVersionRange(version, config.RecommendedTGFVersion); err != nil {
 			errors = append(errors, fmt.Errorf("Unable to check recommended tgf version %s vs %s: %v", version, config.RecommendedTGFVersion, err))
 		} else if !valid {

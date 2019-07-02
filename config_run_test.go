@@ -51,7 +51,7 @@ func TestCurrentVersion(t *testing.T) {
 		exitCode := app.Run()
 		assert.Equal(t, 0, exitCode, "exitCode")
 	})
-	assert.Equal(t, fmt.Sprintf("tgf v%s\n", version), output)
+	assert.Equal(t, "tgf (built from source)\n", output)
 }
 
 func TestAllVersions(t *testing.T) {

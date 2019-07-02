@@ -15,52 +15,67 @@ import (
 	"github.com/inconshreveable/go-update"
 )
 
-// RunUpdater checks if an update is due, checks if current version is outdated and performs update if needed
-func RunUpdater(app *TGFApplication) bool {
-	const autoUpdateFile = "tgfautoupdate"
+const locallyBuilt = "(Locally Built)"
+
+// RunWithUpdateCheck checks if an update is due, checks if current version is outdated and performs update if needed
+func (c *TGFConfig) RunWithUpdateCheck() int {
+	app := c.tgf
+	const autoUpdateFile = "TGFAutoUpdate"
+
+	if app.AutoUpdateSet && !app.AutoUpdate {
+		app.Debug("Check latest version is disabled. Bypassing update version check.")
+		return c.Run()
+	}
+
 	if !app.AutoUpdate && lastRefresh(autoUpdateFile) < 2*time.Hour {
-		app.Debug("Update not due")
-		return false
+		app.Debug("Less than 2 hours since last check. Bypassing update version check.")
+		return c.Run()
 	}
 	touchImageRefresh(autoUpdateFile)
 
-	v, err := getLatestVersion()
+	latestVersionString, err := getLatestVersion()
 	if err != nil {
 		printError("Error getting latest version", err)
-		return false
+		return c.Run()
 	}
 
-	latestVersion, err := semver.Make(v)
+	latestVersion, err := semver.Make(latestVersionString)
 	if err != nil {
-		printError("Semver error", err)
-		return false
+		printError("Semver error on retrivied version %s: %v", latestVersionString, err)
+		return c.Run()
 	}
 
-	currentVersion, err := semver.Make(version)
-	if err != nil {
-		printWarning("Semver error", err)
-		return false
+	if version != locallyBuilt {
+		currentVersion, err := semver.Make(version)
+		if err != nil {
+			printWarning("Semver error on current version %s: %v", version, err)
+			return c.Run()
+		}
+
+		if currentVersion.GTE(latestVersion) {
+			app.Debug("Your current version (%v) is Up to date.", currentVersion)
+			return c.Run()
+		}
+	} else if !app.AutoUpdate {
+		app.Debug("Currently running a locally built version, no update unless explicitly specified.")
+		return c.Run()
 	}
 
-	if currentVersion.GTE(latestVersion) {
-		app.Debug("Up to date")
-		return false
-	}
-
-	url := getPlatformZipURL(v)
-
-	if err := doUpdate(url); err != nil {
-		printError("Failed update: %v", err)
-		return false
-	}
+	url := getPlatformZipURL(latestVersion.String())
 
 	executablePath, err := os.Executable()
 	if err != nil {
 		printError("Executable path error: %v", err)
 	}
 
-	printWarning("Updated the executable at %v from version %v to version %v \nThe process will restart with the new version...", executablePath, version, v)
-	return true
+	printWarning("Updating %s from %s ==> %v", executablePath, version, latestVersion)
+	if err := doUpdate(url); err != nil {
+		printError("Failed update for %s: %v", url, err)
+		return c.Run()
+	}
+
+	printWarning("TGF is restarting...")
+	return c.restart()
 }
 
 func doUpdate(url string) (err error) {
@@ -123,13 +138,10 @@ func getLatestVersion() (string, error) {
 }
 
 // Restart re runs the app with all the arguments passed
-func Restart() int {
+func (c *TGFConfig) restart() int {
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
-	cmd.Stdout = os.Stdout
-	cmd.Stdin = os.Stdin
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	if err := cmd.Run(); err != nil {
 		printError("Error on restart: %v", err)
 		return 1
 	}
