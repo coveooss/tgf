@@ -35,7 +35,7 @@ func (c *TGFConfig) RunWithUpdateCheck() int {
 	}
 	touchImageRefresh(autoUpdateFile)
 
-	latestVersionString := c.LatestTgfVersion
+	latestVersionString := c.UpdateVersion
 	if latestVersionString == "" {
 		fetchedVersion, err := getLatestVersion()
 		if err != nil {

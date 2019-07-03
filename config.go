@@ -60,7 +60,7 @@ type TGFConfig struct {
 	RunBefore               string            `yaml:"run-before,omitempty" json:"run-before,omitempty" hcl:"run-before,omitempty"`
 	RunAfter                string            `yaml:"run-after,omitempty" json:"run-after,omitempty" hcl:"run-after,omitempty"`
 	Aliases                 map[string]string `yaml:"alias,omitempty" json:"alias,omitempty" hcl:"alias,omitempty"`
-	LatestTgfVersion        string            `yaml:"latest-tgf-version,omitempty" json:"latest-tgf-version,omitempty" hcl:"latest-tgf-version,omitempty"`
+	UpdateVersion           string            `yaml:"latest-tgf-version,omitempty" json:"latest-tgf-version,omitempty" hcl:"latest-tgf-version,omitempty"`
 
 	runBeforeCommands, runAfterCommands []string
 	imageBuildConfigs                   []TGFConfigBuild // List of config built from previous build configs
