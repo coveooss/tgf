@@ -131,7 +131,7 @@ func getPlatformZipURL(version string) string {
 }
 
 func getLatestVersion() (string, error) {
-	resp, err := http.Get("https://api.github.com/repositories/91362181/releases/latest")
+	resp, err := http.Get("https://api.github.com/repos/coveooss/tgf/releases/latest")
 	if err != nil {
 		return "", err
 	}
