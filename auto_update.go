@@ -24,6 +24,11 @@ func (c *TGFConfig) RunWithUpdateCheck() int {
 	app := c.tgf
 	const autoUpdateFile = "TGFAutoUpdate"
 
+	if !app.AutoUpdateSet {
+		app.AutoUpdateSet = c.AutoUpdate == "on"
+		app.AutoUpdate = app.AutoUpdateSet
+	}
+
 	if app.AutoUpdateSet && !app.AutoUpdate {
 		app.Debug("Check latest version is disabled. Bypassing update version check.")
 		return c.Run()

@@ -60,7 +60,9 @@ type TGFConfig struct {
 	RunBefore               string            `yaml:"run-before,omitempty" json:"run-before,omitempty" hcl:"run-before,omitempty"`
 	RunAfter                string            `yaml:"run-after,omitempty" json:"run-after,omitempty" hcl:"run-after,omitempty"`
 	Aliases                 map[string]string `yaml:"alias,omitempty" json:"alias,omitempty" hcl:"alias,omitempty"`
-	UpdateVersion           string            `yaml:"latest-tgf-version,omitempty" json:"latest-tgf-version,omitempty" hcl:"latest-tgf-version,omitempty"`
+	UpdateVersion           string            `yaml:"update-version,omitempty" json:"update-version,omitempty" hcl:"update-version,omitempty"`
+	AutoUpdateDelay         time.Duration     `yaml:"auto-update-delay,omitempty" json:"auto-update-delay,omitempty" hcl:"auto-update-delay,omitempty"`
+	AutoUpdate              string            `yaml:"auto-update,omitempty" json:"auto-update,omitempty" hcl:"auto-update,omitempty"`
 
 	runBeforeCommands, runAfterCommands []string
 	imageBuildConfigs                   []TGFConfigBuild // List of config built from previous build configs
@@ -119,6 +121,8 @@ func InitConfig(app *TGFApplication) *TGFConfig {
 	config := TGFConfig{Image: "coveo/tgf",
 		tgf:               app,
 		Refresh:           1 * time.Hour,
+		AutoUpdateDelay:   2 * time.Hour,
+		AutoUpdate:        "on",
 		EntryPoint:        "terragrunt",
 		LogLevel:          "notice",
 		Environment:       make(map[string]string),
