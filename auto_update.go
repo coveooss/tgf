@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	"time"
 
 	"github.com/blang/semver"
 	"github.com/inconshreveable/go-update"
@@ -24,20 +23,24 @@ func (c *TGFConfig) RunWithUpdateCheck() int {
 	app := c.tgf
 	const autoUpdateFile = "TGFAutoUpdate"
 
-	if !app.AutoUpdateSet { // Fallback to config settings if --update flag is not set
-		app.AutoUpdateSet = c.AutoUpdate != ""
-		app.AutoUpdate = c.AutoUpdate == "on"
+	if app.AutoUpdateSet {
+		if app.AutoUpdate {
+			app.Debug("Auto update is forced. Checking version...")
+		} else {
+			app.Debug("Auto update is force disabled. Bypassing update version check.")
+			return c.Run()
+		}
+	} else {
+		if !c.AutoUpdate {
+			app.Debug("Auto update is disabled in the config. Bypassing update version check.")
+			return c.Run()
+		}
+		if lastRefresh(autoUpdateFile) < c.AutoUpdateDelay {
+			app.Debug("Less than 2 hours since last check. Bypassing update version check.")
+			return c.Run()
+		}
 	}
 
-	if app.AutoUpdateSet && !app.AutoUpdate {
-		app.Debug("Check latest version is disabled. Bypassing update version check.")
-		return c.Run()
-	}
-
-	if !app.AutoUpdate && lastRefresh(autoUpdateFile) < 2*time.Hour {
-		app.Debug("Less than 2 hours since last check. Bypassing update version check.")
-		return c.Run()
-	}
 	touchImageRefresh(autoUpdateFile)
 
 	latestVersionString := c.UpdateVersion

@@ -62,7 +62,7 @@ type TGFConfig struct {
 	Aliases                 map[string]string `yaml:"alias,omitempty" json:"alias,omitempty" hcl:"alias,omitempty"`
 	UpdateVersion           string            `yaml:"update-version,omitempty" json:"update-version,omitempty" hcl:"update-version,omitempty"`
 	AutoUpdateDelay         time.Duration     `yaml:"auto-update-delay,omitempty" json:"auto-update-delay,omitempty" hcl:"auto-update-delay,omitempty"`
-	AutoUpdate              string            `yaml:"auto-update,omitempty" json:"auto-update,omitempty" hcl:"auto-update,omitempty"`
+	AutoUpdate              bool              `yaml:"auto-update,omitempty" json:"auto-update,omitempty" hcl:"auto-update,omitempty"`
 
 	runBeforeCommands, runAfterCommands []string
 	imageBuildConfigs                   []TGFConfigBuild // List of config built from previous build configs
@@ -122,7 +122,7 @@ func InitConfig(app *TGFApplication) *TGFConfig {
 		tgf:               app,
 		Refresh:           1 * time.Hour,
 		AutoUpdateDelay:   2 * time.Hour,
-		AutoUpdate:        "on",
+		AutoUpdate:        true,
 		EntryPoint:        "terragrunt",
 		LogLevel:          "notice",
 		Environment:       make(map[string]string),
