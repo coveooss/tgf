@@ -3,6 +3,8 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -33,10 +35,14 @@ func (c *TGFConfig) RunWithUpdateCheck() int {
 	}
 	touchImageRefresh(autoUpdateFile)
 
-	latestVersionString, err := getLatestVersion()
-	if err != nil {
-		printError("Error getting latest version", err)
-		return c.Run()
+	latestVersionString := c.LatestTgfVersion
+	if latestVersionString == "" {
+		fetchedVersion, err := getLatestVersion()
+		if err != nil {
+			printError("Error getting latest version: %v", err)
+			return c.Run()
+		}
+		latestVersionString = fetchedVersion
 	}
 
 	latestVersion, err := semver.Make(latestVersionString)
@@ -125,16 +131,19 @@ func getPlatformZipURL(version string) string {
 }
 
 func getLatestVersion() (string, error) {
-	resp, err := http.Get("https://coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf_version.txt")
+	resp, err := http.Get("https://api.github.com/repositories/91362181/releases/latest")
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
 
-	latestVersion, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
+	var jsonResponse map[string]string
+	json.NewDecoder(resp.Body).Decode(&jsonResponse)
+	latestVersion := jsonResponse["tag_name"]
+	if latestVersion == "" {
+		return "", errors.New("Error parsing json response")
 	}
-	return string(latestVersion), nil
+	return latestVersion[1:], nil
 }
 
 // Restart re runs the app with all the arguments passed
