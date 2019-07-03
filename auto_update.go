@@ -24,9 +24,9 @@ func (c *TGFConfig) RunWithUpdateCheck() int {
 	app := c.tgf
 	const autoUpdateFile = "TGFAutoUpdate"
 
-	if !app.AutoUpdateSet {
-		app.AutoUpdateSet = c.AutoUpdate == "on"
-		app.AutoUpdate = app.AutoUpdateSet
+	if !app.AutoUpdateSet { // Fallback to config settings if --update flag is not set
+		app.AutoUpdateSet = c.AutoUpdate != ""
+		app.AutoUpdate = c.AutoUpdate == "on"
 	}
 
 	if app.AutoUpdateSet && !app.AutoUpdate {
