@@ -53,7 +53,7 @@ If any of the tgf arguments conflicts with an argument of the desired entry poin
 after -- to ensure that they are not interpreted by tgf and are passed to the entry point. Any non conflicting
 argument will be passed to the entry point wherever it is located on the invocation arguments.
 
-	tgf ls -- -D   # Avoid -D to be interpreted by tgf as --debug-docker
+	tgf ls -- -D   # Avoid -D to be interpreted by tgf as --debug
 
 It is also possible to specify additional arguments through environment variable @(envArgs).
 
@@ -123,7 +123,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("current-version", "Get current version information").BoolVar(&app.GetCurrentVersion)
 	app.Flag("all-versions", "Get versions of TGF & all others underlying utilities").BoolVar(&app.GetAllVersions)
 	app.Flag("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)").Short('L').PlaceHolder("<level>").StringVar(&app.LoggingLevel)
-	app.Flag("debug-docker", "Print the docker command issued").Short('D').BoolVar(&app.DebugMode)
+	app.Flag("debug", "Print debug messages and docker commands issued").Short('D').Default(String(os.Getenv(envDebug)).ParseBool()).BoolVar(&app.DebugMode)
 	app.Flag("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache").Short('F').BoolVar(&app.FlushCache)
 	swFlagON("interactive", "Launch Docker in interactive mode").Alias("it").BoolVar(&app.DockerInteractive)
 	swFlagON("docker-build", "Enable docker build instructions configured in the config files").BoolVar(&app.DockerBuild)

@@ -150,7 +150,7 @@ arguments conflicts with an argument of the desired entry point, you must place 
 tgf and are passed to the entry point. Any non conflicting argument will be passed to the entry point wherever it is located on the invocation
 arguments.
 
-  tgf ls -- -D   # Avoid -D to be interpreted by tgf as --debug-docker
+  tgf ls -- -D   # Avoid -D to be interpreted by tgf as --debug
 
 It is also possible to specify additional arguments through environment variable TGF_ARGS or enable debugging mode through TGF_DEBUG.
 
@@ -162,7 +162,7 @@ Flags:
   -H, --tgf-help                 Show context-sensitive help (also try --help-man).
       --all-versions             Get versions of TGF & all others underlying utilities (alias --av)
       --current-version          Get current version information (alias --cv)
-  -D, --debug-docker             Print the docker command issued
+  -D, --debug                    Print debug messages and docker commands issued
   -F, --flush-cache              Invoke terragrunt with --terragrunt-update-source to flush the cache
       --get-image-name           Just return the resulting image name (alias --gi)
       --interactive              On by default, use --no-interactive or --no-it to disable launching Docker in interactive mode or set
