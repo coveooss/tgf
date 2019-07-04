@@ -56,7 +56,7 @@ func (c *TGFConfig) RunWithUpdateCheck() int {
 
 	latestVersion, err := semver.Make(latestVersionString)
 	if err != nil {
-		printError("Semver error on retrivied version %s: %v", latestVersionString, err)
+		printError("Semver error on retrieved version %s: %v", latestVersionString, err)
 		return c.Run()
 	}
 
@@ -68,7 +68,7 @@ func (c *TGFConfig) RunWithUpdateCheck() int {
 		}
 
 		if currentVersion.GTE(latestVersion) {
-			app.Debug("Your current version (%v) is Up to date.", currentVersion)
+			app.Debug("Your current version (%v) is up to date.", currentVersion)
 			return c.Run()
 		}
 	} else if !app.AutoUpdate {
@@ -118,7 +118,7 @@ func doUpdate(url string) (err error) {
 
 	tgfFile, err := zipReader.File[0].Open()
 	if err != nil {
-		printError("Failed to read new versionrollback from bad update: %v", err)
+		printError("Failed to read new version rollback from bad update: %v", err)
 		return
 	}
 
