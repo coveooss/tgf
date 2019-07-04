@@ -36,7 +36,7 @@ func (c *TGFConfig) RunWithUpdateCheck() int {
 			return c.Run()
 		}
 		if lastRefresh(autoUpdateFile) < c.AutoUpdateDelay {
-			app.Debug("Less than 2 hours since last check. Bypassing update version check.")
+			app.Debug("Less than %v since last check. Bypassing update version check.", c.AutoUpdateDelay.String)
 			return c.Run()
 		}
 	}
