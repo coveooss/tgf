@@ -41,6 +41,7 @@ func (c *TGFConfig) RunWithUpdateCheck() int {
 		}
 	}
 
+	app.Debug("Comparing local and latest versions...")
 	touchImageRefresh(autoUpdateFile)
 
 	latestVersionString := c.UpdateVersion
