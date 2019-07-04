@@ -93,6 +93,9 @@ Key | Description | Default value
 | run-before | Script that is executed before the actual command | *no default*
 | run-after | Script that is executed after the actual command | *no default*
 | alias | Allows to set short aliases for long commands<br>`my_command: "--ri --with-docker-mount --image=my-image --image-version=my-tag -E my-script.py"` | *no default*
+| auto-update | Toggles the auto update check. Will only perform the update after the delay | true
+| auto-update-delay | Delay before running auto-update again  | 2h (2 hours)
+| update-version | The version to update to when running auto update | Latest fetched from Github's API
 
 Note: *The key names are not case sensitive*
 
@@ -188,6 +191,7 @@ Flags:
   -P, --profile=PROFILE          Set the AWS profile configuration to use
       --ps-path=<path>           Parameter Store path used to find AWS common configuration shared by a team or set TGF_SSM_PATH
   -T, --tag=latest               Use a different tag of docker image instead of the default one
+      --update                   Run auto update script
   ```
 
 Example:
