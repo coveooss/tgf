@@ -8,6 +8,7 @@ import (
 
 // Run execute the current configuration
 func (config *TGFConfig) Run() int {
+	return 1
 	app := config.tgf
 
 	// If AWS profile is supplied, we freeze the current session

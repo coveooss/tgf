@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"time"
 
 	"github.com/blang/semver"
 	"github.com/inconshreveable/go-update"
@@ -19,7 +20,7 @@ import (
 const locallyBuilt = "(Locally Built)"
 
 // RunWithUpdateCheck checks if an update is due, checks if current version is outdated and performs update if needed
-func (c *TGFConfig) RunWithUpdateCheck() int {
+func (c *TGFConfig) RunWithUpdateCheck(lastRefresh func(image string) time.Duration) int {
 	app := c.tgf
 	const autoUpdateFile = "TGFAutoUpdate"
 
@@ -36,7 +37,7 @@ func (c *TGFConfig) RunWithUpdateCheck() int {
 			return c.Run()
 		}
 		if lastRefresh(autoUpdateFile) < c.AutoUpdateDelay {
-			app.Debug("Less than %v since last check. Bypassing update version check.", c.AutoUpdateDelay.String)
+			app.Debug("Less than %v since last check. Bypassing update version check.", c.AutoUpdateDelay.String())
 			return c.Run()
 		}
 	}

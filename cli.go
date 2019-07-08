@@ -216,5 +216,5 @@ func (app *TGFApplication) Run() int {
 		return 0
 	}
 
-	return InitConfig(app).RunWithUpdateCheck()
+	return InitConfig(app).RunWithUpdateCheck(lastRefresh)
 }
