@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func ExampleTGFConfig_RunWithUpdateCheck_forcing_update_cli() {
+func ExampleRunWithUpdateCheck_forcing_no_update_cli() {
 	cfg := &TGFConfig{
 		tgf: &TGFApplication{
 			AutoUpdateSet: true,
@@ -14,13 +14,31 @@ func ExampleTGFConfig_RunWithUpdateCheck_forcing_update_cli() {
 		},
 	}
 
-	ErrPrintf = PrintMock
-	cfg.RunWithUpdateCheck(lastRefresh1Hour)
+	ErrPrintf = fmt.Printf
+	version = "1.20.0"
+	RunWithUpdateCheck(cfg)
 	// Output:
 	// Auto update is force disabled. Bypassing update version check.
 }
 
-func ExampleTGFConfig_RunWithUpdateCheck_no_update_config() {
+func ExampleRunWithUpdateCheck_forcing_update_cli_up_to_date() {
+	cfg := &TGFConfig{
+		tgf: &TGFApplication{
+			AutoUpdateSet: true,
+			AutoUpdate:    true,
+			DebugMode:     true,
+		},
+	}
+
+	version = "1.0.0"
+	ErrPrintf = fmt.Printf
+	RunWithUpdateCheck(cfg)
+	// Output:
+	// Auto update is forced. Checking version...
+	// Comparing local and latest versions...
+}
+
+func ExampleRunWithUpdateCheck_no_update_config() {
 	cfg := &TGFConfig{
 		tgf: &TGFApplication{
 			AutoUpdateSet: false,
@@ -29,13 +47,14 @@ func ExampleTGFConfig_RunWithUpdateCheck_no_update_config() {
 		AutoUpdate: false,
 	}
 
-	ErrPrintf = PrintMock
-	cfg.RunWithUpdateCheck(lastRefresh1Hour)
+	version = "1.20.0"
+	ErrPrintf = fmt.Printf
+	RunWithUpdateCheck(cfg)
 	// Output:
 	// Auto update is disabled in the config. Bypassing update version check.
 }
 
-func ExampleTGFConfig_RunWithUpdateCheck_forcing_update_config() {
+func ExampleRunWithUpdateCheck_forcing_update_config() {
 	cfg := &TGFConfig{
 		tgf: &TGFApplication{
 			AutoUpdateSet: false,
@@ -45,12 +64,9 @@ func ExampleTGFConfig_RunWithUpdateCheck_forcing_update_config() {
 		AutoUpdateDelay: 2 * time.Hour,
 	}
 
+	version = "1.20.0"
 	ErrPrintf = fmt.Printf
-	cfg.RunWithUpdateCheck(lastRefresh1Hour)
+	RunWithUpdateCheck(cfg)
 	// Output:
 	// Less than 2h0m0s since last check. Bypassing update version check.
-}
-
-func lastRefresh1Hour(image string) time.Duration {
-	return 1 * time.Hour
 }

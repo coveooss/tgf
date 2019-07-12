@@ -3,13 +3,10 @@ package main
 import (
 	"archive/zip"
 	"bytes"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"runtime"
 	"time"
 
@@ -18,62 +15,47 @@ import (
 )
 
 const locallyBuilt = "(Locally Built)"
+const autoUpdateFile = "TGFAutoUpdate"
+
+// RunnerUpdater allows flexibility for testing
+type RunnerUpdater interface {
+	Debug(format string, args ...interface{})
+	GetUpdateVersion() (string, error)
+	GetLastRefresh(file string) time.Duration
+	SetLastRefresh(file string)
+	ShouldUpdate() bool
+	Run() int
+	Restart() int
+}
 
 // RunWithUpdateCheck checks if an update is due, checks if current version is outdated and performs update if needed
-func (c *TGFConfig) RunWithUpdateCheck(lastRefresh func(image string) time.Duration) int {
-	app := c.tgf
-	const autoUpdateFile = "TGFAutoUpdate"
+func RunWithUpdateCheck(c RunnerUpdater) int {
 
-	if app.AutoUpdateSet {
-		if app.AutoUpdate {
-			app.Debug("Auto update is forced. Checking version...")
-		} else {
-			app.Debug("Auto update is force disabled. Bypassing update version check.")
-			return c.Run()
-		}
-	} else {
-		if !c.AutoUpdate {
-			app.Debug("Auto update is disabled in the config. Bypassing update version check.")
-			return c.Run()
-		}
-		if lastRefresh(autoUpdateFile) < c.AutoUpdateDelay {
-			app.Debug("Less than %v since last check. Bypassing update version check.", c.AutoUpdateDelay.String())
-			return c.Run()
-		}
-	}
-
-	app.Debug("Comparing local and latest versions...")
-	touchImageRefresh(autoUpdateFile)
-
-	latestVersionString := c.UpdateVersion
-	if latestVersionString == "" {
-		fetchedVersion, err := getLatestVersion()
-		if err != nil {
-			printError("Error getting latest version: %v", err)
-			return c.Run()
-		}
-		latestVersionString = fetchedVersion
-	}
-
-	latestVersion, err := semver.Make(latestVersionString)
-	if err != nil {
-		printError("Semver error on retrieved version %s: %v", latestVersionString, err)
+	if !c.ShouldUpdate() {
 		return c.Run()
 	}
 
-	if version != locallyBuilt {
-		currentVersion, err := semver.Make(version)
-		if err != nil {
-			printWarning("Semver error on current version %s: %v", version, err)
-			return c.Run()
-		}
+	c.Debug("Comparing local and latest versions...")
+	c.SetLastRefresh(autoUpdateFile)
+	updateVersion, err := c.GetUpdateVersion()
+	if err != nil {
+		printError("Error fetching update version: %v", err)
+		return c.Run()
+	}
+	latestVersion, err := semver.Make(updateVersion)
+	if err != nil {
+		printError("Semver error on retrieved version %s: %v", latestVersion, err)
+		return c.Run()
+	}
 
-		if currentVersion.GTE(latestVersion) {
-			app.Debug("Your current version (%v) is up to date.", currentVersion)
-			return c.Run()
-		}
-	} else if !app.AutoUpdate {
-		app.Debug("Currently running a locally built version, no update unless explicitly specified.")
+	currentVersion, err := semver.Make(version)
+	if err != nil {
+		printWarning("Semver error on current version %s: %v", version, err)
+		return c.Run()
+	}
+
+	if currentVersion.GTE(latestVersion) {
+		c.Debug("Your current version (%v) is up to date.", currentVersion)
 		return c.Run()
 	}
 
@@ -91,7 +73,7 @@ func (c *TGFConfig) RunWithUpdateCheck(lastRefresh func(image string) time.Durat
 	}
 
 	printWarning("TGF is restarting...")
-	return c.restart()
+	return c.Restart()
 }
 
 func doUpdate(url string) (err error) {
@@ -138,31 +120,4 @@ func getPlatformZipURL(version string) string {
 		name = "macOS"
 	}
 	return fmt.Sprintf("https://github.com/coveo/tgf/releases/download/v%[1]s/tgf_%[1]s_%[2]s_64-bits.zip", version, name)
-}
-
-func getLatestVersion() (string, error) {
-	resp, err := http.Get("https://api.github.com/repos/coveooss/tgf/releases/latest")
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	var jsonResponse map[string]string
-	json.NewDecoder(resp.Body).Decode(&jsonResponse)
-	latestVersion := jsonResponse["tag_name"]
-	if latestVersion == "" {
-		return "", errors.New("Error parsing json response")
-	}
-	return latestVersion[1:], nil
-}
-
-// Restart re runs the app with all the arguments passed
-func (c *TGFConfig) restart() int {
-	cmd := exec.Command(os.Args[0], os.Args[1:]...)
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	if err := cmd.Run(); err != nil {
-		printError("Error on restart: %v", err)
-		return 1
-	}
-	return 0
 }

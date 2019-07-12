@@ -2,10 +2,12 @@ package main
 
 import (
 	"crypto/md5"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/user"
@@ -545,4 +547,71 @@ type VersionMistmatchError string
 
 func (e VersionMistmatchError) Error() string {
 	return string(e)
+}
+
+// Restart re runs the app with all the arguments passed
+func (config *TGFConfig) Restart() int {
+	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	if err := cmd.Run(); err != nil {
+		printError("Error on restart: %v", err)
+		return 1
+	}
+	return 0
+}
+
+// Debug prints debug information
+func (config *TGFConfig) Debug(format string, args ...interface{}) {
+	config.tgf.Debug(format, args...)
+}
+
+// GetUpdateVersion fetches the latest tgf version from the GITHUB_API
+func (config *TGFConfig) GetUpdateVersion() (string, error) {
+	resp, err := http.Get("https://api.github.com/repos/coveooss/tgf/releases/latest")
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var jsonResponse map[string]string
+	json.NewDecoder(resp.Body).Decode(&jsonResponse)
+	latestVersion := jsonResponse["tag_name"]
+	if latestVersion == "" {
+		return "", errors.New("Error parsing json response")
+	}
+	return latestVersion[1:], nil
+}
+
+// ShouldUpdate evaluate wether tgf updater should run or not depending on cli options and config
+func (config *TGFConfig) ShouldUpdate() bool {
+	app := config.tgf
+	if app.AutoUpdateSet {
+		if app.AutoUpdate {
+			app.Debug("Auto update is forced. Checking version...")
+		} else {
+			app.Debug("Auto update is force disabled. Bypassing update version check.")
+			return false
+		}
+	} else {
+		if !config.AutoUpdate {
+			app.Debug("Auto update is disabled in the config. Bypassing update version check.")
+			return false
+		}
+		if config.GetLastRefresh(autoUpdateFile) < config.AutoUpdateDelay {
+			app.Debug("Less than %v since last check. Bypassing update version check.", config.AutoUpdateDelay.String())
+			return false
+		}
+	}
+
+	return true
+}
+
+// GetLastRefresh get the lastime the tgf update file was updated
+func (config *TGFConfig) GetLastRefresh(autoUpdateFile string) time.Duration {
+	return lastRefresh(autoUpdateFile)
+}
+
+// SetLastRefresh set the lastime the tgf update file was updated
+func (config *TGFConfig) SetLastRefresh(autoUpdateFile string) {
+	touchImageRefresh(autoUpdateFile)
 }
