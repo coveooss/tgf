@@ -65,7 +65,6 @@ type TGFConfig struct {
 	UpdateVersion           string            `yaml:"update-version,omitempty" json:"update-version,omitempty" hcl:"update-version,omitempty"`
 	AutoUpdateDelay         time.Duration     `yaml:"auto-update-delay,omitempty" json:"auto-update-delay,omitempty" hcl:"auto-update-delay,omitempty"`
 	AutoUpdate              bool              `yaml:"auto-update,omitempty" json:"auto-update,omitempty" hcl:"auto-update,omitempty"`
-	NoRun                   bool              `yaml:"no-run,omitempty" json:"no-run,omitempty" hcl:"no-run,omitempty"`
 
 	runBeforeCommands, runAfterCommands []string
 	imageBuildConfigs                   []TGFConfigBuild // List of config built from previous build configs
@@ -126,7 +125,6 @@ func InitConfig(app *TGFApplication) *TGFConfig {
 		Refresh:           1 * time.Hour,
 		AutoUpdateDelay:   2 * time.Hour,
 		AutoUpdate:        true,
-		NoRun:             false,
 		EntryPoint:        "terragrunt",
 		LogLevel:          "notice",
 		Environment:       make(map[string]string),
@@ -553,11 +551,6 @@ func (e VersionMistmatchError) Error() string {
 
 // Restart re runs the app with all the arguments passed
 func (config *TGFConfig) Restart() int {
-	if config.NoRun {
-		Println("No restart")
-		return 0
-	}
-	printWarning("TGF is restarting...")
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {
