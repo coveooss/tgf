@@ -12,6 +12,7 @@ func ExampleRunWithUpdateCheck_forcing_no_update_cli() {
 			AutoUpdate:    false,
 			DebugMode:     true,
 		},
+		NoRun: true,
 	}
 
 	ErrPrintf = fmt.Printf
@@ -28,6 +29,7 @@ func ExampleRunWithUpdateCheck_forcing_update_cli_up_to_date() {
 			AutoUpdate:    true,
 			DebugMode:     true,
 		},
+		NoRun: true,
 	}
 
 	version = "1.0.0"
@@ -45,6 +47,7 @@ func ExampleRunWithUpdateCheck_no_update_config() {
 			DebugMode:     true,
 		},
 		AutoUpdate: false,
+		NoRun:      true,
 	}
 
 	version = "1.20.0"
@@ -62,6 +65,7 @@ func ExampleRunWithUpdateCheck_forcing_update_config() {
 		},
 		AutoUpdate:      true,
 		AutoUpdateDelay: 2 * time.Hour,
+		NoRun:           true,
 	}
 
 	version = "1.20.0"

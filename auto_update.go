@@ -72,7 +72,6 @@ func RunWithUpdateCheck(c RunnerUpdater) int {
 		return c.Run()
 	}
 
-	printWarning("TGF is restarting...")
 	return c.Restart()
 }
 
