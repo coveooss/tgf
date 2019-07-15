@@ -102,13 +102,13 @@ func ExampleTGFConfig_ShouldUpdate_forceConfig() {
 			DebugMode:     true,
 		},
 		AutoUpdate:      true,
-		AutoUpdateDelay: 2 * time.Hour,
+		AutoUpdateDelay: 0 * time.Hour,
 	}
 
 	ErrPrintf = fmt.Printf
 	cfg.ShouldUpdate()
 	// Output:
-	// Less than 2h0m0s since last check. Bypassing update version check.
+	// An update is due. Checking version...
 }
 
 func ExampleTGFConfig_ShouldUpdate_forceOffConfig() {

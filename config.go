@@ -552,7 +552,7 @@ func (e VersionMistmatchError) Error() string {
 	return string(e)
 }
 
-// Restart re runs the app with all the arguments passed
+// Restart re-run the app with all the arguments passed
 func (config *TGFConfig) Restart() int {
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
@@ -563,12 +563,12 @@ func (config *TGFConfig) Restart() int {
 	return 0
 }
 
-// Debug prints debug information
+// Debug print debug information with formatting string
 func (config *TGFConfig) Debug(format string, args ...interface{}) {
 	config.tgf.Debug(format, args...)
 }
 
-// GetUpdateVersion fetches the latest tgf version from the GITHUB_API
+// GetUpdateVersion fetches the latest tgf version number from the GITHUB_API
 func (config *TGFConfig) GetUpdateVersion() (string, error) {
 	resp, err := http.Get("https://api.github.com/repos/coveooss/tgf/releases/latest")
 	if err != nil {
@@ -585,7 +585,7 @@ func (config *TGFConfig) GetUpdateVersion() (string, error) {
 	return latestVersion[1:], nil
 }
 
-// ShouldUpdate evaluate wether tgf updater should run or not depending on cli options and config
+// ShouldUpdate evaluate wether tgf updater should run or not depending on cli options and config file
 func (config *TGFConfig) ShouldUpdate() bool {
 	app := config.tgf
 	if app.AutoUpdateSet {
@@ -600,15 +600,19 @@ func (config *TGFConfig) ShouldUpdate() bool {
 			app.Debug("Auto update is disabled in the config. Bypassing update version check.")
 			return false
 		}
+		Println("last ref-> ", config.GetLastRefresh(autoUpdateFile))
 		if config.GetLastRefresh(autoUpdateFile) < config.AutoUpdateDelay {
 			app.Debug("Less than %v since last check. Bypassing update version check.", config.AutoUpdateDelay.String())
 			return false
+		} else {
+			app.Debug("An update is due. Checking version...")
 		}
 	}
 
 	return true
 }
 
+// DoUpdate fetch the executable from the link, unzip it and replace it with the current
 func (config *TGFConfig) DoUpdate(url string) (err error) {
 	// check url
 	if url == "" {

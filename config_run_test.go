@@ -46,6 +46,7 @@ func setup(t *testing.T, testFunction func()) string {
 }
 
 func TestCurrentVersion(t *testing.T) {
+	version = locallyBuilt
 	output := setup(t, func() {
 		app := NewTGFApplication([]string{"--current-version"})
 		exitCode := app.Run()
