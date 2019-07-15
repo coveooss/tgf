@@ -1,6 +1,8 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"crypto/md5"
 	"encoding/json"
 	"errors"
@@ -24,6 +26,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
 	"github.com/hashicorp/go-getter"
+	"github.com/inconshreveable/go-update"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -604,6 +607,44 @@ func (config *TGFConfig) ShouldUpdate() bool {
 	}
 
 	return true
+}
+
+func (config *TGFConfig) DoUpdate(url string) (err error) {
+	// check url
+	if url == "" {
+		return fmt.Errorf("Empty url")
+	}
+
+	// request the new zip file
+	resp, err := http.Get(url)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
+	zipReader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
+	if err != nil {
+		return
+	}
+
+	tgfFile, err := zipReader.File[0].Open()
+	if err != nil {
+		printError("Failed to read new version rollback from bad update: %v", err)
+		return
+	}
+
+	err = update.Apply(tgfFile, update.Options{})
+	if err != nil {
+		if err := update.RollbackError(err); err != nil {
+			printError("Failed to rollback from bad update: %v", err)
+		}
+	}
+	return err
 }
 
 // GetLastRefresh get the lastime the tgf update file was updated

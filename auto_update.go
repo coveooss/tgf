@@ -1,21 +1,18 @@
 package main
 
 import (
-	"archive/zip"
-	"bytes"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"runtime"
 	"time"
 
 	"github.com/blang/semver"
-	"github.com/inconshreveable/go-update"
 )
 
 const locallyBuilt = "(Locally Built)"
 const autoUpdateFile = "TGFAutoUpdate"
+
+//go:generate moq -out runner_updater_moq_test.go . RunnerUpdater
 
 // RunnerUpdater allows flexibility for testing
 type RunnerUpdater interface {
@@ -24,6 +21,7 @@ type RunnerUpdater interface {
 	GetLastRefresh(file string) time.Duration
 	SetLastRefresh(file string)
 	ShouldUpdate() bool
+	DoUpdate(url string) (err error)
 	Run() int
 	Restart() int
 }
@@ -67,51 +65,13 @@ func RunWithUpdateCheck(c RunnerUpdater) int {
 	}
 
 	printWarning("Updating %s from %s ==> %v", executablePath, version, latestVersion)
-	if err := doUpdate(url); err != nil {
+	if err := c.DoUpdate(url); err != nil {
 		printError("Failed update for %s: %v", url, err)
 		return c.Run()
 	}
 
 	printWarning("TGF is restarting...")
 	return c.Restart()
-}
-
-func doUpdate(url string) (err error) {
-	// check url
-	if url == "" {
-		return fmt.Errorf("Empty url")
-	}
-
-	// request the new zip file
-	resp, err := http.Get(url)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
-
-	zipReader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
-	if err != nil {
-		return
-	}
-
-	tgfFile, err := zipReader.File[0].Open()
-	if err != nil {
-		printError("Failed to read new version rollback from bad update: %v", err)
-		return
-	}
-
-	err = update.Apply(tgfFile, update.Options{})
-	if err != nil {
-		if err := update.RollbackError(err); err != nil {
-			printError("Failed to rollback from bad update: %v", err)
-		}
-	}
-	return err
 }
 
 func getPlatformZipURL(version string) string {
