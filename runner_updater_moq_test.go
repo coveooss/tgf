@@ -9,10 +9,10 @@ import (
 )
 
 var (
-	lockRunnerUpdaterMockDebug            sync.RWMutex
 	lockRunnerUpdaterMockDoUpdate         sync.RWMutex
 	lockRunnerUpdaterMockGetLastRefresh   sync.RWMutex
 	lockRunnerUpdaterMockGetUpdateVersion sync.RWMutex
+	lockRunnerUpdaterMockLogDebug         sync.RWMutex
 	lockRunnerUpdaterMockRestart          sync.RWMutex
 	lockRunnerUpdaterMockRun              sync.RWMutex
 	lockRunnerUpdaterMockSetLastRefresh   sync.RWMutex
@@ -29,9 +29,6 @@ var _ RunnerUpdater = &RunnerUpdaterMock{}
 //
 //         // make and configure a mocked RunnerUpdater
 //         mockedRunnerUpdater := &RunnerUpdaterMock{
-//             DebugFunc: func(format string, args ...interface{})  {
-// 	               panic("mock out the Debug method")
-//             },
 //             DoUpdateFunc: func(url string) error {
 // 	               panic("mock out the DoUpdate method")
 //             },
@@ -40,6 +37,9 @@ var _ RunnerUpdater = &RunnerUpdaterMock{}
 //             },
 //             GetUpdateVersionFunc: func() (string, error) {
 // 	               panic("mock out the GetUpdateVersion method")
+//             },
+//             LogDebugFunc: func(format string, args ...interface{})  {
+// 	               panic("mock out the LogDebug method")
 //             },
 //             RestartFunc: func() int {
 // 	               panic("mock out the Restart method")
@@ -60,9 +60,6 @@ var _ RunnerUpdater = &RunnerUpdaterMock{}
 //
 //     }
 type RunnerUpdaterMock struct {
-	// DebugFunc mocks the Debug method.
-	DebugFunc func(format string, args ...interface{})
-
 	// DoUpdateFunc mocks the DoUpdate method.
 	DoUpdateFunc func(url string) error
 
@@ -71,6 +68,9 @@ type RunnerUpdaterMock struct {
 
 	// GetUpdateVersionFunc mocks the GetUpdateVersion method.
 	GetUpdateVersionFunc func() (string, error)
+
+	// LogDebugFunc mocks the LogDebug method.
+	LogDebugFunc func(format string, args ...interface{})
 
 	// RestartFunc mocks the Restart method.
 	RestartFunc func() int
@@ -86,13 +86,6 @@ type RunnerUpdaterMock struct {
 
 	// calls tracks calls to the methods.
 	calls struct {
-		// Debug holds details about calls to the Debug method.
-		Debug []struct {
-			// Format is the format argument value.
-			Format string
-			// Args is the args argument value.
-			Args []interface{}
-		}
 		// DoUpdate holds details about calls to the DoUpdate method.
 		DoUpdate []struct {
 			// URL is the url argument value.
@@ -105,6 +98,13 @@ type RunnerUpdaterMock struct {
 		}
 		// GetUpdateVersion holds details about calls to the GetUpdateVersion method.
 		GetUpdateVersion []struct {
+		}
+		// LogDebug holds details about calls to the LogDebug method.
+		LogDebug []struct {
+			// Format is the format argument value.
+			Format string
+			// Args is the args argument value.
+			Args []interface{}
 		}
 		// Restart holds details about calls to the Restart method.
 		Restart []struct {
@@ -121,41 +121,6 @@ type RunnerUpdaterMock struct {
 		ShouldUpdate []struct {
 		}
 	}
-}
-
-// Debug calls DebugFunc.
-func (mock *RunnerUpdaterMock) Debug(format string, args ...interface{}) {
-	if mock.DebugFunc == nil {
-		panic("RunnerUpdaterMock.DebugFunc: method is nil but RunnerUpdater.Debug was just called")
-	}
-	callInfo := struct {
-		Format string
-		Args   []interface{}
-	}{
-		Format: format,
-		Args:   args,
-	}
-	lockRunnerUpdaterMockDebug.Lock()
-	mock.calls.Debug = append(mock.calls.Debug, callInfo)
-	lockRunnerUpdaterMockDebug.Unlock()
-	mock.DebugFunc(format, args...)
-}
-
-// DebugCalls gets all the calls that were made to Debug.
-// Check the length with:
-//     len(mockedRunnerUpdater.DebugCalls())
-func (mock *RunnerUpdaterMock) DebugCalls() []struct {
-	Format string
-	Args   []interface{}
-} {
-	var calls []struct {
-		Format string
-		Args   []interface{}
-	}
-	lockRunnerUpdaterMockDebug.RLock()
-	calls = mock.calls.Debug
-	lockRunnerUpdaterMockDebug.RUnlock()
-	return calls
 }
 
 // DoUpdate calls DoUpdateFunc.
@@ -243,6 +208,41 @@ func (mock *RunnerUpdaterMock) GetUpdateVersionCalls() []struct {
 	lockRunnerUpdaterMockGetUpdateVersion.RLock()
 	calls = mock.calls.GetUpdateVersion
 	lockRunnerUpdaterMockGetUpdateVersion.RUnlock()
+	return calls
+}
+
+// LogDebug calls LogDebugFunc.
+func (mock *RunnerUpdaterMock) LogDebug(format string, args ...interface{}) {
+	if mock.LogDebugFunc == nil {
+		panic("RunnerUpdaterMock.LogDebugFunc: method is nil but RunnerUpdater.LogDebug was just called")
+	}
+	callInfo := struct {
+		Format string
+		Args   []interface{}
+	}{
+		Format: format,
+		Args:   args,
+	}
+	lockRunnerUpdaterMockLogDebug.Lock()
+	mock.calls.LogDebug = append(mock.calls.LogDebug, callInfo)
+	lockRunnerUpdaterMockLogDebug.Unlock()
+	mock.LogDebugFunc(format, args...)
+}
+
+// LogDebugCalls gets all the calls that were made to LogDebug.
+// Check the length with:
+//     len(mockedRunnerUpdater.LogDebugCalls())
+func (mock *RunnerUpdaterMock) LogDebugCalls() []struct {
+	Format string
+	Args   []interface{}
+} {
+	var calls []struct {
+		Format string
+		Args   []interface{}
+	}
+	lockRunnerUpdaterMockLogDebug.RLock()
+	calls = mock.calls.LogDebug
+	lockRunnerUpdaterMockLogDebug.RUnlock()
 	return calls
 }
 

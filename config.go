@@ -563,8 +563,8 @@ func (config *TGFConfig) Restart() int {
 	return 0
 }
 
-// Debug print debug information with formatting string
-func (config *TGFConfig) Debug(format string, args ...interface{}) {
+// LogDebug print debug information with formatting string
+func (config *TGFConfig) LogDebug(format string, args ...interface{}) {
 	config.tgf.Debug(format, args...)
 }
 
@@ -590,7 +590,12 @@ func (config *TGFConfig) ShouldUpdate() bool {
 	app := config.tgf
 	if app.AutoUpdateSet {
 		if app.AutoUpdate {
-			app.Debug("Auto update is forced. Checking version...")
+			if version == locallyBuilt {
+				version = "0.0.0"
+				app.Debug("Auto update is forced locally. Checking version...")
+			} else {
+				app.Debug("Auto update is forced. Checking version...")
+			}
 		} else {
 			app.Debug("Auto update is force disabled. Bypassing update version check.")
 			return false
@@ -599,12 +604,14 @@ func (config *TGFConfig) ShouldUpdate() bool {
 		if !config.AutoUpdate {
 			app.Debug("Auto update is disabled in the config. Bypassing update version check.")
 			return false
-		}
-		Println("last ref-> ", config.GetLastRefresh(autoUpdateFile))
-		if config.GetLastRefresh(autoUpdateFile) < config.AutoUpdateDelay {
+		} else if config.GetLastRefresh(autoUpdateFile) < config.AutoUpdateDelay {
 			app.Debug("Less than %v since last check. Bypassing update version check.", config.AutoUpdateDelay.String())
 			return false
 		} else {
+			if version == locallyBuilt {
+				app.Debug("Running locally. Bypassing update version check.")
+				return false
+			}
 			app.Debug("An update is due. Checking version...")
 		}
 	}

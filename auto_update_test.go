@@ -12,7 +12,7 @@ func TestAutoUpdateLower(t *testing.T) {
 	version = "1.20.0" // local version
 	mockUpdater := &RunnerUpdaterMock{
 		GetUpdateVersionFunc: func() (string, error) { return "1.21.0", nil }, // Remote version
-		DebugFunc:            func(format string, args ...interface{}) {},
+		LogDebugFunc:         func(format string, args ...interface{}) {},
 		GetLastRefreshFunc:   func(string) time.Duration { return 0 * time.Hour }, // Force update
 		SetLastRefreshFunc:   func(string) {},
 		ShouldUpdateFunc:     func() bool { return true },
@@ -23,7 +23,7 @@ func TestAutoUpdateLower(t *testing.T) {
 
 	RunWithUpdateCheck(mockUpdater)
 
-	call := mockUpdater.DebugCalls()[0]
+	call := mockUpdater.LogDebugCalls()[0]
 	assert.Equal(t, "Comparing local and latest versions...", call.Format)
 }
 
@@ -31,7 +31,7 @@ func TestAutoUpdateEqual(t *testing.T) {
 	version = "1.21.0" // local version
 	mockUpdater := &RunnerUpdaterMock{
 		GetUpdateVersionFunc: func() (string, error) { return "1.21.0", nil }, // Remote version
-		DebugFunc:            func(format string, args ...interface{}) {},
+		LogDebugFunc:         func(format string, args ...interface{}) {},
 		GetLastRefreshFunc:   func(string) time.Duration { return 0 * time.Hour }, // Force update
 		SetLastRefreshFunc:   func(string) {},
 		ShouldUpdateFunc:     func() bool { return true },
@@ -42,7 +42,7 @@ func TestAutoUpdateEqual(t *testing.T) {
 
 	RunWithUpdateCheck(mockUpdater)
 
-	call := mockUpdater.DebugCalls()[1]
+	call := mockUpdater.LogDebugCalls()[1]
 	assert.Equal(t, "Your current version (%v) is up to date.", call.Format)
 }
 
@@ -50,7 +50,7 @@ func TestAutoUpdateHigher(t *testing.T) {
 	version = "1.21.0" // local version
 	mockUpdater := &RunnerUpdaterMock{
 		GetUpdateVersionFunc: func() (string, error) { return "1.20.0", nil }, // Remote version
-		DebugFunc:            func(format string, args ...interface{}) {},
+		LogDebugFunc:         func(format string, args ...interface{}) {},
 		GetLastRefreshFunc:   func(string) time.Duration { return 0 * time.Hour }, // Force update
 		SetLastRefreshFunc:   func(string) {},
 		ShouldUpdateFunc:     func() bool { return true },
@@ -61,11 +61,25 @@ func TestAutoUpdateHigher(t *testing.T) {
 
 	RunWithUpdateCheck(mockUpdater)
 
-	call := mockUpdater.DebugCalls()[1]
+	call := mockUpdater.LogDebugCalls()[1]
 	assert.Equal(t, "Your current version (%v) is up to date.", call.Format)
 }
 
-func ExampleTGFConfig_ShouldUpdate_forceCli() {
+func ExampleTGFConfig_ShouldUpdate_forceConfiglocal() {
+	cfg := &TGFConfig{
+		tgf: &TGFApplication{
+			DebugMode: true,
+		},
+		AutoUpdate: true,
+	}
+
+	ErrPrintf = fmt.Printf
+	cfg.ShouldUpdate()
+	// Output:
+	// Running locally. Bypassing update version check.
+}
+
+func ExampleTGFConfig_ShouldUpdate_forceCliLocal() {
 	cfg := &TGFConfig{
 		tgf: &TGFApplication{
 			AutoUpdateSet: true,
@@ -77,7 +91,7 @@ func ExampleTGFConfig_ShouldUpdate_forceCli() {
 	ErrPrintf = fmt.Printf
 	cfg.ShouldUpdate()
 	// Output:
-	// Auto update is forced. Checking version...
+	// Auto update is forced locally. Checking version...
 }
 
 func ExampleTGFConfig_ShouldUpdate_forceOffCli() {
@@ -96,6 +110,7 @@ func ExampleTGFConfig_ShouldUpdate_forceOffCli() {
 }
 
 func ExampleTGFConfig_ShouldUpdate_forceConfig() {
+	version = "1.1.1"
 	cfg := &TGFConfig{
 		tgf: &TGFApplication{
 			AutoUpdateSet: false,

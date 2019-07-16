@@ -16,7 +16,7 @@ const autoUpdateFile = "TGFAutoUpdate"
 
 // RunnerUpdater allows flexibility for testing
 type RunnerUpdater interface {
-	Debug(format string, args ...interface{})
+	LogDebug(format string, args ...interface{})
 	GetUpdateVersion() (string, error)
 	GetLastRefresh(file string) time.Duration
 	SetLastRefresh(file string)
@@ -28,12 +28,11 @@ type RunnerUpdater interface {
 
 // RunWithUpdateCheck checks if an update is due, checks if current version is outdated and performs update if needed
 func RunWithUpdateCheck(c RunnerUpdater) int {
-
 	if !c.ShouldUpdate() {
 		return c.Run()
 	}
 
-	c.Debug("Comparing local and latest versions...")
+	c.LogDebug("Comparing local and latest versions...")
 	c.SetLastRefresh(autoUpdateFile)
 	updateVersion, err := c.GetUpdateVersion()
 	if err != nil {
@@ -53,7 +52,7 @@ func RunWithUpdateCheck(c RunnerUpdater) int {
 	}
 
 	if currentVersion.GTE(latestVersion) {
-		c.Debug("Your current version (%v) is up to date.", currentVersion)
+		c.LogDebug("Your current version (%v) is up to date.", currentVersion)
 		return c.Run()
 	}
 
