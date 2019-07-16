@@ -69,6 +69,7 @@ func RunWithUpdateCheck(c RunnerUpdater) int {
 		return c.Run()
 	}
 
+	c.LogDebug("TGF updated to %v", latestVersion)
 	printWarning("TGF is restarting...")
 	return c.Restart()
 }

@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAutoUpdateLower(t *testing.T) {
-	version = "1.20.0" // local version
+func setupUpdaterMock(localVersion string, latestVersion string) *RunnerUpdaterMock {
+	version = localVersion
 	mockUpdater := &RunnerUpdaterMock{
-		GetUpdateVersionFunc: func() (string, error) { return "1.21.0", nil }, // Remote version
+		GetUpdateVersionFunc: func() (string, error) { return latestVersion, nil }, // Remote version
 		LogDebugFunc:         func(format string, args ...interface{}) {},
 		GetLastRefreshFunc:   func(string) time.Duration { return 0 * time.Hour }, // Force update
 		SetLastRefreshFunc:   func(string) {},
@@ -21,48 +21,40 @@ func TestAutoUpdateLower(t *testing.T) {
 		DoUpdateFunc:         func(url string) (err error) { return nil },
 	}
 
-	RunWithUpdateCheck(mockUpdater)
+	return mockUpdater
+}
 
-	call := mockUpdater.LogDebugCalls()[0]
-	assert.Equal(t, "Comparing local and latest versions...", call.Format)
+func (mockUpdater *RunnerUpdaterMock) LogDebugCalledWith(arg string) bool {
+	for _, call := range mockUpdater.LogDebugCalls() {
+		if call.Format == arg {
+			return true
+		}
+	}
+	return false
+}
+
+func TestAutoUpdateLower(t *testing.T) {
+	mockUpdater := setupUpdaterMock("1.20.0", "1.21.0")
+	RunWithUpdateCheck(mockUpdater)
+	assert.True(t, mockUpdater.LogDebugCalledWith("TGF updated to %v"), `"TGF updated" never logged`)
+	assert.Equal(t, len(mockUpdater.RunCalls()), 0, "Auto update bypassed")
+	assert.NotEqual(t, len(mockUpdater.RestartCalls()), 0, "Application did not restart")
 }
 
 func TestAutoUpdateEqual(t *testing.T) {
-	version = "1.21.0" // local version
-	mockUpdater := &RunnerUpdaterMock{
-		GetUpdateVersionFunc: func() (string, error) { return "1.21.0", nil }, // Remote version
-		LogDebugFunc:         func(format string, args ...interface{}) {},
-		GetLastRefreshFunc:   func(string) time.Duration { return 0 * time.Hour }, // Force update
-		SetLastRefreshFunc:   func(string) {},
-		ShouldUpdateFunc:     func() bool { return true },
-		RunFunc:              func() int { return 0 },
-		RestartFunc:          func() int { return 0 },
-		DoUpdateFunc:         func(url string) (err error) { return nil },
-	}
-
+	mockUpdater := setupUpdaterMock("1.21.0", "1.21.0")
 	RunWithUpdateCheck(mockUpdater)
-
-	call := mockUpdater.LogDebugCalls()[1]
-	assert.Equal(t, "Your current version (%v) is up to date.", call.Format)
+	assert.True(t, mockUpdater.LogDebugCalledWith("Your current version (%v) is up to date."), `"TGF updated" never logged`)
+	assert.NotEqual(t, len(mockUpdater.RunCalls()), 0, "Auto update was not bypassed")
+	assert.Equal(t, len(mockUpdater.RestartCalls()), 0, "Application was restarted")
 }
 
 func TestAutoUpdateHigher(t *testing.T) {
-	version = "1.21.0" // local version
-	mockUpdater := &RunnerUpdaterMock{
-		GetUpdateVersionFunc: func() (string, error) { return "1.20.0", nil }, // Remote version
-		LogDebugFunc:         func(format string, args ...interface{}) {},
-		GetLastRefreshFunc:   func(string) time.Duration { return 0 * time.Hour }, // Force update
-		SetLastRefreshFunc:   func(string) {},
-		ShouldUpdateFunc:     func() bool { return true },
-		RunFunc:              func() int { return 0 },
-		RestartFunc:          func() int { return 0 },
-		DoUpdateFunc:         func(url string) (err error) { return nil },
-	}
-
+	mockUpdater := setupUpdaterMock("1.21.0", "1.20.0")
 	RunWithUpdateCheck(mockUpdater)
-
-	call := mockUpdater.LogDebugCalls()[1]
-	assert.Equal(t, "Your current version (%v) is up to date.", call.Format)
+	assert.True(t, mockUpdater.LogDebugCalledWith("Your current version (%v) is up to date."), `"TGF updated" never logged`)
+	assert.NotEqual(t, len(mockUpdater.RunCalls()), 0, "Auto update was not bypassed")
+	assert.Equal(t, len(mockUpdater.RestartCalls()), 0, "Application was restarted")
 }
 
 func ExampleTGFConfig_ShouldUpdate_forceConfiglocal() {
