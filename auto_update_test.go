@@ -57,7 +57,34 @@ func TestAutoUpdateHigher(t *testing.T) {
 	assert.Equal(t, len(mockUpdater.RestartCalls()), 0, "Application was restarted")
 }
 
+func ExampleRunWithUpdateCheck_githubApiError() {
+	mockUpdater := setupUpdaterMock("1.20.0", "1.21.0")
+	mockUpdater.GetUpdateVersionFunc = func() (string, error) { return "", fmt.Errorf("API error") }
+	ErrPrintln = fmt.Println
+	RunWithUpdateCheck(mockUpdater)
+	// Output:
+	// Error fetching update version: API error
+}
+
+func ExampleRunWithUpdateCheck_githubApiBadVersionString() {
+	mockUpdater := setupUpdaterMock("1.20.0", "not a number")
+	ErrPrintln = fmt.Println
+	RunWithUpdateCheck(mockUpdater)
+	// Output:
+	// Semver error on retrieved version "not a number" : No Major.Minor.Patch elements found
+}
+
+func ExampleRunWithUpdateCheck_badVersionStringLocal() {
+	mockUpdater := setupUpdaterMock("not a number", "1.21.0")
+	ErrPrintln = fmt.Println
+	RunWithUpdateCheck(mockUpdater)
+	// Output:
+	// Semver error on current version "not a number": No Major.Minor.Patch elements found
+
+}
+
 func ExampleTGFConfig_ShouldUpdate_forceConfiglocal() {
+	version = locallyBuilt
 	cfg := &TGFConfig{
 		tgf: &TGFApplication{
 			DebugMode: true,
@@ -72,6 +99,7 @@ func ExampleTGFConfig_ShouldUpdate_forceConfiglocal() {
 }
 
 func ExampleTGFConfig_ShouldUpdate_forceCliLocal() {
+	version = locallyBuilt
 	cfg := &TGFConfig{
 		tgf: &TGFApplication{
 			AutoUpdateSet: true,

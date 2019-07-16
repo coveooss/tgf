@@ -41,13 +41,13 @@ func RunWithUpdateCheck(c RunnerUpdater) int {
 	}
 	latestVersion, err := semver.Make(updateVersion)
 	if err != nil {
-		printError("Semver error on retrieved version %s: %v", latestVersion, err)
+		printError(`Semver error on retrieved version "%s" : %v`, updateVersion, err)
 		return c.Run()
 	}
 
 	currentVersion, err := semver.Make(version)
 	if err != nil {
-		printWarning("Semver error on current version %s: %v", version, err)
+		printWarning(`Semver error on current version "%s": %v`, version, err)
 		return c.Run()
 	}
 
