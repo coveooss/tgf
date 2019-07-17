@@ -354,6 +354,12 @@ func TestTGFConfig_parseRequest(t *testing.T) {
 	ts := setupServer(t)
 	defer ts.Close()
 
+	zipErrorMsg,
+		http400ErrorMsg,
+		http404ErrorMsg := "zip: not a valid zip file",
+		"HTTP status error 400",
+		"HTTP status error 404"
+
 	type args struct {
 		url string
 	}
@@ -361,8 +367,7 @@ func TestTGFConfig_parseRequest(t *testing.T) {
 		name        string
 		args        args
 		wantTgfFile bool
-		wantErr     bool
-		wantErrMsg  string
+		wantErrMsg  *string
 	}{
 		{
 			name: "Non-zip body",
@@ -370,8 +375,7 @@ func TestTGFConfig_parseRequest(t *testing.T) {
 				url: ts.URL + "/invalid/zip",
 			},
 			wantTgfFile: false,
-			wantErr:     true,
-			wantErrMsg:  "zip: not a valid zip file",
+			wantErrMsg:  &zipErrorMsg,
 		},
 		{
 			name: "Valid zip body",
@@ -379,7 +383,7 @@ func TestTGFConfig_parseRequest(t *testing.T) {
 				url: ts.URL + "/valid/zip",
 			},
 			wantTgfFile: true,
-			wantErr:     false,
+			wantErrMsg:  nil,
 		},
 		{
 			name: "HTTP Get error",
@@ -387,8 +391,7 @@ func TestTGFConfig_parseRequest(t *testing.T) {
 				url: ts.URL + "/error",
 			},
 			wantTgfFile: false,
-			wantErr:     true,
-			wantErrMsg:  "HTTP status error 400",
+			wantErrMsg:  &http400ErrorMsg,
 		},
 
 		{
@@ -397,8 +400,7 @@ func TestTGFConfig_parseRequest(t *testing.T) {
 				url: ts.URL + "/",
 			},
 			wantTgfFile: false,
-			wantErr:     true,
-			wantErrMsg:  "HTTP status error 404",
+			wantErrMsg:  &http404ErrorMsg,
 		},
 		// TODO: Add test cases.
 	}
@@ -406,12 +408,10 @@ func TestTGFConfig_parseRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &TGFConfig{}
 			gotTgfFile, err := config.getTgfFile(tt.args.url)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("TGFConfig.parseRequest() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if tt.wantErr {
-				assert.EqualError(t, err, tt.wantErrMsg)
+			if tt.wantErrMsg != nil {
+				assert.EqualError(t, err, *tt.wantErrMsg)
+			} else {
+				assert.Nil(t, err)
 			}
 			if (gotTgfFile != nil) != tt.wantTgfFile {
 				t.Errorf("TGFConfig.parseRequest() gotTgfFile = %v, want %v", gotTgfFile, tt.wantTgfFile)
