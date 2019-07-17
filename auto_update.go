@@ -56,7 +56,7 @@ func RunWithUpdateCheck(c RunnerUpdater) int {
 		return c.Run()
 	}
 
-	url := getPlatformZipURL(latestVersion.String())
+	url := PlatformZipURL(latestVersion.String())
 
 	executablePath, err := os.Executable()
 	if err != nil {
@@ -74,7 +74,8 @@ func RunWithUpdateCheck(c RunnerUpdater) int {
 	return c.Restart()
 }
 
-func getPlatformZipURL(version string) string {
+// PlatformZipURL compute the uri pointing at the given version of tgf zip
+func PlatformZipURL(version string) string {
 	name := runtime.GOOS
 	if name == "darwin" {
 		name = "macOS"

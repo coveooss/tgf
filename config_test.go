@@ -1,9 +1,12 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -298,4 +301,81 @@ func randInt() int {
 	source := rand.NewSource(time.Now().UnixNano())
 	random := rand.New(source)
 	return random.Int()
+}
+
+func createMockTgfZip() (*bytes.Reader, error) {
+	// Create a buffer to write our archive to.
+	buf := new(bytes.Buffer)
+
+	// Create a new zip archive.
+	zipWriter := zip.NewWriter(buf)
+
+	zipFile, err := zipWriter.Create("tgf")
+	if err != nil {
+		return nil, err
+	}
+	_, err = zipFile.Write([]byte("binary body"))
+	if err != nil {
+		return nil, err
+	}
+
+	// Make sure to check the error on Close.
+	err = zipWriter.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	//write the zipped file to the disk
+	return bytes.NewReader(buf.Bytes()), nil
+}
+
+func TestTGFConfig_parseRequest(t *testing.T) {
+	zipFileReader, err := createMockTgfZip()
+	if err != nil {
+		t.Errorf("Error creating mock tgf Zip: %v", err)
+	}
+	type args struct {
+		resp *http.Response
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantTgfFile bool
+		wantErr     bool
+	}{
+		{
+			name: "Non-zip body",
+			args: args{
+				resp: &http.Response{
+					Body: ioutil.NopCloser(bytes.NewBufferString("not a zip")),
+				},
+			},
+			wantTgfFile: false,
+			wantErr:     true,
+		},
+		{
+			name: "Valid zip body",
+			args: args{
+				resp: &http.Response{
+					Body: ioutil.NopCloser(zipFileReader),
+				},
+			},
+			wantTgfFile: true,
+			wantErr:     false,
+		},
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &TGFConfig{}
+			gotTgfFile, err := config.parseRequest(tt.args.resp)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("TGFConfig.parseRequest() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if (gotTgfFile != nil) != tt.wantTgfFile {
+				t.Errorf("TGFConfig.parseRequest() gotTgfFile = %v, want %v", gotTgfFile, tt.wantTgfFile)
+			}
+		})
+	}
 }

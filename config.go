@@ -619,18 +619,8 @@ func (config *TGFConfig) ShouldUpdate() bool {
 	return true
 }
 
-// DoUpdate fetch the executable from the link, unzip it and replace it with the current
-func (config *TGFConfig) DoUpdate(url string) (err error) {
-	// check url
-	if url == "" {
-		return fmt.Errorf("Empty url")
-	}
-
+func (config *TGFConfig) parseRequest(resp *http.Response) (tgfFile io.ReadCloser, err error) {
 	// request the new zip file
-	resp, err := http.Get(url)
-	if err != nil {
-		return
-	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -643,19 +633,32 @@ func (config *TGFConfig) DoUpdate(url string) (err error) {
 		return
 	}
 
-	tgfFile, err := zipReader.File[0].Open()
+	tgfFile, err = zipReader.File[0].Open()
 	if err != nil {
 		printError("Failed to read new version rollback from bad update: %v", err)
 		return
 	}
+	return
+}
 
+// DoUpdate fetch the executable from the link, unzip it and replace it with the current
+func (config *TGFConfig) DoUpdate(url string) (err error) {
+	// request the new zip file
+	resp, err := http.Get(url)
+	if err != nil {
+		return
+	}
+	tgfFile, err := config.parseRequest(resp)
+	if err != nil {
+		return
+	}
 	err = update.Apply(tgfFile, update.Options{})
 	if err != nil {
 		if err := update.RollbackError(err); err != nil {
 			printError("Failed to rollback from bad update: %v", err)
 		}
 	}
-	return err
+	return
 }
 
 // GetLastRefresh get the lastime the tgf update file was updated
