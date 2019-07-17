@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
 	"path/filepath"
@@ -303,8 +304,8 @@ func randInt() int {
 	return random.Int()
 }
 
-func createMockTgfZip() (*bytes.Reader, error) {
-	// Create a buffer to write our archive to.
+func createMockTgfZip() ([]byte, error) {
+	// Create a buffer to write archive.
 	buf := new(bytes.Buffer)
 
 	// Create a new zip archive.
@@ -325,53 +326,92 @@ func createMockTgfZip() (*bytes.Reader, error) {
 		return nil, err
 	}
 
-	//write the zipped file to the disk
-	return bytes.NewReader(buf.Bytes()), nil
+	return buf.Bytes(), nil
+}
+
+func setupServer(t *testing.T) *httptest.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/valid/zip", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fakeTgfZip, err := createMockTgfZip()
+		if err != nil {
+			t.Errorf("Error creating mock tgf Zip: %v", err)
+		}
+		w.Write(fakeTgfZip)
+	}))
+	mux.HandleFunc("/invalid/zip", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Not a zip file"))
+	}))
+	mux.HandleFunc("/error", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Bad request - Go away!", 400)
+	}))
+
+	ts := httptest.NewServer(mux)
+
+	return ts
 }
 
 func TestTGFConfig_parseRequest(t *testing.T) {
-	zipFileReader, err := createMockTgfZip()
-	if err != nil {
-		t.Errorf("Error creating mock tgf Zip: %v", err)
-	}
+	ts := setupServer(t)
+	defer ts.Close()
+
 	type args struct {
-		resp *http.Response
+		url string
 	}
 	tests := []struct {
 		name        string
 		args        args
 		wantTgfFile bool
 		wantErr     bool
+		wantErrMsg  string
 	}{
 		{
 			name: "Non-zip body",
 			args: args{
-				resp: &http.Response{
-					Body: ioutil.NopCloser(bytes.NewBufferString("not a zip")),
-				},
+				url: ts.URL + "/invalid/zip",
 			},
 			wantTgfFile: false,
 			wantErr:     true,
+			wantErrMsg:  "zip: not a valid zip file",
 		},
 		{
 			name: "Valid zip body",
 			args: args{
-				resp: &http.Response{
-					Body: ioutil.NopCloser(zipFileReader),
-				},
+				url: ts.URL + "/valid/zip",
 			},
 			wantTgfFile: true,
 			wantErr:     false,
+		},
+		{
+			name: "HTTP Get error",
+			args: args{
+				url: ts.URL + "/error",
+			},
+			wantTgfFile: false,
+			wantErr:     true,
+			wantErrMsg:  "HTTP status error 400",
+		},
+
+		{
+			name: "404 error",
+			args: args{
+				url: ts.URL + "/",
+			},
+			wantTgfFile: false,
+			wantErr:     true,
+			wantErrMsg:  "HTTP status error 404",
 		},
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &TGFConfig{}
-			gotTgfFile, err := config.parseRequest(tt.args.resp)
+			gotTgfFile, err := config.getTgfFile(tt.args.url)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("TGFConfig.parseRequest() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if tt.wantErr {
+				assert.EqualError(t, err, tt.wantErrMsg)
 			}
 			if (gotTgfFile != nil) != tt.wantTgfFile {
 				t.Errorf("TGFConfig.parseRequest() gotTgfFile = %v, want %v", gotTgfFile, tt.wantTgfFile)

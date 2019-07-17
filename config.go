@@ -619,8 +619,15 @@ func (config *TGFConfig) ShouldUpdate() bool {
 	return true
 }
 
-func (config *TGFConfig) parseRequest(resp *http.Response) (tgfFile io.ReadCloser, err error) {
+func (config *TGFConfig) getTgfFile(url string) (tgfFile io.ReadCloser, err error) {
 	// request the new zip file
+	resp, err := http.Get(url)
+	if err != nil {
+		return
+	} else if resp.StatusCode != 200 {
+		err = fmt.Errorf("HTTP status error %v", resp.StatusCode)
+		return
+	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -643,12 +650,7 @@ func (config *TGFConfig) parseRequest(resp *http.Response) (tgfFile io.ReadClose
 
 // DoUpdate fetch the executable from the link, unzip it and replace it with the current
 func (config *TGFConfig) DoUpdate(url string) (err error) {
-	// request the new zip file
-	resp, err := http.Get(url)
-	if err != nil {
-		return
-	}
-	tgfFile, err := config.parseRequest(resp)
+	tgfFile, err := config.getTgfFile(url)
 	if err != nil {
 		return
 	}
