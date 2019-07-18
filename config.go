@@ -1,11 +1,15 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"crypto/md5"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/user"
@@ -22,6 +26,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/gruntwork-io/terragrunt/aws_helper"
 	"github.com/hashicorp/go-getter"
+	"github.com/inconshreveable/go-update"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -60,6 +65,9 @@ type TGFConfig struct {
 	RunBefore               string            `yaml:"run-before,omitempty" json:"run-before,omitempty" hcl:"run-before,omitempty"`
 	RunAfter                string            `yaml:"run-after,omitempty" json:"run-after,omitempty" hcl:"run-after,omitempty"`
 	Aliases                 map[string]string `yaml:"alias,omitempty" json:"alias,omitempty" hcl:"alias,omitempty"`
+	UpdateVersion           string            `yaml:"update-version,omitempty" json:"update-version,omitempty" hcl:"update-version,omitempty"`
+	AutoUpdateDelay         time.Duration     `yaml:"auto-update-delay,omitempty" json:"auto-update-delay,omitempty" hcl:"auto-update-delay,omitempty"`
+	AutoUpdate              bool              `yaml:"auto-update,omitempty" json:"auto-update,omitempty" hcl:"auto-update,omitempty"`
 
 	runBeforeCommands, runAfterCommands []string
 	imageBuildConfigs                   []TGFConfigBuild // List of config built from previous build configs
@@ -118,6 +126,8 @@ func InitConfig(app *TGFApplication) *TGFConfig {
 	config := TGFConfig{Image: "coveo/tgf",
 		tgf:               app,
 		Refresh:           1 * time.Hour,
+		AutoUpdateDelay:   2 * time.Hour,
+		AutoUpdate:        true,
 		EntryPoint:        "terragrunt",
 		LogLevel:          "notice",
 		Environment:       make(map[string]string),
@@ -268,7 +278,7 @@ func (config *TGFConfig) validate() (errors []error) {
 		errors = append(errors, ConfigWarning(fmt.Sprintf("Image tag parameter should not contain the image name: %s", *config.ImageTag)))
 	}
 
-	if config.RecommendedTGFVersion != "" {
+	if config.RecommendedTGFVersion != "" && version != locallyBuilt {
 		if valid, err := CheckVersionRange(version, config.RecommendedTGFVersion); err != nil {
 			errors = append(errors, fmt.Errorf("Unable to check recommended tgf version %s vs %s: %v", version, config.RecommendedTGFVersion, err))
 		} else if !valid {
@@ -540,4 +550,125 @@ type VersionMistmatchError string
 
 func (e VersionMistmatchError) Error() string {
 	return string(e)
+}
+
+// Restart re-run the app with all the arguments passed
+func (config *TGFConfig) Restart() int {
+	cmd := exec.Command(os.Args[0], os.Args[1:]...)
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+	if err := cmd.Run(); err != nil {
+		printError("Error on restart: %v", err)
+		return 1
+	}
+	return 0
+}
+
+// LogDebug print debug information with formatting string
+func (config *TGFConfig) LogDebug(format string, args ...interface{}) {
+	config.tgf.Debug(format, args...)
+}
+
+// GetUpdateVersion fetches the latest tgf version number from the GITHUB_API
+func (config *TGFConfig) GetUpdateVersion() (string, error) {
+	resp, err := http.Get("https://api.github.com/repos/coveooss/tgf/releases/latest")
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var jsonResponse map[string]string
+	json.NewDecoder(resp.Body).Decode(&jsonResponse)
+	latestVersion := jsonResponse["tag_name"]
+	if latestVersion == "" {
+		return "", errors.New("Error parsing json response")
+	}
+	return latestVersion[1:], nil
+}
+
+// ShouldUpdate evaluate wether tgf updater should run or not depending on cli options and config file
+func (config *TGFConfig) ShouldUpdate() bool {
+	app := config.tgf
+	if app.AutoUpdateSet {
+		if app.AutoUpdate {
+			if version == locallyBuilt {
+				version = "0.0.0"
+				app.Debug("Auto update is forced locally. Checking version...")
+			} else {
+				app.Debug("Auto update is forced. Checking version...")
+			}
+		} else {
+			app.Debug("Auto update is force disabled. Bypassing update version check.")
+			return false
+		}
+	} else {
+		if !config.AutoUpdate {
+			app.Debug("Auto update is disabled in the config. Bypassing update version check.")
+			return false
+		} else if config.GetLastRefresh(autoUpdateFile) < config.AutoUpdateDelay {
+			app.Debug("Less than %v since last check. Bypassing update version check.", config.AutoUpdateDelay.String())
+			return false
+		} else {
+			if version == locallyBuilt {
+				app.Debug("Running locally. Bypassing update version check.")
+				return false
+			}
+			app.Debug("An update is due. Checking version...")
+		}
+	}
+
+	return true
+}
+
+func (config *TGFConfig) getTgfFile(url string) (tgfFile io.ReadCloser, err error) {
+	// request the new zip file
+	resp, err := http.Get(url)
+	if err != nil {
+		return
+	} else if resp.StatusCode != 200 {
+		err = fmt.Errorf("HTTP status error %v", resp.StatusCode)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+
+	zipReader, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
+	if err != nil {
+		return
+	}
+
+	tgfFile, err = zipReader.File[0].Open()
+	if err != nil {
+		printError("Failed to read new version rollback from bad update: %v", err)
+		return
+	}
+	return
+}
+
+// DoUpdate fetch the executable from the link, unzip it and replace it with the current
+func (config *TGFConfig) DoUpdate(url string) (err error) {
+	tgfFile, err := config.getTgfFile(url)
+	if err != nil {
+		return
+	}
+	err = update.Apply(tgfFile, update.Options{})
+	if err != nil {
+		if err := update.RollbackError(err); err != nil {
+			printError("Failed to rollback from bad update: %v", err)
+		}
+	}
+	return
+}
+
+// GetLastRefresh get the lastime the tgf update file was updated
+func (config *TGFConfig) GetLastRefresh(autoUpdateFile string) time.Duration {
+	return lastRefresh(autoUpdateFile)
+}
+
+// SetLastRefresh set the lastime the tgf update file was updated
+func (config *TGFConfig) SetLastRefresh(autoUpdateFile string) {
+	touchImageRefresh(autoUpdateFile)
 }

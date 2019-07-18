@@ -1,9 +1,13 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
 	"path/filepath"
@@ -258,6 +262,69 @@ func TestIsPartialVersion(t *testing.T) {
 	}
 }
 
+func TestTGFConfig_parseRequest(t *testing.T) {
+	ts := setupServer(t)
+	defer ts.Close()
+
+	type args struct {
+		url string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantTgfFile bool
+		wantErrMsg  *string
+	}{
+		{
+			name: "Non-zip body",
+			args: args{
+				url: ts.URL + "/invalid/zip",
+			},
+			wantTgfFile: false,
+			wantErrMsg:  aws.String("zip: not a valid zip file"),
+		},
+		{
+			name: "Valid zip body",
+			args: args{
+				url: ts.URL + "/valid/zip",
+			},
+			wantTgfFile: true,
+			wantErrMsg:  nil,
+		},
+		{
+			name: "HTTP Get error",
+			args: args{
+				url: ts.URL + "/error",
+			},
+			wantTgfFile: false,
+			wantErrMsg:  aws.String("HTTP status error 400"),
+		},
+
+		{
+			name: "404 error",
+			args: args{
+				url: ts.URL + "/",
+			},
+			wantTgfFile: false,
+			wantErrMsg:  aws.String("HTTP status error 404"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &TGFConfig{}
+			gotTgfFile, err := config.getTgfFile(tt.args.url)
+			if tt.wantErrMsg != nil {
+				assert.EqualError(t, err, *tt.wantErrMsg)
+			} else {
+				assert.Nil(t, err)
+			}
+			if (gotTgfFile != nil) != tt.wantTgfFile {
+				t.Errorf("TGFConfig.parseRequest() gotTgfFile = %v, want %v", gotTgfFile, tt.wantTgfFile)
+			}
+		})
+	}
+}
+
 func writeSSMConfig(parameterFolder, parameterKey, parameterValue string) {
 	fullParameterKey := fmt.Sprintf("%s/%s", parameterFolder, parameterKey)
 	client := getSSMClient()
@@ -298,4 +365,50 @@ func randInt() int {
 	source := rand.NewSource(time.Now().UnixNano())
 	random := rand.New(source)
 	return random.Int()
+}
+
+func createMockTgfZip() ([]byte, error) {
+	// Create a buffer to write archive.
+	buf := new(bytes.Buffer)
+
+	// Create a new zip archive.
+	zipWriter := zip.NewWriter(buf)
+
+	zipFile, err := zipWriter.Create("tgf")
+	if err != nil {
+		return nil, err
+	}
+	_, err = zipFile.Write([]byte("binary body"))
+	if err != nil {
+		return nil, err
+	}
+
+	// Make sure to check the error on Close.
+	err = zipWriter.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func setupServer(t *testing.T) *httptest.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/valid/zip", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fakeTgfZip, err := createMockTgfZip()
+		if err != nil {
+			t.Errorf("Error creating mock tgf Zip: %v", err)
+		}
+		w.Write(fakeTgfZip)
+	}))
+	mux.HandleFunc("/invalid/zip", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Not a zip file"))
+	}))
+	mux.HandleFunc("/error", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Bad request - Go away!", 400)
+	}))
+
+	ts := httptest.NewServer(mux)
+
+	return ts
 }
