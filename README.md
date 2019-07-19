@@ -46,7 +46,7 @@ curl https://raw.githubusercontent.com/coveooss/tgf/master/get-latest-tgf.sh | b
 On `Windows` with Powershell:
 
 ```batch
-curl https://raw.githubusercontent.com/coveooss/tgf/feature/dt-1848-windows-upate-script/get-latest-tgf.bat > get.bat && get & del get.bat
+curl https://raw.githubusercontent.com/coveooss/tgf/master/get-latest-tgf.bat > get.bat && get & del get.bat
 ```
 
 ## Configuration
