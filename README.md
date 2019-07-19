@@ -45,9 +45,8 @@ curl https://raw.githubusercontent.com/coveooss/tgf/master/get-latest-tgf.sh | b
 
 On `Windows` with Powershell:
 
-```powershell
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest https://github.com/coveooss/tgf/releases/download/v1.20.2/tgf_1.20.2_windows_64-bits.zip -OutFile tgf.zip
+```batch
+curl https://raw.githubusercontent.com/coveooss/tgf/feature/dt-1848-windows-upate-script/get-latest-tgf.bat > get.bat && get & del get.bat
 ```
 
 ## Configuration
