@@ -45,8 +45,8 @@ curl https://raw.githubusercontent.com/coveooss/tgf/master/get-latest-tgf.sh | b
 
 On `Windows` with Powershell:
 
-```batch
-curl https://raw.githubusercontent.com/coveooss/tgf/master/get-latest-tgf.bat > get.bat && get & del get.bat
+```PowerShell
+(Invoke-WebRequest https://raw.githubusercontent.com/coveooss/tgf/master/get-latest-tgf.ps1).Content | Invoke-Expression
 ```
 
 ## Configuration
