@@ -1,11 +1,10 @@
 $ErrorActionPreference = "Stop" #Make all errors terminating
-$env:PATH =$env:PATH+";."
 
 try {
     $TGF_PATH = (Get-Command tgf.exe).Path
     Write-Host tgf path: $TGF_PATH
     $LOCAL_VERSION = (tgf.exe --current-version) | Out-String
-    $LOCAL_VERSION = [regex]::Matches($LOCAL_VERSION,'[0-9]+.[0-9]+.[0-9]+').Value
+    $LOCAL_VERSION = [regex]::Matches($LOCAL_VERSION,'\d+\.\d+\.\d+').Value
 } catch {
     $TGF_PATH = Join-Path -Path (Get-Location) -ChildPath "tgf.exe"
     Write-Host tgf not found. using $TGF_PATH
