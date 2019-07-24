@@ -20,4 +20,5 @@ Copy-Item $TempTgfPath -Destination $TGF_PATH -Force
 
 Remove-Item $ZipFile
 Remove-Item $TempTgfFolder -Recurse
-Invoke-Expression -Command "tgf --current-version"
+Write-Host "Installation is completed!"
+Write-Host "Make sure to add tgf to your path."

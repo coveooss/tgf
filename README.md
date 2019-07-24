@@ -43,11 +43,13 @@ You can run the `get-latest-tgf.sh` script to check if you have the latest versi
 curl https://raw.githubusercontent.com/coveooss/tgf/master/get-latest-tgf.sh | bash
 ```
 
-On `Windows` with Powershell:
+On `Windows`, run `get-latest-tgf.ps1` with Powershell:
 
 ```PowerShell
 (Invoke-WebRequest https://raw.githubusercontent.com/coveooss/tgf/master/get-latest-tgf.ps1).Content | Invoke-Expression
 ```
+
+>  This will install tgf in your current directory. Make sure to add the executable to your PATH.
 
 ## Configuration
 
