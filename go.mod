@@ -6,7 +6,7 @@ replace github.com/gruntwork-io/terragrunt => github.com/coveooss/terragrunt v1.
 
 require (
 	github.com/Microsoft/go-winio v0.4.12 // indirect
-	github.com/aws/aws-sdk-go v1.21.6
+	github.com/aws/aws-sdk-go v1.21.9
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/coveooss/gotemplate/v3 v3.2.0
 	github.com/coveord/kingpin/v2 v2.3.1
