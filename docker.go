@@ -73,8 +73,8 @@ func (docker *dockerConfig) call() int {
 
 	cwd := filepath.ToSlash(must(filepath.EvalSymlinks(must(os.Getwd()).(string))).(string))
 	currentDrive := fmt.Sprintf("%s/", filepath.VolumeName(cwd))
-	sourceFolder := filepath.ToSlash(filepath.Join("/", app.MountPoint, strings.TrimPrefix(cwd, currentDrive)))
 	rootFolder := strings.Split(strings.TrimPrefix(cwd, currentDrive), "/")[0]
+	sourceFolder := fmt.Sprintf("/%s", filepath.ToSlash(strings.Replace(strings.TrimPrefix(cwd, currentDrive), rootFolder, app.MountPoint, 1)))
 
 	dockerArgs := []string{
 		"run",
@@ -82,7 +82,7 @@ func (docker *dockerConfig) call() int {
 	if app.DockerInteractive {
 		dockerArgs = append(dockerArgs, "-it")
 	}
-	dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:%s", convertDrive(currentDrive), rootFolder, filepath.ToSlash(filepath.Join("/", app.MountPoint, rootFolder))), "-w", sourceFolder)
+	dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:/%s", convertDrive(currentDrive), rootFolder, app.MountPoint), "-w", sourceFolder)
 
 	if app.WithDockerMount {
 		withDockerMountArgs := []string{"-v", fmt.Sprintf(dockerSocketMountPattern, dockerSocketFile), "--group-add", getDockerGroup()}
@@ -98,11 +98,11 @@ func (docker *dockerConfig) call() int {
 	if app.MountHomeDir {
 		currentUser := must(user.Current()).(*user.User)
 		home := filepath.ToSlash(currentUser.HomeDir)
-		homeWithoutVolume := strings.TrimPrefix(home, filepath.VolumeName(home))
+		mountingHome := filepath.Join("/home", filepath.Base(home))
 
 		dockerArgs = append(dockerArgs, []string{
-			"-v", fmt.Sprintf("%v:%v", convertDrive(home), homeWithoutVolume),
-			"-e", fmt.Sprintf("HOME=%v", homeWithoutVolume),
+			"-v", fmt.Sprintf("%v:%v", convertDrive(home), mountingHome),
+			"-e", fmt.Sprintf("HOME=%v", mountingHome),
 		}...)
 
 		dockerArgs = append(dockerArgs, config.DockerOptions...)
