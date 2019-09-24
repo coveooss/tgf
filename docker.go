@@ -98,7 +98,7 @@ func (docker *dockerConfig) call() int {
 	if app.MountHomeDir {
 		currentUser := must(user.Current()).(*user.User)
 		home := filepath.ToSlash(currentUser.HomeDir)
-		mountingHome := filepath.Join("/home", filepath.Base(home))
+		mountingHome := fmt.Sprintf("/home/%s", filepath.Base(home))
 
 		dockerArgs = append(dockerArgs, []string{
 			"-v", fmt.Sprintf("%v:%v", convertDrive(home), mountingHome),
