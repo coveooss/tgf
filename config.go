@@ -570,6 +570,11 @@ func (config *TGFConfig) LogDebug(format string, args ...interface{}) {
 
 // GetUpdateVersion fetches the latest tgf version number from the GITHUB_API
 func (config *TGFConfig) GetUpdateVersion() (string, error) {
+	if config.UpdateVersion != "" {
+		// The target version number has been specified in the configuration to avoid
+		// hammering GitHub
+		return config.UpdateVersion, nil
+	}
 	resp, err := http.Get("https://api.github.com/repos/coveooss/tgf/releases/latest")
 	if err != nil {
 		return "", err
