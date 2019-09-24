@@ -129,7 +129,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	swFlagON("docker-build", "Enable docker build instructions configured in the config files").BoolVar(&app.DockerBuild)
 	swFlagON("home", "Enable mapping of the home directory").BoolVar(&app.MountHomeDir)
 	swFlagON("temp", "Map the temp folder to a local folder").BoolVar(&app.MountTempDir)
-	app.Flag("mount-point", "Specify a mount point for the current folder").PlaceHolder("<folder>").StringVar(&app.MountPoint)
+	app.Flag("mount-point", "Specify a mount point for the current folder").PlaceHolder("<folder>").Default("CurrentSources").StringVar(&app.MountPoint)
 	app.Flag("prune", "Remove all previous versions of the targeted image").BoolVar(&app.PruneImages)
 	app.Flag("docker-arg", "Supply extra argument to Docker").PlaceHolder("<opt>").StringsVar(&app.DockerOptions)
 	app.Flag("with-current-user", "Runs the docker command with the current user, using the --user arg").Alias("cu").BoolVar(&app.WithCurrentUser)
