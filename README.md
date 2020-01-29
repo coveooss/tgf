@@ -49,7 +49,7 @@ On `Windows`, run `get-latest-tgf.ps1` with Powershell:
 (Invoke-WebRequest https://raw.githubusercontent.com/coveooss/tgf/master/get-latest-tgf.ps1).Content | Invoke-Expression
 ```
 
->  This will install tgf in your current directory. Make sure to add the executable to your PATH.
+> This will install tgf in your current directory. Make sure to add the executable to your PATH.
 
 ## Configuration
 
@@ -128,20 +128,39 @@ section | Description
 > tgf -H
 usage: tgf [<flags>]
 
-DESCRIPTION: TGF (terragrunt frontend) is a Docker frontend for terragrunt/terraform. It automatically maps your current
-folder, your HOME folder, your TEMP folder as well of most environment variables to the docker process. You can add -D to your command to get the
-exact docker command that is generated.
+DESCRIPTION:
+TGF (terragrunt frontend) is a Docker frontend for terragrunt/terraform. It automatically maps your current folder,
+your HOME folder, your TEMP folder as well of most environment variables to the docker process. You can add -D to
+your command to get the exact docker command that is generated.
 
-It then looks in your current folder and all its parents to find a file named '.tgf.config' to retrieve the default configuration. If not all
-configurable values are satisfied and you have an AWS configuration, it will then try to retrieve the missing elements from the AWS Parameter Store
-under the key '/default/tgf'.
+It then looks in your current folder and all its parents to find a file named '.tgf.config' to retrieve the
+default configuration. If not all configurable values are satisfied and you have an AWS configuration, it will
+then try to retrieve the missing elements from the AWS Parameter Store under the key '/default/tgf'.
 
-Configurable values are: docker-image, docker-image-version, docker-image-tag, docker-image-build, docker-image-build-folder,
-docker-image-build-tag, logging-level, entry-point, docker-refresh, docker-options, recommended-image-version, required-image-version,
-tgf-recommended-version, environment, run-before, run-after, alias.
+Configurable values are:
+  - docker-image
+  - docker-image-version
+  - docker-image-tag
+  - docker-image-build
+  - docker-image-build-folder
+  - docker-image-build-tag
+  - logging-level
+  - entry-point
+  - docker-refresh
+  - docker-options
+  - recommended-image-version
+  - required-image-version
+  - tgf-recommended-version
+  - environment
+  - run-before
+  - run-after
+  - alias
+  - update-version
+  - auto-update-delay
+  - auto-update
 
-You can get the full documentation at https://github.com/coveooss/tgf/blob/master/README.md and check for new version at
-https://github.com/coveooss/tgf/releases/latest.
+Full documentation can be found at https://github.com/coveooss/tgf/blob/master/README.md
+Check for new version at https://github.com/coveooss/tgf/releases/latest.
 
 Any docker image could be used, but TGF specialized images could be found at: https://hub.docker.com/r/coveo/tgf/tags.
 
@@ -149,57 +168,71 @@ Terragrunt documentation could be found at https://github.com/coveo/terragrunt/b
 
 Terraform documentation could be found at https://www.terraform.io/docs/index.html.
 
-IMPORTANT: Most of the tgf command line arguments are in uppercase to avoid potential conflict with the underlying command. If any of the tgf
-arguments conflicts with an argument of the desired entry point, you must place that argument after -- to ensure that they are not interpreted by
-tgf and are passed to the entry point. Any non conflicting argument will be passed to the entry point wherever it is located on the invocation
-arguments.
+ENVIRONMENT VARIABLES:
+Most of the arguments can be set through environment variables using the format TGF_ARG_NAME.
+
+Ex:
+   TGF_LOCAL_IMAGE=1      ==> --local-image
+   TGF_IMAGE_VERSION=2.0  ==> --image-version=2.0
+
+SHORTCUTS:
+You can also use shortcuts instead of using the long argument names (first letter of each word).
+
+Ex:
+   --li     ==> --local-image
+   --iv=2.0 ==> --image-version=2.0
+
+IMPORTANT:
+Most of the tgf command line arguments are in uppercase to avoid potential conflict with the underlying command.
+If any of the tgf arguments conflicts with an argument of the desired entry point, you must place that argument
+after -- to ensure that they are not interpreted by tgf and are passed to the entry point. Any non conflicting
+argument will be passed to the entry point wherever it is located on the invocation arguments.
 
   tgf ls -- -D   # Avoid -D to be interpreted by tgf as --debug
 
-It is also possible to specify additional arguments through environment variable TGF_ARGS or enable debugging mode through TGF_DEBUG.
+It is also possible to specify additional arguments through environment variable TGF_ARGS.
 
-VERSION: 1.20.2
+VERSION: 1.22.0
 
 AUTHOR: Coveo
 
 Flags:
-  -H, --tgf-help                 Show context-sensitive help (also try --help-man).
-      --all-versions             Get versions of TGF & all others underlying utilities (alias --av)
-      --current-version          Get current version information (alias --cv)
-  -D, --debug                    Print debug messages and docker commands issued
-  -F, --flush-cache              Invoke terragrunt with --terragrunt-update-source to flush the cache
-      --get-image-name           Just return the resulting image name (alias --gi)
-      --interactive              On by default, use --no-interactive or --no-it to disable launching Docker in interactive mode or set
-                                 TGF_INTERACTIVE to 0 or false
-      --local-image              If set, TGF will not pull the image when refreshing (alias --li)
-      --no-docker-build          Disable docker build instructions configured in the config files (alias --nb)
-      --no-home                  Disable the mapping of the home directory (alias --nh) or set TGF_NO_HOME
-      --no-temp                  Disable the mapping of the temp directory (alias --nt) or set TGF_NO_TEMP
-      --no-aws                   Disable use of AWS to get configuration (alias --na) or set TGF_NO_AWS
-      --prune                    Remove all previous versions of the targeted image
-      --refresh-image            Force a refresh of the docker image (alias --ri)
-      --with-current-user        Runs the docker command with the current user, using the --user arg (alias --cu)
-      --with-docker-mount        Mounts the docker socket to the image so the host's docker api is usable (alias --wd)
-      --config-files=<files>     Set the files to look for (default: TGFConfig) or set TGF_CONFIG_FILES
-      --config-location=<path>   Set the configuration location or set TGF_CONFIG_LOCATION
-      --docker-arg=<opt> ...     Supply extra argument to Docker (alias --da)
-  -E, --entrypoint=terragrunt    Override the entry point for docker
-      --ignore-user-config       Ignore all tgf.user.config files (alias --iuc)
-      --image=coveo/tgf          Use the specified image instead of the default one
-      --image-version=version    Use a different version of docker image instead of the default one (alias --iv)
-  -L, --logging-level=<level>    Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6) or set TGF_LOGGING_LEVEL
-      --mount-point=MOUNT-POINT  Specify a mount point for the current folder --mp)
-  -P, --profile=PROFILE          Set the AWS profile configuration to use
-      --ps-path=<path>           Parameter Store path used to find AWS common configuration shared by a team or set TGF_SSM_PATH
-  -T, --tag=latest               Use a different tag of docker image instead of the default one
-      --update                   Run auto update script
-  ```
+  -H, --help-tgf                Show context-sensitive help (also try --help-man)
+      --image=coveo/tgf         Use the specified image instead of the default one
+      --image-version=version   Use a different version of docker image instead of the default one
+  -T, --tag=latest              Use a different tag of docker image instead of the default one
+      --local-image             If set, TGF will not pull the image when refreshing
+      --get-image-name          Just return the resulting image name
+      --refresh-image           Force a refresh of the docker image
+  -E, --entrypoint=terragrunt   Override the entry point for docker
+      --current-version         Get current version information
+      --all-versions            Get versions of TGF & all others underlying utilities
+  -L, --logging-level=<level>   Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)
+  -D, --debug                   Print debug messages and docker commands issued
+  -F, --flush-cache             Invoke terragrunt with --terragrunt-update-source to flush the cache
+      --interactive             ON by default: Launch Docker in interactive mode, use --no-interactive to disable
+      --docker-build            ON by default: Enable docker build instructions configured in the config files, use --no-docker-build to disable
+      --home                    ON by default: Enable mapping of the home directory, use --no-home to disable
+      --temp                    ON by default: Map the temp folder to a local folder, use --no-temp to disable
+      --mount-point=<folder>    Specify a mount point for the current folder
+      --prune                   Remove all previous versions of the targeted image
+      --docker-arg=<opt> ...    Supply extra argument to Docker
+      --with-current-user       Runs the docker command with the current user, using the --user arg
+      --with-docker-mount       Mounts the docker socket to the image so the host's docker api is usable
+      --ignore-user-config      Ignore all tgf.user.config files
+      --aws                     ON by default: Use AWS Parameter store to get configuration, use --no-aws to disable
+  -P, --profile=<AWS profile>   Set the AWS profile configuration to use
+      --ssm-path=<path>         Parameter Store path used to find AWS common configuration shared by a team
+      --config-files=<files>    Set the files to look for (default: TGFConfig)
+      --config-location=<path>  Set the configuration location
+      --update                  Run auto update script
+```
 
 Example:
 
 ```bash
 > tgf --current-version
-tgf v1.18.1
+tgf v1.22.0
 ```
 
 Returns the current version of the tgf tool
@@ -326,4 +359,3 @@ Build are automatically launched on tagging.
 
 Tags with format image-0.0.0 automatically launch a Docker images build that are available through Docker Hub.
 Tags with format v0.0.0 automatically launch a new release on Github for the TGF executable.
-

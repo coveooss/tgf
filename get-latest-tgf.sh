@@ -8,7 +8,7 @@ if [ ! -d "$TGF_PATH" ]; then
 fi
 
 get_local_tgf_version () {
-    TGF_LOCAL_VERSION=$($TGF --current-version | awk -F\  '{print $2}' | cut -d'v' -f 2)
+    [ -r $TGF ] && TGF_LOCAL_VERSION=$($TGF --current-version | awk -F\ '{print $2}' | cut -d'v' -f 2)
 }
 
 get_latest_tgf_version () {
@@ -35,7 +35,7 @@ install_latest_tgf () {
     elif [[ $(uname -s) == Darwin ]]
     then
         echo 'Installing latest tgf for OSX in' $TGF_PATH '...'
-        curl -sL "https://github.com/coveooss/tgf/releases/download/v"$TGF_LATEST_VERSION"/tgf_"$TGF_LATEST_VERSION"_macOS_64-bits.zip" | bsdtar -xf- -C $TGF_PATH && script_end
+        curl -sL "https://github.com/coveooss/tgf/releases/download/v"$TGF_LATEST_VERSION"/tgf_"$TGF_LATEST_VERSION"_macOS_64-bits.zip" | bsdtar -xf- -C $TGF_PATH && chmod +x $TGF && script_end
     else 
         echo 'OS not supported.'
         exit 1
