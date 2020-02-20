@@ -1,0 +1,34 @@
+name: Build
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "*"
+  pull_request:
+    branches:
+      - master
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
+
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Run tests
+        run: |
+          go test ./...
+
+      - name: Build tag
+        if: github.ref == 'refs/heads/v*'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -sL https://git.io/goreleaser | bash;
