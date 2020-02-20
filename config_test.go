@@ -325,6 +325,76 @@ func TestTGFConfig_parseRequest(t *testing.T) {
 	}
 }
 
+func TestGetImageName(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		image         string
+		version       *string
+		tag           *string
+		expectedImage string
+	}{
+		{
+			image:         "coveo/tgf",
+			version:       aws.String("3.0.0"),
+			tag:           aws.String("aws"),
+			expectedImage: "coveo/tgf:3.0.0-aws",
+		},
+		{
+			image:         "coveo/tgf",
+			version:       aws.String("3.0.0"),
+			tag:           nil,
+			expectedImage: "coveo/tgf:3.0.0",
+		},
+		{
+			image:         "coveo/tgf",
+			version:       nil,
+			tag:           aws.String("aws"),
+			expectedImage: "coveo/tgf:aws",
+		},
+		{
+			image:         "coveo/tgf",
+			version:       nil,
+			tag:           nil,
+			expectedImage: "coveo/tgf",
+		},
+		{
+			image:         "coveo/tgf",
+			version:       aws.String("RandomString"),
+			tag:           nil,
+			expectedImage: "coveo/tgf:RandomString",
+		},
+		{
+			image:         "coveo/tgf",
+			version:       aws.String("RandomString"),
+			tag:           aws.String("aws"),
+			expectedImage: "coveo/tgf:RandomString-aws",
+		},
+		{
+			image:         "coveo/tgf",
+			version:       aws.String("with-hyphen"),
+			tag:           aws.String("aws"),
+			expectedImage: "coveo/tgf:with-hyphen-aws",
+		},
+		{
+			image:         "coveo/tgf",
+			version:       aws.String("3.0.0"),
+			tag:           aws.String("3.0.0"),
+			expectedImage: "coveo/tgf:3.0.0-3.0.0",
+		},
+	}
+	for _, tt := range cases {
+		tt := tt
+		t.Run(tt.expectedImage, func(t *testing.T) {
+			config := &TGFConfig{
+				Image:        tt.image,
+				ImageVersion: tt.version,
+				ImageTag:     tt.tag,
+			}
+			assert.Equal(t, tt.expectedImage, config.GetImageName())
+		})
+	}
+}
+
 func writeSSMConfig(parameterFolder, parameterKey, parameterValue string) {
 	fullParameterKey := fmt.Sprintf("%s/%s", parameterFolder, parameterKey)
 	client := getSSMClient()
