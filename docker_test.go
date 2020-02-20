@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
@@ -20,6 +21,7 @@ func TestGetImage(t *testing.T) {
 
 	// build test image
 	defer func() { assert.NoError(t, exec.Command("docker", "rmi", testImageNameTagged).Run()) }()
+	fmt.Println("Building and tagging", testImageNameTagged)
 	c2 := exec.Command("docker", "build", "-", "-t", testImageNameTagged)
 	c2.Stdin, c2.Stdout, c2.Stderr = bytes.NewBufferString("FROM scratch\nLABEL name="+testTag), os.Stdout, os.Stderr
 	c2.Start()
