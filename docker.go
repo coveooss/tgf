@@ -221,11 +221,13 @@ func (docker *dockerConfig) getImage() (name string) {
 		var out *os.File
 		if ib.Folder == "" {
 			// There is no explicit folder, so we create a temporary folder to store the docker file
+			app.Debug("Creating build folder")
 			temp = must(ioutil.TempDir("", "tgf-dockerbuild")).(string)
 			out = must(os.Create(filepath.Join(temp, dockerfilePattern))).(*os.File)
 			folder = temp
 		} else {
 			if ib.Instructions != "" {
+				app.Debug("Creating dockerfile in provider build folder")
 				out = must(ioutil.TempFile(ib.Dir(), dockerfilePattern)).(*os.File)
 				temp = out.Name()
 				dockerFile = temp
@@ -234,6 +236,7 @@ func (docker *dockerConfig) getImage() (name string) {
 		}
 
 		if out != nil {
+			app.Debug("Writing instructions to dockerfile")
 			ib.Instructions = fmt.Sprintf("FROM %s\n%s\n", name, ib.Instructions)
 			must(fmt.Fprintf(out, ib.Instructions))
 			must(out.Close())
