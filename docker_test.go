@@ -13,7 +13,6 @@ import (
 )
 
 func TestGetImage(t *testing.T) {
-	t.Parallel()
 
 	testImageName := "test-image" + strconv.Itoa(randInt())
 	testTag := "test" + strconv.Itoa(randInt())
@@ -91,6 +90,7 @@ func TestGetImage(t *testing.T) {
 				app.DockerBuild = tt.dockerBuild
 				app.Refresh = tt.refresh
 				app.UseLocalImage = tt.useLocalImage
+				app.DebugMode = true
 				docker := dockerConfig{tt.config}
 				assert.Equal(t, tt.result, docker.getImage(), "The result image tag is not correct")
 				if tt.result != testImageName+":latest" && tt.result != testImageNameTagged {
