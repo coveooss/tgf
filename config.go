@@ -341,8 +341,7 @@ func (config *TGFConfig) GetImageName() string {
 	if config.ImageVersion != nil {
 		suffix += *config.ImageVersion
 	}
-	shouldAddTag := config.ImageVersion == nil || *config.ImageVersion == "" || reVersion.MatchString(*config.ImageVersion)
-	if config.ImageTag != nil && shouldAddTag {
+	if config.ImageTag != nil {
 		if suffix != "" && *config.ImageTag != "" {
 			suffix += tagSeparator
 		}

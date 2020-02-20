@@ -221,11 +221,13 @@ func (docker *dockerConfig) getImage() (name string) {
 		var out *os.File
 		if ib.Folder == "" {
 			// There is no explicit folder, so we create a temporary folder to store the docker file
+			app.Debug("Creating build folder")
 			temp = must(ioutil.TempDir("", "tgf-dockerbuild")).(string)
 			out = must(os.Create(filepath.Join(temp, dockerfilePattern))).(*os.File)
 			folder = temp
 		} else {
 			if ib.Instructions != "" {
+				app.Debug("Creating dockerfile in provider build folder")
 				out = must(ioutil.TempFile(ib.Dir(), dockerfilePattern)).(*os.File)
 				temp = out.Name()
 				dockerFile = temp
@@ -234,6 +236,7 @@ func (docker *dockerConfig) getImage() (name string) {
 		}
 
 		if out != nil {
+			app.Debug("Writing instructions to dockerfile")
 			ib.Instructions = fmt.Sprintf("FROM %s\n%s\n", name, ib.Instructions)
 			must(fmt.Fprintf(out, ib.Instructions))
 			must(out.Close())
@@ -427,18 +430,18 @@ func (docker *dockerConfig) refreshImage(image string) {
 	app.Refresh = true // Setting this to true will ensure that dependant built images will also be refreshed
 
 	if app.UseLocalImage {
-		ErrPrintf("Not refreshing %v because `local-image` is set\n", image)
+		app.Debug("Not refreshing %v because `local-image` is set\n", image)
 		return
 	}
 
-	ErrPrintf("Checking if there is a newer version of docker image %v\n", image)
+	app.Debug("Checking if there is a newer version of docker image %v\n", image)
 	err := getDockerUpdateCmd(image).Run()
 	if err != nil {
 		matches, _ := utils.MultiMatch(image, reECR)
 		account, accountOk := matches["account"]
 		region, regionOk := matches["region"]
 		if accountOk && regionOk && docker.awsConfigExist() {
-			ErrPrintf("Failed to pull %v. It is an ECR image, trying again after a login.\n", image)
+			app.Debug("Failed to pull %v. It is an ECR image, trying again after a login.\n", image)
 			loginToECR(account, region)
 			must(getDockerUpdateCmd(image).Run())
 		} else {

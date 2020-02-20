@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
@@ -13,7 +14,6 @@ import (
 )
 
 func TestGetImage(t *testing.T) {
-	t.Parallel()
 
 	testImageName := "test-image" + strconv.Itoa(randInt())
 	testTag := "test" + strconv.Itoa(randInt())
@@ -21,10 +21,10 @@ func TestGetImage(t *testing.T) {
 
 	// build test image
 	defer func() { assert.NoError(t, exec.Command("docker", "rmi", testImageNameTagged).Run()) }()
+	fmt.Println("Building and tagging", testImageNameTagged)
 	c2 := exec.Command("docker", "build", "-", "-t", testImageNameTagged)
 	c2.Stdin, c2.Stdout, c2.Stderr = bytes.NewBufferString("FROM scratch\nLABEL name="+testTag), os.Stdout, os.Stderr
-	c2.Start()
-	time.Sleep(1 * time.Second) // We have to wait a bit because test may fail if executed to quickly after this initial image build
+	assert.NoError(t, c2.Run())
 
 	tests := []struct {
 		name          string
@@ -83,20 +83,24 @@ func TestGetImage(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		assert.NotPanics(t, func() {
-			app := NewTestApplication(nil)
-			tt.config.tgf = app
-			app.DockerBuild = tt.dockerBuild
-			app.Refresh = tt.refresh
-			app.UseLocalImage = tt.useLocalImage
-			docker := dockerConfig{tt.config}
-			assert.Equal(t, tt.result, docker.getImage(), "The result image tag is not correct")
-			if tt.result != testImageName+":latest" && tt.result != testImageNameTagged {
-				time.Sleep(1 * time.Second)
-				command := exec.Command("docker", "rmi", tt.result)
-				t.Log("Running:", strings.Join(command.Args, " "))
-				assert.NoError(t, command.Run())
-			}
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			assert.NotPanics(t, func() {
+				app := NewTestApplication(nil)
+				tt.config.tgf = app
+				app.DockerBuild = tt.dockerBuild
+				app.Refresh = tt.refresh
+				app.UseLocalImage = tt.useLocalImage
+				app.DebugMode = true
+				docker := dockerConfig{tt.config}
+				assert.Equal(t, tt.result, docker.getImage(), "The result image tag is not correct")
+				if tt.result != testImageName+":latest" && tt.result != testImageNameTagged {
+					time.Sleep(1 * time.Second)
+					command := exec.Command("docker", "rmi", tt.result)
+					t.Log("Running:", strings.Join(command.Args, " "))
+					assert.NoError(t, command.Run())
+				}
+			})
 		})
 	}
 }

@@ -9,15 +9,15 @@ builds:
       - amd64
 
 # Archive customization
-archive:
-  format: zip
+archives:
+  - format: zip
 
-  replacements:
-    amd64: 64-bits
-    darwin: macOS
+    replacements:
+      amd64: 64-bits
+      darwin: macOS
 
-  files:
-    - nothing.*
+    files:
+      - nothing.*
 
 # GitHub release customization
 release:
