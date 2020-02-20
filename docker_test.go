@@ -83,20 +83,23 @@ func TestGetImage(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		assert.NotPanics(t, func() {
-			app := NewTestApplication(nil)
-			tt.config.tgf = app
-			app.DockerBuild = tt.dockerBuild
-			app.Refresh = tt.refresh
-			app.UseLocalImage = tt.useLocalImage
-			docker := dockerConfig{tt.config}
-			assert.Equal(t, tt.result, docker.getImage(), "The result image tag is not correct")
-			if tt.result != testImageName+":latest" && tt.result != testImageNameTagged {
-				time.Sleep(1 * time.Second)
-				command := exec.Command("docker", "rmi", tt.result)
-				t.Log("Running:", strings.Join(command.Args, " "))
-				assert.NoError(t, command.Run())
-			}
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			assert.NotPanics(t, func() {
+				app := NewTestApplication(nil)
+				tt.config.tgf = app
+				app.DockerBuild = tt.dockerBuild
+				app.Refresh = tt.refresh
+				app.UseLocalImage = tt.useLocalImage
+				docker := dockerConfig{tt.config}
+				assert.Equal(t, tt.result, docker.getImage(), "The result image tag is not correct")
+				if tt.result != testImageName+":latest" && tt.result != testImageNameTagged {
+					time.Sleep(1 * time.Second)
+					command := exec.Command("docker", "rmi", tt.result)
+					t.Log("Running:", strings.Join(command.Args, " "))
+					assert.NoError(t, command.Run())
+				}
+			})
 		})
 	}
 }
