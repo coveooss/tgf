@@ -430,18 +430,18 @@ func (docker *dockerConfig) refreshImage(image string) {
 	app.Refresh = true // Setting this to true will ensure that dependant built images will also be refreshed
 
 	if app.UseLocalImage {
-		ErrPrintf("Not refreshing %v because `local-image` is set\n", image)
+		app.Debug("Not refreshing %v because `local-image` is set\n", image)
 		return
 	}
 
-	ErrPrintf("Checking if there is a newer version of docker image %v\n", image)
+	app.Debug("Checking if there is a newer version of docker image %v\n", image)
 	err := getDockerUpdateCmd(image).Run()
 	if err != nil {
 		matches, _ := utils.MultiMatch(image, reECR)
 		account, accountOk := matches["account"]
 		region, regionOk := matches["region"]
 		if accountOk && regionOk && docker.awsConfigExist() {
-			ErrPrintf("Failed to pull %v. It is an ECR image, trying again after a login.\n", image)
+			app.Debug("Failed to pull %v. It is an ECR image, trying again after a login.\n", image)
 			loginToECR(account, region)
 			must(getDockerUpdateCmd(image).Run())
 		} else {
