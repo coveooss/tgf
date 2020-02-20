@@ -24,8 +24,7 @@ func TestGetImage(t *testing.T) {
 	fmt.Println("Building and tagging", testImageNameTagged)
 	c2 := exec.Command("docker", "build", "-", "-t", testImageNameTagged)
 	c2.Stdin, c2.Stdout, c2.Stderr = bytes.NewBufferString("FROM scratch\nLABEL name="+testTag), os.Stdout, os.Stderr
-	c2.Start()
-	time.Sleep(1 * time.Second) // We have to wait a bit because test may fail if executed to quickly after this initial image build
+	assert.NoError(t, c2.Run())
 
 	tests := []struct {
 		name          string
