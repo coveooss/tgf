@@ -20,5 +20,6 @@ jobs:
       - name: Build tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CGO_ENABLED: 0
         run: |
           curl -sL https://git.io/goreleaser | bash;
