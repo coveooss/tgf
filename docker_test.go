@@ -54,12 +54,10 @@ func TestGetImage(t *testing.T) {
 			config: &TGFConfig{
 				ImageTag: &testTag,
 				Image:    testImageName,
-				imageBuildConfigs: []TGFConfigBuild{
-					TGFConfigBuild{
-						Instructions: "LABEL another=test",
-						Tag:          "buildtag",
-					},
-				},
+				imageBuildConfigs: []TGFConfigBuild{{
+					Instructions: "LABEL another=test",
+					Tag:          "buildtag",
+				}},
 			},
 			useLocalImage: true,
 			dockerBuild:   true,
@@ -70,12 +68,10 @@ func TestGetImage(t *testing.T) {
 			config: &TGFConfig{
 				ImageTag: &testTag,
 				Image:    testImageName,
-				imageBuildConfigs: []TGFConfigBuild{
-					TGFConfigBuild{
-						Instructions: "LABEL another=test",
-						Tag:          "buildtag",
-					},
-				},
+				imageBuildConfigs: []TGFConfigBuild{{
+					Instructions: "LABEL another=test",
+					Tag:          "buildtag",
+				}},
 			},
 			useLocalImage: true,
 			result:        testImageNameTagged,

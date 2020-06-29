@@ -1,5 +1,7 @@
 # TGF
 
+<!-- markdownlint-disable MD033 -->
+
 [![Build Status](https://travis-ci.org/coveooss/tgf.svg?branch=master)](https://travis-ci.org/coveooss/tgf)
 [![Go Report Card](https://goreportcard.com/badge/github.com/coveooss/tgf)](https://goreportcard.com/report/github.com/coveooss/tgf)
 [![Coverage Status](https://coveralls.io/repos/github/coveooss/tgf/badge.svg?branch=master)](https://coveralls.io/github/coveooss/tgf?branch=master)
@@ -20,7 +22,7 @@ Table of content:
 `TGF` is a small utility used to launch a Docker image and automatically map the current folder, your HOME folder and your current environment
 variables to the underlying container.
 
-By default, TGF is used as a frontend for [terragrunt](https://github.com/gruntwork-io/terragrunt), but it could also be used to run different endpoints.
+By default, TGF is used as a frontend for [our fork of terragrunt](https://github.com/coveooss/terragrunt), but it could also be used to run different endpoints.
 
 ### Why use TGF
 
@@ -207,7 +209,7 @@ Flags:
   -E, --entrypoint=terragrunt   Override the entry point for docker
       --current-version         Get current version information
       --all-versions            Get versions of TGF & all others underlying utilities
-  -L, --logging-level=<level>   Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)
+  -L, --logging-level=<level>   Set the logging level (panic=0, fatal=1, error=2, warning=3, info=4, debug=5, trace=6)
   -D, --debug                   Print debug messages and docker commands issued
   -F, --flush-cache             Invoke terragrunt with --terragrunt-update-source to flush the cache
       --interactive             ON by default: Launch Docker in interactive mode, use --no-interactive to disable
