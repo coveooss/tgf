@@ -92,7 +92,7 @@ func ExampleTGFConfig_ShouldUpdate_forceConfiglocal() {
 		AutoUpdate: true,
 	}
 
-	ErrPrintf = fmt.Printf
+	ErrPrintf = fmt.Print
 	cfg.ShouldUpdate()
 	// Output:
 	// Running locally. Bypassing update version check.
@@ -108,7 +108,7 @@ func ExampleTGFConfig_ShouldUpdate_forceCliLocal() {
 		},
 	}
 
-	ErrPrintf = fmt.Printf
+	ErrPrintf = fmt.Print
 	cfg.ShouldUpdate()
 	// Output:
 	// Auto update is forced locally. Checking version...
@@ -123,7 +123,7 @@ func ExampleTGFConfig_ShouldUpdate_forceOffCli() {
 		},
 	}
 
-	ErrPrintf = fmt.Printf
+	ErrPrintf = fmt.Print
 	cfg.ShouldUpdate()
 	// Output:
 	// Auto update is force disabled. Bypassing update version check.
@@ -140,7 +140,7 @@ func ExampleTGFConfig_ShouldUpdate_forceConfig() {
 		AutoUpdateDelay: 0 * time.Hour,
 	}
 
-	ErrPrintf = fmt.Printf
+	ErrPrintf = fmt.Print
 	cfg.ShouldUpdate()
 	// Output:
 	// An update is due. Checking version...
@@ -155,7 +155,7 @@ func ExampleTGFConfig_ShouldUpdate_forceOffConfig() {
 		AutoUpdate: false,
 	}
 
-	ErrPrintf = fmt.Printf
+	ErrPrintf = fmt.Print
 	cfg.ShouldUpdate()
 	// Output:
 	// Auto update is disabled in the config. Bypassing update version check.

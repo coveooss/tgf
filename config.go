@@ -23,8 +23,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/blang/semver"
 	"github.com/coveooss/gotemplate/v3/collections"
+	"github.com/coveooss/terragrunt/v2/awshelper"
 	"github.com/fatih/color"
-	"github.com/gruntwork-io/terragrunt/aws_helper"
 	"github.com/hashicorp/go-getter"
 	"github.com/inconshreveable/go-update"
 	yaml "gopkg.in/yaml.v2"
@@ -148,7 +148,7 @@ func (config TGFConfig) String() string {
 
 // InitAWS tries to open an AWS session and init AWS environment variable on success
 func (config *TGFConfig) InitAWS(profile string) error {
-	_, err := aws_helper.InitAwsSession(profile)
+	_, err := awshelper.InitAwsSession(profile)
 	if err != nil {
 		return err
 	}
@@ -236,7 +236,7 @@ func (config *TGFConfig) setDefaultValues() {
 	for i := range configsData {
 		configData := &configsData[i]
 		if configData.Config.ImageBuild != "" {
-			config.imageBuildConfigs = append([]TGFConfigBuild{TGFConfigBuild{
+			config.imageBuildConfigs = append([]TGFConfigBuild{{
 				Instructions: configData.Config.ImageBuild,
 				Folder:       configData.Config.ImageBuildFolder,
 				Tag:          configData.Config.ImageBuildTag,
@@ -383,7 +383,7 @@ func (config *TGFConfig) ParseAliases() {
 func (config *TGFConfig) readSSMParameterStore(ssmParameterFolder string) map[string]string {
 	config.tgf.Debug("# Reading configuration from SSM %s\n", ssmParameterFolder)
 	values := make(map[string]string)
-	for _, parameter := range must(aws_helper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter) {
+	for _, parameter := range must(awshelper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter) {
 		key := strings.TrimLeft(strings.Replace(*parameter.Name, ssmParameterFolder, "", 1), "/")
 		values[key] = *parameter.Value
 	}

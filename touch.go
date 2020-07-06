@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gruntwork-io/terragrunt/util"
+	"github.com/coveooss/terragrunt/v2/util"
 )
 
 func getTouchFilename(image string) string {

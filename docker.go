@@ -10,9 +10,11 @@ import (
 	"os/exec"
 	"os/signal"
 	"os/user"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -21,10 +23,11 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/blang/semver"
 	"github.com/coveooss/gotemplate/v3/utils"
+	"github.com/coveooss/multilogger/reutils"
+	"github.com/coveooss/terragrunt/v2/util"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	"github.com/gruntwork-io/terragrunt/util"
 )
 
 const (
@@ -45,9 +48,10 @@ func (docker *dockerConfig) call() int {
 	// Change the default log level for terragrunt
 	const logLevelArg = "--terragrunt-logging-level"
 	if !util.ListContainsElement(command, logLevelArg) && filepath.Base(config.EntryPoint) == "terragrunt" {
-		if config.LogLevel == "6" || strings.ToLower(config.LogLevel) == "full" {
-			config.LogLevel = "debug"
-			config.Environment["TF_LOG"] = "DEBUG"
+		level, _ := strconv.Atoi(config.LogLevel)
+		if level > 6 || strings.ToLower(config.LogLevel) == "full" {
+			config.LogLevel = "trace"
+			config.Environment["TF_LOG"] = "TRACE"
 			config.Environment["TERRAGRUNT_DEBUG"] = "1"
 		}
 
@@ -116,6 +120,7 @@ func (docker *dockerConfig) call() int {
 			os.Mkdir(temp, 0755)
 		}
 		dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:/var/tgf", convertDrive(tempDrive), tempFolder))
+		config.Environment["TGF_TEMP_FOLDER"] = path.Join(tempDrive, tempFolder)
 		config.Environment["TERRAGRUNT_CACHE"] = "/var/tgf"
 	}
 
@@ -316,7 +321,7 @@ func (docker *dockerConfig) prune(images ...string) {
 					actual := getActualImageVersionFromImageID(image.ID)
 					if actual == "" {
 						for _, tag := range image.RepoTags {
-							matches, _ := utils.MultiMatch(tag, reImage)
+							matches, _ := reutils.MultiMatch(tag, reImage)
 							if version := matches["version"]; version != "" {
 								if len(version) > len(actual) {
 									actual = version
@@ -437,7 +442,7 @@ func (docker *dockerConfig) refreshImage(image string) {
 	app.Debug("Checking if there is a newer version of docker image %v\n", image)
 	err := getDockerUpdateCmd(image).Run()
 	if err != nil {
-		matches, _ := utils.MultiMatch(image, reECR)
+		matches, _ := reutils.MultiMatch(image, reECR)
 		account, accountOk := matches["account"]
 		region, regionOk := matches["region"]
 		if accountOk && regionOk && docker.awsConfigExist() {

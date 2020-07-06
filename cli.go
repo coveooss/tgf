@@ -5,9 +5,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/coveooss/gotemplate/v3/errors"
 	"github.com/coveooss/gotemplate/v3/hcl"
 	"github.com/coveooss/gotemplate/v3/template"
+	"github.com/coveooss/multilogger/errors"
 	"github.com/coveord/kingpin/v2"
 	"github.com/fatih/color"
 )
@@ -122,7 +122,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("entrypoint", "Override the entry point for docker").Short('E').PlaceHolder("terragrunt").StringVar(&app.Entrypoint)
 	app.Flag("current-version", "Get current version information").BoolVar(&app.GetCurrentVersion)
 	app.Flag("all-versions", "Get versions of TGF & all others underlying utilities").BoolVar(&app.GetAllVersions)
-	app.Flag("logging-level", "Set the logging level (critical=0, error=1, warning=2, notice=3, info=4, debug=5, full=6)").Short('L').PlaceHolder("<level>").StringVar(&app.LoggingLevel)
+	app.Flag("logging-level", "Set the logging level (panic=0, fatal=1, error=2, warning=3, info=4, debug=5, trace=6, full=7)").Short('L').PlaceHolder("<level>").StringVar(&app.LoggingLevel)
 	app.Flag("debug", "Print debug messages and docker commands issued").Short('D').Default(String(os.Getenv(envDebug)).ParseBool()).BoolVar(&app.DebugMode)
 	app.Flag("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache").Short('F').BoolVar(&app.FlushCache)
 	swFlagON("interactive", "Launch Docker in interactive mode").Alias("it").BoolVar(&app.DockerInteractive)
