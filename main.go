@@ -9,50 +9,40 @@ import (
 	_ "github.com/coveooss/gotemplate/v3/json"
 	_ "github.com/coveooss/gotemplate/v3/yaml"
 	"github.com/coveooss/multilogger"
-	multicolor "github.com/coveooss/multilogger/color"
 	"github.com/coveooss/multilogger/errors"
-	"github.com/fatih/color"
 )
 
 // Version is initialized at build time through -ldflags "-X main.Version=<version number>"
 var version = locallyBuilt
-
-var log = multilogger.New("tgf")
 
 func main() {
 	// Handle eventual panic message
 	defer func() {
 		if err := recover(); err != nil {
 			if _, isManaged := err.(errors.Managed); String(os.Getenv(envDebug)).ParseBool() || !isManaged {
-				printError("%[1]v (%[1]T)", err)
+				log.Errorf("%[1]v (%[1]T)", err)
 				debug.PrintStack()
 			} else {
-				printError("%v", err)
+				log.Error(err)
 			}
 			os.Exit(1)
 		}
 	}()
+
 	os.Exit(NewTGFApplication(os.Args[1:]).Run())
 }
 
-func printError(format string, args ...interface{})   { ErrPrintln(errorString(format, args...)) }
-func printWarning(format string, args ...interface{}) { ErrPrintln(warningString(format, args...)) }
+func init() {
+	multilogger.SetGlobalFormat("%module:Italic,Green,Square,IgnoreEmpty,Space%%time% %6globaldelay% %5delta:Round% %-8level:upper,color% %message:color%", false)
+	log = multilogger.New("tgf").SetStdout(os.Stderr)
+}
 
 type (
-	// String is imported from gotemplate/collections
+	// String is imported from collections
 	String = collections.String
 )
 
-// Function Aliases
 var (
-	must          = errors.Must
-	Print         = multicolor.Print
-	Printf        = multicolor.Printf
-	Println       = multicolor.Println
-	ErrPrintf     = multicolor.ErrorPrintf
-	ErrPrintln    = multicolor.ErrorPrintln
-	ErrPrint      = multicolor.ErrorPrint
-	Split2        = collections.Split2
-	warningString = color.New(color.FgYellow).SprintfFunc()
-	errorString   = color.New(color.FgRed).SprintfFunc()
+	must = errors.Must
+	log  *multilogger.Logger
 )

@@ -60,7 +60,6 @@ func TestAutoUpdateHigher(t *testing.T) {
 func ExampleRunWithUpdateCheck_githubApiError() {
 	mockUpdater := setupUpdaterMock("1.20.0", "1.21.0")
 	mockUpdater.GetUpdateVersionFunc = func() (string, error) { return "", fmt.Errorf("API error") }
-	ErrPrintln = fmt.Println
 	RunWithUpdateCheck(mockUpdater)
 	// Output:
 	// Error fetching update version: API error
@@ -68,7 +67,6 @@ func ExampleRunWithUpdateCheck_githubApiError() {
 
 func ExampleRunWithUpdateCheck_githubApiBadVersionString() {
 	mockUpdater := setupUpdaterMock("1.20.0", "not a number")
-	ErrPrintln = fmt.Println
 	RunWithUpdateCheck(mockUpdater)
 	// Output:
 	// Semver error on retrieved version "not a number" : No Major.Minor.Patch elements found
@@ -76,7 +74,6 @@ func ExampleRunWithUpdateCheck_githubApiBadVersionString() {
 
 func ExampleRunWithUpdateCheck_badVersionStringLocal() {
 	mockUpdater := setupUpdaterMock("not a number", "1.21.0")
-	ErrPrintln = fmt.Println
 	RunWithUpdateCheck(mockUpdater)
 	// Output:
 	// Semver error on current version "not a number": No Major.Minor.Patch elements found
@@ -86,13 +83,10 @@ func ExampleRunWithUpdateCheck_badVersionStringLocal() {
 func ExampleTGFConfig_ShouldUpdate_forceConfiglocal() {
 	version = locallyBuilt
 	cfg := &TGFConfig{
-		tgf: &TGFApplication{
-			DebugMode: true,
-		},
+		tgf:        &TGFApplication{},
 		AutoUpdate: true,
 	}
 
-	ErrPrintf = fmt.Print
 	cfg.ShouldUpdate()
 	// Output:
 	// Running locally. Bypassing update version check.
@@ -104,11 +98,9 @@ func ExampleTGFConfig_ShouldUpdate_forceCliLocal() {
 		tgf: &TGFApplication{
 			AutoUpdateSet: true,
 			AutoUpdate:    true,
-			DebugMode:     true,
 		},
 	}
 
-	ErrPrintf = fmt.Print
 	cfg.ShouldUpdate()
 	// Output:
 	// Auto update is forced locally. Checking version...
@@ -119,11 +111,9 @@ func ExampleTGFConfig_ShouldUpdate_forceOffCli() {
 		tgf: &TGFApplication{
 			AutoUpdateSet: true,
 			AutoUpdate:    false,
-			DebugMode:     true,
 		},
 	}
 
-	ErrPrintf = fmt.Print
 	cfg.ShouldUpdate()
 	// Output:
 	// Auto update is force disabled. Bypassing update version check.
@@ -132,15 +122,11 @@ func ExampleTGFConfig_ShouldUpdate_forceOffCli() {
 func ExampleTGFConfig_ShouldUpdate_forceConfig() {
 	version = "1.1.1"
 	cfg := &TGFConfig{
-		tgf: &TGFApplication{
-			AutoUpdateSet: false,
-			DebugMode:     true,
-		},
+		tgf:             &TGFApplication{AutoUpdateSet: false},
 		AutoUpdate:      true,
 		AutoUpdateDelay: 0 * time.Hour,
 	}
 
-	ErrPrintf = fmt.Print
 	cfg.ShouldUpdate()
 	// Output:
 	// An update is due. Checking version...
@@ -148,14 +134,10 @@ func ExampleTGFConfig_ShouldUpdate_forceConfig() {
 
 func ExampleTGFConfig_ShouldUpdate_forceOffConfig() {
 	cfg := &TGFConfig{
-		tgf: &TGFApplication{
-			AutoUpdateSet: false,
-			DebugMode:     true,
-		},
+		tgf:        &TGFApplication{AutoUpdateSet: false},
 		AutoUpdate: false,
 	}
 
-	ErrPrintf = fmt.Print
 	cfg.ShouldUpdate()
 	// Output:
 	// Auto update is disabled in the config. Bypassing update version check.

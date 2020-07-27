@@ -22,12 +22,15 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/blang/semver"
+	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/coveooss/gotemplate/v3/utils"
 	"github.com/coveooss/multilogger/reutils"
 	"github.com/coveooss/terragrunt/v2/util"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/fatih/color"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -71,7 +74,7 @@ func (docker *dockerConfig) call() int {
 	imageName := docker.getImage()
 
 	if app.GetImageName {
-		Println(imageName)
+		fmt.Println(imageName)
 		return 0
 	}
 
@@ -143,9 +146,17 @@ func (docker *dockerConfig) call() int {
 		}
 	}
 
-	for key, val := range config.Environment {
-		os.Setenv(key, val)
-		app.Debug("export %v=%v", key, val)
+	if len(config.Environment) > 0 {
+		for key, val := range config.Environment {
+			os.Setenv(key, val)
+		}
+		if log.GetLevel() >= logrus.DebugLevel {
+			exportedVariables := make(collections.StringArray, len(config.Environment))
+			for i, key := range collections.AsDictionary(config.Environment).KeysAsString() {
+				exportedVariables[i] = String(fmt.Sprintf("%s = %s", key, config.Environment[key.String()]))
+			}
+			log.Debugf("Environment variables\n%s", color.HiBlackString(exportedVariables.Join("\n").IndentN(4).Str()))
+		}
 	}
 
 	for _, do := range app.DockerOptions {
@@ -165,26 +176,21 @@ func (docker *dockerConfig) call() int {
 	var stderr bytes.Buffer
 	dockerCmd.Stderr = &stderr
 
-	if len(config.Environment) > 0 {
-		app.Debug("")
-	}
-	app.Debug("%s\n", strings.Join(dockerCmd.Args, " "))
+	log.Debug(color.HiBlackString(strings.Join(dockerCmd.Args, " ")))
 
 	if err := runCommands(config.runBeforeCommands); err != nil {
 		return -1
 	}
 	if err := dockerCmd.Run(); err != nil {
 		if stderr.Len() > 0 {
-			ErrPrintf(errorString(stderr.String()))
-			ErrPrintf("\n%s %s\n", dockerCmd.Args[0], strings.Join(dockerArgs, " "))
-
+			log.Errorf("%s\n%s %s", stderr.String(), dockerCmd.Args[0], strings.Join(dockerArgs, " "))
 			if runtime.GOOS == "windows" {
-				ErrPrintln(windowsMessage)
+				log.Error(windowsMessage)
 			}
 		}
 	}
 	if err := runCommands(config.runAfterCommands); err != nil {
-		ErrPrintf(errorString("%v", err))
+		log.Error(err)
 	}
 
 	return dockerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
@@ -199,7 +205,7 @@ func runCommands(commands []string) error {
 		if tempFile != "" {
 			defer func() { os.Remove(tempFile) }()
 		}
-		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, log, log
 		if err := cmd.Run(); err != nil {
 			return err
 		}
@@ -226,13 +232,13 @@ func (docker *dockerConfig) getImage() (name string) {
 		var out *os.File
 		if ib.Folder == "" {
 			// There is no explicit folder, so we create a temporary folder to store the docker file
-			app.Debug("Creating build folder")
+			log.Debug("Creating build folder")
 			temp = must(ioutil.TempDir("", "tgf-dockerbuild")).(string)
 			out = must(os.Create(filepath.Join(temp, dockerfilePattern))).(*os.File)
 			folder = temp
 		} else {
 			if ib.Instructions != "" {
-				app.Debug("Creating dockerfile in provider build folder")
+				log.Debug("Creating dockerfile in provider build folder")
 				out = must(ioutil.TempFile(ib.Dir(), dockerfilePattern)).(*os.File)
 				temp = out.Name()
 				dockerFile = temp
@@ -241,7 +247,7 @@ func (docker *dockerConfig) getImage() (name string) {
 		}
 
 		if out != nil {
-			app.Debug("Writing instructions to dockerfile")
+			log.Debug("Writing instructions to dockerfile")
 			ib.Instructions = fmt.Sprintf("FROM %s\n%s\n", name, ib.Instructions)
 			must(fmt.Fprintf(out, ib.Instructions))
 			must(out.Close())
@@ -255,9 +261,9 @@ func (docker *dockerConfig) getImage() (name string) {
 			signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 			go func() {
 				<-c
-				Println("\nRemoving file", dockerFile)
+				fmt.Println("\nRemoving file", dockerFile)
 				cleanup()
-				panic(errorString("Execution interrupted by user: %v", c))
+				panic(fmt.Sprintf("Execution interrupted by user: %v", c))
 			}()
 		}
 
@@ -266,7 +272,7 @@ func (docker *dockerConfig) getImage() (name string) {
 		lastHash = fmt.Sprintf("-%s", ib.hash())
 
 		name = name + "-" + ib.GetTag()
-		if image, tag := Split2(name, ":"); len(tag) > maxDockerTagLength {
+		if image, tag := collections.Split2(name, ":"); len(tag) > maxDockerTagLength {
 			name = image + ":" + tag[0:maxDockerTagLength]
 		}
 		if app.Refresh || getImageHash(name) != ib.hash() {
@@ -283,10 +289,11 @@ func (docker *dockerConfig) getImage() (name string) {
 			args = append(args, "--tag", name)
 			buildCmd := exec.Command("docker", args...)
 
-			app.Debug("%s", strings.Join(buildCmd.Args, " "))
+			instructions := strings.Join(buildCmd.Args, " ")
 			if ib.Instructions != "" {
-				app.Debug("%s", ib.Instructions)
+				instructions += "\n" + String(ib.Instructions).TrimSpace().IndentN(4).Str()
 			}
+			log.Debug(color.HiBlackString(instructions))
 			buildCmd.Stderr = os.Stderr
 			buildCmd.Dir = folder
 			must(buildCmd.Output())
@@ -302,10 +309,10 @@ var pruneDangling = func() {
 	danglingFilters := filters.NewArgs()
 	danglingFilters.Add("dangling", "true")
 	if _, err := cli.ImagesPrune(ctx, danglingFilters); err != nil {
-		printError("Error pruning dangling images (Untagged): %v", err.Error())
+		log.Errorln("Error pruning dangling images (Untagged):", err)
 	}
 	if _, err := cli.ContainersPrune(ctx, filters.Args{}); err != nil {
-		printError("Error pruning unused containers: %v", err.Error())
+		log.Errorln("Error pruning unused containers:", err)
 	}
 }
 
@@ -331,7 +338,7 @@ func (docker *dockerConfig) prune(images ...string) {
 					}
 					upToDate, err := CheckVersionRange(actual, current)
 					if err != nil {
-						ErrPrintln("Check version for %s vs%s: %v", actual, current, err)
+						log.Errorf("Check version for %s vs%s: %v", actual, current, err)
 					} else if !upToDate {
 						for _, tag := range image.RepoTags {
 							deleteImage(tag)
@@ -348,14 +355,14 @@ func deleteImage(id string) {
 	cli, ctx := getDockerClient()
 	items, err := cli.ImageRemove(ctx, id, types.ImageRemoveOptions{})
 	if err != nil {
-		printError((err.Error()))
+		log.Error(err)
 	}
 	for _, item := range items {
 		if item.Untagged != "" {
-			ErrPrintf("Untagged %s\n", item.Untagged)
+			log.Infof("Untagged %s\n", item.Untagged)
 		}
 		if item.Deleted != "" {
-			ErrPrintf("Deleted %s\n", item.Deleted)
+			log.Infof("Deleted %s\n", item.Deleted)
 		}
 	}
 }
@@ -435,18 +442,18 @@ func (docker *dockerConfig) refreshImage(image string) {
 	app.Refresh = true // Setting this to true will ensure that dependant built images will also be refreshed
 
 	if app.UseLocalImage {
-		app.Debug("Not refreshing %v because `local-image` is set\n", image)
+		log.Debugf("Not refreshing %v because `local-image` is set", image)
 		return
 	}
 
-	app.Debug("Checking if there is a newer version of docker image %v\n", image)
+	log.Debugln("Checking if there is a newer version of docker image", image)
 	err := getDockerUpdateCmd(image).Run()
 	if err != nil {
 		matches, _ := reutils.MultiMatch(image, reECR)
 		account, accountOk := matches["account"]
 		region, regionOk := matches["region"]
 		if accountOk && regionOk && docker.awsConfigExist() {
-			app.Debug("Failed to pull %v. It is an ECR image, trying again after a login.\n", image)
+			log.Debugf("Failed to pull %v. It is an ECR image, trying again after a login.\n", image)
 			loginToECR(account, region)
 			must(getDockerUpdateCmd(image).Run())
 		} else {
@@ -454,7 +461,7 @@ func (docker *dockerConfig) refreshImage(image string) {
 		}
 	}
 	touchImageRefresh(image)
-	ErrPrintln()
+	log.Println()
 }
 
 func loginToECR(account string, region string) {
