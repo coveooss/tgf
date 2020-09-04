@@ -14,7 +14,7 @@ func NewTestApplication(args []string) *TGFApplication {
 	for _, env := range os.Environ() {
 		if strings.HasPrefix(env, "TGF_") {
 			name, _ := collections.Split2(env, "=")
-			os.Setenv(name, "")
+			_ = os.Setenv(name, "")
 		}
 	}
 	return NewTGFApplication(args)
@@ -71,6 +71,36 @@ func TestNewApplicationWithOptionsAndAliases(t *testing.T) {
 			map[string]interface{}{"UseAWS": false, "DockerInteractive": true},
 			nil,
 		},
+		{
+			"--temp = --temp-location host",
+			[]string{"--temp"},
+			map[string]interface{}{"TempDirMountLocation": mountLocHost},
+			nil,
+		},
+		{
+			"--no-temp = --temp-location none",
+			[]string{"--no-temp"},
+			map[string]interface{}{"TempDirMountLocation": mountLocNone},
+			nil,
+		},
+		{
+			"--temp-location wins over --temp",
+			[]string{"--temp", "--temp-location", "none"},
+			map[string]interface{}{"TempDirMountLocation": mountLocNone},
+			nil,
+		},
+		{
+			"--temp-location wins over --no-temp",
+			[]string{"--temp-location", "host", "--no-temp"},
+			map[string]interface{}{"TempDirMountLocation": mountLocHost},
+			nil,
+		},
+		{
+			"--temp-location default",
+			[]string{},
+			map[string]interface{}{"TempDirMountLocation": mountLocVolume},
+			nil,
+		},
 	}
 
 	for _, tt := range tests {
@@ -92,6 +122,8 @@ func TestNewApplicationWithOptionsAndAliases(t *testing.T) {
 						assert.Equal(t, wantValue, reflect.ValueOf(app).Elem().FieldByName(wantField).Interface().(bool), wantField)
 					} else if wantValue, ok := wantValueInt.(string); ok {
 						assert.Equal(t, wantValue, reflect.ValueOf(app).Elem().FieldByName(wantField).Interface().(string), wantField)
+					} else if wantValue, ok := wantValueInt.(MountLocation); ok {
+						assert.Equal(t, wantValue, reflect.ValueOf(app).Elem().FieldByName(wantField).Interface().(MountLocation), wantField)
 					} else {
 						t.Error("The wanted value can only be bool or string")
 					}

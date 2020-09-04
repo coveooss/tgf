@@ -62,6 +62,16 @@ VERSION: @version
 AUTHOR:	Coveo
 `
 
+// MountLocation is a docker mount location
+type MountLocation string
+
+// Mount locations
+const (
+	mountLocNone   MountLocation = "none"
+	mountLocHost   MountLocation = "host"
+	mountLocVolume MountLocation = "volume"
+)
+
 // CLI Environment Variables
 const (
 	envArgs  = "TGF_ARGS"
@@ -71,43 +81,47 @@ const (
 // TGFApplication allows proper management between managed and non managed arguments provided to kingpin
 type TGFApplication struct {
 	*kingpin.Application
-	AwsProfile        string
-	ConfigFiles       string
-	ConfigLocation    string
-	DebugMode         bool
-	DisableUserConfig bool
-	DockerBuild       bool
-	DockerInteractive bool
-	DockerOptions     []string
-	Entrypoint        string
-	FlushCache        bool
-	GetAllVersions    bool
-	GetCurrentVersion bool
-	GetImageName      bool
-	Image             string
-	ImageTag          string
-	ImageVersion      string
-	LoggingLevel      string
-	MountHomeDir      bool
-	MountPoint        string
-	MountTempDir      bool
-	PruneImages       bool
-	PsPath            string
-	Refresh           bool
-	UseAWS            bool
-	UseLocalImage     bool
-	WithCurrentUser   bool
-	WithDockerMount   bool
-	AutoUpdate        bool
-	AutoUpdateSet     bool
+	AwsProfile           string
+	ConfigFiles          string
+	ConfigLocation       string
+	DebugMode            bool
+	DisableUserConfig    bool
+	DockerBuild          bool
+	DockerInteractive    bool
+	DockerOptions        []string
+	Entrypoint           string
+	FlushCache           bool
+	GetAllVersions       bool
+	GetCurrentVersion    bool
+	GetImageName         bool
+	Image                string
+	ImageTag             string
+	ImageVersion         string
+	LoggingLevel         string
+	MountHomeDir         bool
+	MountPoint           string
+	PruneImages          bool
+	PsPath               string
+	Refresh              bool
+	TempDirMountLocation MountLocation
+	UseAWS               bool
+	UseLocalImage        bool
+	WithCurrentUser      bool
+	WithDockerMount      bool
+	AutoUpdate           bool
+	AutoUpdateSet        bool
 }
 
 // NewTGFApplication returns an initialized copy of TGFApplication along with the parsed CLI arguments
 func NewTGFApplication(args []string) *TGFApplication {
 	d := formatDescription()
 	base := kingpin.New("tgf", d).Author("Coveo").AllowUnmanaged().AutoShortcut().InitOnlyOnce().DefaultEnvars().UsageWriter(color.Output)
-	base.DeleteFlag("help")
-	base.DeleteFlag("help-long")
+	_ = base.DeleteFlag("help")
+	_ = base.DeleteFlag("help-long")
+	var temp bool
+	var tempIsSetByUser bool
+	var tempLocation MountLocation
+	var tempLocationIsSetByUser bool
 	app := TGFApplication{Application: base}
 	swFlagON := func(name, description string) *kingpin.FlagClause {
 		return app.Flag(name, fmt.Sprintf("ON by default: %s, use --no-%s to disable", description, name)).Default(true)
@@ -128,7 +142,12 @@ func NewTGFApplication(args []string) *TGFApplication {
 	swFlagON("interactive", "Launch Docker in interactive mode").Alias("it").BoolVar(&app.DockerInteractive)
 	swFlagON("docker-build", "Enable docker build instructions configured in the config files").BoolVar(&app.DockerBuild)
 	swFlagON("home", "Enable mapping of the home directory").BoolVar(&app.MountHomeDir)
-	swFlagON("temp", "Map the temp folder to a local folder").BoolVar(&app.MountTempDir)
+	swFlagON("temp", "Map the temp folder to a local folder (Deprecated: Use --temp-location host and --temp-location none").IsSetByUser(&tempIsSetByUser).BoolVar(&temp)
+	app.Flag("temp-location",
+		fmt.Sprintf(`Determine where the temporary work folder '%s' inside the docker image is mounted:
+   %s: mounts the work folder in the docker volume named “tgf”. The volume is created if it doesn't exist.
+   %s: mounts the work folder in a directory on the host.
+   %s: The work folder is not mounted and is private to the docker container.`, dockerVolumeName, mountLocVolume, mountLocHost, mountLocNone)).IsSetByUser(&tempLocationIsSetByUser).EnumVar((*string)(&tempLocation), "volume", "host", "none")
 	app.Flag("mount-point", "Specify a mount point for the current folder").PlaceHolder("<folder>").Default("current_sources").StringVar(&app.MountPoint)
 	app.Flag("prune", "Remove all previous versions of the targeted image").BoolVar(&app.PruneImages)
 	app.Flag("docker-arg", "Supply extra argument to Docker").PlaceHolder("<opt>").StringsVar(&app.DockerOptions)
@@ -145,8 +164,33 @@ func NewTGFApplication(args []string) *TGFApplication {
 	kingpin.CommandLine = app.Application
 	kingpin.HelpFlag = app.GetFlag("help-tgf")
 
-	app.Parse(args)
+	_, _ = app.Parse(args)
+	app.TempDirMountLocation = resolveTempMountLocation(temp, tempIsSetByUser, tempLocation, tempLocationIsSetByUser)
 	return &app
+}
+
+// resolveTempMountLocation resolves the mount location based on the
+// deprecated cli options --temp/--no-temp and the new option --temp-location
+// This function will no longer be needed when --temp/--no-temp is deprecated
+// and will be replaced by simply setting the default value for the --temp-location kingpin Flag.
+func resolveTempMountLocation(temp bool, tempIsSetByUser bool, tempLocation MountLocation, tempLocationIsSetByUser bool) MountLocation {
+	// If --temp-location was provided on the command line, it wins
+	if tempLocationIsSetByUser {
+		return tempLocation
+	}
+
+	// If --temp/--no-temp were provided on the command line, use them
+	if tempIsSetByUser {
+		switch temp {
+		case true:
+			return mountLocHost
+		case false:
+			return mountLocNone
+		}
+	}
+
+	// No options were provided on the command line, return default
+	return mountLocVolume
 }
 
 func formatDescription() string {
@@ -196,7 +240,8 @@ func (app *TGFApplication) Debug(format string, args ...interface{}) {
 
 // ShowHelp simply display the help context and quit execution
 func (app *TGFApplication) ShowHelp(c *kingpin.ParseContext) error {
-	app.Writer(os.Stdout)
+	app.ErrorWriter(os.Stdout)
+	app.UsageWriter(os.Stdout)
 	usage := strings.Replace(kingpin.DefaultUsageTemplate, "{{.Help|Wrap 0}}", "{{.Help}}", -1)
 	if err := app.UsageForContextWithTemplate(c, 2, usage); err != nil {
 		return err
