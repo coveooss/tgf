@@ -117,6 +117,8 @@ github.com/coveooss/multilogger v0.4.7 h1:8N7UehpdKL09eTFh4ag6A5trp17EBI2VsKQdk0
 github.com/coveooss/multilogger v0.4.7/go.mod h1:MwtlfEwkxTa2WlEqiv99F1jWjdgIHXflZKP0TdbDDWg=
 github.com/coveooss/multilogger v0.4.8 h1:UodWv9PFx0KwPb3/9qXsOmlJDGoIgKUFJyJ/4aYfCSM=
 github.com/coveooss/multilogger v0.4.8/go.mod h1:Pw3jXW2Y4KEd+j5vFTTGSAFRX4fIOvJZzDPnvf9dr7U=
+github.com/coveooss/multilogger v0.5.2 h1:HmuMT1RTD0d6tkqrrO9FlUBbp2p7QYbcAR6guszlifc=
+github.com/coveooss/multilogger v0.5.2/go.mod h1:Pw3jXW2Y4KEd+j5vFTTGSAFRX4fIOvJZzDPnvf9dr7U=
 github.com/coveooss/terragrunt v1.7.10 h1:Zv8foo4yNr5wWgyLpm5QrueGb4VjwRoZo2VsxHXKY6Q=
 github.com/coveooss/terragrunt/v2 v2.2.0 h1:Uiq091tO/I9S/TRF6L97cc2Kba5fWWvwzGwJB/yCfq4=
 github.com/coveooss/terragrunt/v2 v2.2.0/go.mod h1:mkhH8yqyvJ5DB42Wt5bCKqnvTdvx6OeGfhCACTPzM8c=
