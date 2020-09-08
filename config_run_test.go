@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fatih/color"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,14 +34,18 @@ func setup(t *testing.T, testFunction func()) string {
 	ioutil.WriteFile(testTgfUserConfigFile, tgfConfig, 0644)
 
 	// Capture the outputs
-	buffer := bytes.Buffer{}
-	stdout, stderr := color.Output, color.Error
-	color.Output, color.Error = &buffer, &buffer
-	defer func() { color.Output, color.Error = stdout, stderr }()
+	var logBuffer bytes.Buffer
+	log.SetOut(&logBuffer)
+	original := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+	defer func() { os.Stdout = original }()
 
 	// Run the actual test
 	testFunction()
-	return buffer.String()
+	w.Close()
+	out, _ := ioutil.ReadAll(r)
+	return string(out) + logBuffer.String()
 }
 
 func TestCurrentVersion(t *testing.T) {
@@ -57,9 +60,9 @@ func TestCurrentVersion(t *testing.T) {
 
 func TestAllVersions(t *testing.T) {
 	output := setup(t, func() {
-		app := NewTGFApplication([]string{"--all-versions", "--no-aws", "--entrypoint=OTHER_FILE"})
+		app := NewTGFApplication([]string{"--all-versions", "--no-aws", "--ignore-user-config", "--entrypoint=OTHER_FILE"})
 		exitCode := InitConfig(app).Run()
 		assert.Equal(t, 1, exitCode, "exitCode")
 	})
-	assert.Equal(t, color.RedString("--all-version works only with terragrunt as the entrypoint")+"\n", output)
+	assert.Equal(t, "ERROR: --all-version works only with terragrunt as the entrypoint\n", output)
 }

@@ -185,7 +185,7 @@ func (config *TGFConfig) setDefaultValues() {
 	// Fetch SSM configs
 	if config.awsConfigExist() {
 		if err := config.InitAWS(""); err != nil {
-			printError("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err)
+			log.Errorf("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err)
 		} else {
 			if app.ConfigLocation == "" {
 				values := config.readSSMParameterStore(app.PsPath)
@@ -213,11 +213,11 @@ func (config *TGFConfig) setDefaultValues() {
 
 	// Fetch file configs
 	for _, configFile := range config.findConfigFiles(must(os.Getwd()).(string)) {
-		app.Debug("# Reading configuration from %s\n", configFile)
+		log.Debugln("Reading configuration from", configFile)
 		bytes, err := ioutil.ReadFile(configFile)
 
 		if err != nil {
-			fmt.Fprintln(os.Stderr, errorString("Error while loading configuration file %s\n%v", configFile, err))
+			log.Errorf("Error while loading configuration file %s\n%v", configFile, err)
 			continue
 		}
 		configsData = append(configsData, configData{Name: configFile, Raw: string(bytes)})
@@ -227,7 +227,7 @@ func (config *TGFConfig) setDefaultValues() {
 	for i := range configsData {
 		configData := &configsData[i]
 		if err := collections.ConvertData(configData.Raw, config); err != nil {
-			fmt.Fprintln(os.Stderr, errorString("Error while loading configuration from %s\nConfiguration file must be valid YAML, JSON or HCL\n%v", configData.Name, err))
+			log.Errorf("Error while loading configuration from %s\nConfiguration file must be valid YAML, JSON or HCL\n%v", configData.Name, err)
 		}
 		collections.ConvertData(configData.Raw, &configData.Config)
 	}
@@ -313,15 +313,15 @@ func (config *TGFConfig) ValidateVersion() bool {
 	for _, err := range config.validate() {
 		switch err := err.(type) {
 		case ConfigWarning:
-			printWarning("%v", err)
+			log.Warning(err)
 		case VersionMistmatchError:
-			printError("%v", err)
+			log.Error(err)
 			if version == "-" {
 				// We consider this as a fatal error only if the version has not been explicitly specified on the command line
 				return false
 			}
 		default:
-			printError("%v", err)
+			log.Error(err)
 			return false
 		}
 	}
@@ -381,7 +381,7 @@ func (config *TGFConfig) ParseAliases() {
 }
 
 func (config *TGFConfig) readSSMParameterStore(ssmParameterFolder string) map[string]string {
-	config.tgf.Debug("# Reading configuration from SSM %s\n", ssmParameterFolder)
+	log.Debugln("Reading configuration from SSM", ssmParameterFolder)
 	values := make(map[string]string)
 	for _, parameter := range must(awshelper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter) {
 		key := strings.TrimLeft(strings.Replace(*parameter.Name, ssmParameterFolder, "", 1), "/")
@@ -411,7 +411,7 @@ func (config *TGFConfig) findRemoteConfigFiles(location, files string) []string 
 	for _, configPath := range configPaths {
 		fullConfigPath := location + configPath
 		destConfigPath := path.Join(tempDir, configPath)
-		config.tgf.Debug("# Reading configuration from %s\n", fullConfigPath)
+		log.Debugln("Reading configuration from", fullConfigPath)
 		source := must(getter.Detect(fullConfigPath, must(os.Getwd()).(string), getter.Detectors)).(string)
 
 		err := getter.Get(destConfigPath, source)
@@ -423,12 +423,12 @@ func (config *TGFConfig) findRemoteConfigFiles(location, files string) []string 
 		}
 
 		if err != nil {
-			printWarning("Error fetching config at %s: %v", source, err)
+			log.Warningf("Error fetching config at %s: %v", source, err)
 			continue
 		}
 
 		if content, err := ioutil.ReadFile(destConfigPath); err != nil {
-			printWarning("Error reading fetched config file %s: %v", configPath, err)
+			log.Warningf("Error reading fetched config file %s: %v", configPath, err)
 		} else {
 			contentString := string(content)
 			if contentString != "" {
@@ -556,15 +556,10 @@ func (config *TGFConfig) Restart() int {
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {
-		printError("Error on restart: %v", err)
+		log.Errorln("Error on restart:", err)
 		return 1
 	}
 	return 0
-}
-
-// LogDebug print debug information with formatting string
-func (config *TGFConfig) LogDebug(format string, args ...interface{}) {
-	config.tgf.Debug(format, args...)
 }
 
 // GetUpdateVersion fetches the latest tgf version number from the GITHUB_API
@@ -596,27 +591,27 @@ func (config *TGFConfig) ShouldUpdate() bool {
 		if app.AutoUpdate {
 			if version == locallyBuilt {
 				version = "0.0.0"
-				app.Debug("Auto update is forced locally. Checking version...")
+				log.Debug("Auto update is forced locally. Checking version...")
 			} else {
-				app.Debug("Auto update is forced. Checking version...")
+				log.Debug("Auto update is forced. Checking version...")
 			}
 		} else {
-			app.Debug("Auto update is force disabled. Bypassing update version check.")
+			log.Debug("Auto update is force disabled. Bypassing update version check.")
 			return false
 		}
 	} else {
 		if !config.AutoUpdate {
-			app.Debug("Auto update is disabled in the config. Bypassing update version check.")
+			log.Debug("Auto update is disabled in the config. Bypassing update version check.")
 			return false
 		} else if config.GetLastRefresh(autoUpdateFile) < config.AutoUpdateDelay {
-			app.Debug("Less than %v since last check. Bypassing update version check.", config.AutoUpdateDelay.String())
+			log.Debugf("Less than %v since last check. Bypassing update version check.", config.AutoUpdateDelay.String())
 			return false
 		} else {
 			if version == locallyBuilt {
-				app.Debug("Running locally. Bypassing update version check.")
+				log.Debug("Running locally. Bypassing update version check.")
 				return false
 			}
-			app.Debug("An update is due. Checking version...")
+			log.Debug("An update is due. Checking version...")
 		}
 	}
 
@@ -646,7 +641,7 @@ func (config *TGFConfig) getTgfFile(url string) (tgfFile io.ReadCloser, err erro
 
 	tgfFile, err = zipReader.File[0].Open()
 	if err != nil {
-		printError("Failed to read new version rollback from bad update: %v", err)
+		log.Errorln("Failed to read new version rollback from bad update:", err)
 		return
 	}
 	return
@@ -661,7 +656,7 @@ func (config *TGFConfig) DoUpdate(url string) (err error) {
 	err = update.Apply(tgfFile, update.Options{})
 	if err != nil {
 		if err := update.RollbackError(err); err != nil {
-			printError("Failed to rollback from bad update: %v", err)
+			log.Errorln("Failed to rollback from bad update:", err)
 		}
 	}
 	return

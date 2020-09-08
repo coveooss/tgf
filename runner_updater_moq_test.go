@@ -8,17 +8,6 @@ import (
 	"time"
 )
 
-var (
-	lockRunnerUpdaterMockDoUpdate         sync.RWMutex
-	lockRunnerUpdaterMockGetLastRefresh   sync.RWMutex
-	lockRunnerUpdaterMockGetUpdateVersion sync.RWMutex
-	lockRunnerUpdaterMockLogDebug         sync.RWMutex
-	lockRunnerUpdaterMockRestart          sync.RWMutex
-	lockRunnerUpdaterMockRun              sync.RWMutex
-	lockRunnerUpdaterMockSetLastRefresh   sync.RWMutex
-	lockRunnerUpdaterMockShouldUpdate     sync.RWMutex
-)
-
 // Ensure, that RunnerUpdaterMock does implement RunnerUpdater.
 // If this is not the case, regenerate this file with moq.
 var _ RunnerUpdater = &RunnerUpdaterMock{}
@@ -37,9 +26,6 @@ var _ RunnerUpdater = &RunnerUpdaterMock{}
 //             },
 //             GetUpdateVersionFunc: func() (string, error) {
 // 	               panic("mock out the GetUpdateVersion method")
-//             },
-//             LogDebugFunc: func(format string, args ...interface{})  {
-// 	               panic("mock out the LogDebug method")
 //             },
 //             RestartFunc: func() int {
 // 	               panic("mock out the Restart method")
@@ -69,9 +55,6 @@ type RunnerUpdaterMock struct {
 	// GetUpdateVersionFunc mocks the GetUpdateVersion method.
 	GetUpdateVersionFunc func() (string, error)
 
-	// LogDebugFunc mocks the LogDebug method.
-	LogDebugFunc func(format string, args ...interface{})
-
 	// RestartFunc mocks the Restart method.
 	RestartFunc func() int
 
@@ -99,13 +82,6 @@ type RunnerUpdaterMock struct {
 		// GetUpdateVersion holds details about calls to the GetUpdateVersion method.
 		GetUpdateVersion []struct {
 		}
-		// LogDebug holds details about calls to the LogDebug method.
-		LogDebug []struct {
-			// Format is the format argument value.
-			Format string
-			// Args is the args argument value.
-			Args []interface{}
-		}
 		// Restart holds details about calls to the Restart method.
 		Restart []struct {
 		}
@@ -121,6 +97,13 @@ type RunnerUpdaterMock struct {
 		ShouldUpdate []struct {
 		}
 	}
+	lockDoUpdate         sync.RWMutex
+	lockGetLastRefresh   sync.RWMutex
+	lockGetUpdateVersion sync.RWMutex
+	lockRestart          sync.RWMutex
+	lockRun              sync.RWMutex
+	lockSetLastRefresh   sync.RWMutex
+	lockShouldUpdate     sync.RWMutex
 }
 
 // DoUpdate calls DoUpdateFunc.
@@ -133,9 +116,9 @@ func (mock *RunnerUpdaterMock) DoUpdate(url string) error {
 	}{
 		URL: url,
 	}
-	lockRunnerUpdaterMockDoUpdate.Lock()
+	mock.lockDoUpdate.Lock()
 	mock.calls.DoUpdate = append(mock.calls.DoUpdate, callInfo)
-	lockRunnerUpdaterMockDoUpdate.Unlock()
+	mock.lockDoUpdate.Unlock()
 	return mock.DoUpdateFunc(url)
 }
 
@@ -148,9 +131,9 @@ func (mock *RunnerUpdaterMock) DoUpdateCalls() []struct {
 	var calls []struct {
 		URL string
 	}
-	lockRunnerUpdaterMockDoUpdate.RLock()
+	mock.lockDoUpdate.RLock()
 	calls = mock.calls.DoUpdate
-	lockRunnerUpdaterMockDoUpdate.RUnlock()
+	mock.lockDoUpdate.RUnlock()
 	return calls
 }
 
@@ -164,9 +147,9 @@ func (mock *RunnerUpdaterMock) GetLastRefresh(file string) time.Duration {
 	}{
 		File: file,
 	}
-	lockRunnerUpdaterMockGetLastRefresh.Lock()
+	mock.lockGetLastRefresh.Lock()
 	mock.calls.GetLastRefresh = append(mock.calls.GetLastRefresh, callInfo)
-	lockRunnerUpdaterMockGetLastRefresh.Unlock()
+	mock.lockGetLastRefresh.Unlock()
 	return mock.GetLastRefreshFunc(file)
 }
 
@@ -179,9 +162,9 @@ func (mock *RunnerUpdaterMock) GetLastRefreshCalls() []struct {
 	var calls []struct {
 		File string
 	}
-	lockRunnerUpdaterMockGetLastRefresh.RLock()
+	mock.lockGetLastRefresh.RLock()
 	calls = mock.calls.GetLastRefresh
-	lockRunnerUpdaterMockGetLastRefresh.RUnlock()
+	mock.lockGetLastRefresh.RUnlock()
 	return calls
 }
 
@@ -192,9 +175,9 @@ func (mock *RunnerUpdaterMock) GetUpdateVersion() (string, error) {
 	}
 	callInfo := struct {
 	}{}
-	lockRunnerUpdaterMockGetUpdateVersion.Lock()
+	mock.lockGetUpdateVersion.Lock()
 	mock.calls.GetUpdateVersion = append(mock.calls.GetUpdateVersion, callInfo)
-	lockRunnerUpdaterMockGetUpdateVersion.Unlock()
+	mock.lockGetUpdateVersion.Unlock()
 	return mock.GetUpdateVersionFunc()
 }
 
@@ -205,44 +188,9 @@ func (mock *RunnerUpdaterMock) GetUpdateVersionCalls() []struct {
 } {
 	var calls []struct {
 	}
-	lockRunnerUpdaterMockGetUpdateVersion.RLock()
+	mock.lockGetUpdateVersion.RLock()
 	calls = mock.calls.GetUpdateVersion
-	lockRunnerUpdaterMockGetUpdateVersion.RUnlock()
-	return calls
-}
-
-// LogDebug calls LogDebugFunc.
-func (mock *RunnerUpdaterMock) LogDebug(format string, args ...interface{}) {
-	if mock.LogDebugFunc == nil {
-		panic("RunnerUpdaterMock.LogDebugFunc: method is nil but RunnerUpdater.LogDebug was just called")
-	}
-	callInfo := struct {
-		Format string
-		Args   []interface{}
-	}{
-		Format: format,
-		Args:   args,
-	}
-	lockRunnerUpdaterMockLogDebug.Lock()
-	mock.calls.LogDebug = append(mock.calls.LogDebug, callInfo)
-	lockRunnerUpdaterMockLogDebug.Unlock()
-	mock.LogDebugFunc(format, args...)
-}
-
-// LogDebugCalls gets all the calls that were made to LogDebug.
-// Check the length with:
-//     len(mockedRunnerUpdater.LogDebugCalls())
-func (mock *RunnerUpdaterMock) LogDebugCalls() []struct {
-	Format string
-	Args   []interface{}
-} {
-	var calls []struct {
-		Format string
-		Args   []interface{}
-	}
-	lockRunnerUpdaterMockLogDebug.RLock()
-	calls = mock.calls.LogDebug
-	lockRunnerUpdaterMockLogDebug.RUnlock()
+	mock.lockGetUpdateVersion.RUnlock()
 	return calls
 }
 
@@ -253,9 +201,9 @@ func (mock *RunnerUpdaterMock) Restart() int {
 	}
 	callInfo := struct {
 	}{}
-	lockRunnerUpdaterMockRestart.Lock()
+	mock.lockRestart.Lock()
 	mock.calls.Restart = append(mock.calls.Restart, callInfo)
-	lockRunnerUpdaterMockRestart.Unlock()
+	mock.lockRestart.Unlock()
 	return mock.RestartFunc()
 }
 
@@ -266,9 +214,9 @@ func (mock *RunnerUpdaterMock) RestartCalls() []struct {
 } {
 	var calls []struct {
 	}
-	lockRunnerUpdaterMockRestart.RLock()
+	mock.lockRestart.RLock()
 	calls = mock.calls.Restart
-	lockRunnerUpdaterMockRestart.RUnlock()
+	mock.lockRestart.RUnlock()
 	return calls
 }
 
@@ -279,9 +227,9 @@ func (mock *RunnerUpdaterMock) Run() int {
 	}
 	callInfo := struct {
 	}{}
-	lockRunnerUpdaterMockRun.Lock()
+	mock.lockRun.Lock()
 	mock.calls.Run = append(mock.calls.Run, callInfo)
-	lockRunnerUpdaterMockRun.Unlock()
+	mock.lockRun.Unlock()
 	return mock.RunFunc()
 }
 
@@ -292,9 +240,9 @@ func (mock *RunnerUpdaterMock) RunCalls() []struct {
 } {
 	var calls []struct {
 	}
-	lockRunnerUpdaterMockRun.RLock()
+	mock.lockRun.RLock()
 	calls = mock.calls.Run
-	lockRunnerUpdaterMockRun.RUnlock()
+	mock.lockRun.RUnlock()
 	return calls
 }
 
@@ -308,9 +256,9 @@ func (mock *RunnerUpdaterMock) SetLastRefresh(file string) {
 	}{
 		File: file,
 	}
-	lockRunnerUpdaterMockSetLastRefresh.Lock()
+	mock.lockSetLastRefresh.Lock()
 	mock.calls.SetLastRefresh = append(mock.calls.SetLastRefresh, callInfo)
-	lockRunnerUpdaterMockSetLastRefresh.Unlock()
+	mock.lockSetLastRefresh.Unlock()
 	mock.SetLastRefreshFunc(file)
 }
 
@@ -323,9 +271,9 @@ func (mock *RunnerUpdaterMock) SetLastRefreshCalls() []struct {
 	var calls []struct {
 		File string
 	}
-	lockRunnerUpdaterMockSetLastRefresh.RLock()
+	mock.lockSetLastRefresh.RLock()
 	calls = mock.calls.SetLastRefresh
-	lockRunnerUpdaterMockSetLastRefresh.RUnlock()
+	mock.lockSetLastRefresh.RUnlock()
 	return calls
 }
 
@@ -336,9 +284,9 @@ func (mock *RunnerUpdaterMock) ShouldUpdate() bool {
 	}
 	callInfo := struct {
 	}{}
-	lockRunnerUpdaterMockShouldUpdate.Lock()
+	mock.lockShouldUpdate.Lock()
 	mock.calls.ShouldUpdate = append(mock.calls.ShouldUpdate, callInfo)
-	lockRunnerUpdaterMockShouldUpdate.Unlock()
+	mock.lockShouldUpdate.Unlock()
 	return mock.ShouldUpdateFunc()
 }
 
@@ -349,8 +297,8 @@ func (mock *RunnerUpdaterMock) ShouldUpdateCalls() []struct {
 } {
 	var calls []struct {
 	}
-	lockRunnerUpdaterMockShouldUpdate.RLock()
+	mock.lockShouldUpdate.RLock()
 	calls = mock.calls.ShouldUpdate
-	lockRunnerUpdaterMockShouldUpdate.RUnlock()
+	mock.lockShouldUpdate.RUnlock()
 	return calls
 }
