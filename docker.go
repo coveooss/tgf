@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/docker/docker/api/types/volume"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -547,35 +546,3 @@ to the drive letter:
 	...
 	Z:\ ==> /Z
 `
-
-// volumeExists returns true if the given volume is already created.
-func volumeExists(name string) bool {
-	cli, ctx := getDockerClient()
-
-	list, err := cli.VolumeList(ctx, filters.NewArgs())
-
-	if err != nil {
-		return false
-	}
-
-	for _, volume := range list.Volumes {
-		if volume != nil && volume.Name == name {
-			return true
-		}
-	}
-
-	return false
-}
-
-func createVolume(name string) error {
-	cli, ctx := getDockerClient()
-
-	_, err := cli.VolumeCreate(ctx, volume.VolumesCreateBody{
-		Driver:     "",
-		DriverOpts: nil,
-		Labels:     nil,
-		Name:       name,
-	})
-
-	return err
-}
