@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/fatih/color"
@@ -37,10 +38,10 @@ func (config *TGFConfig) Run() int {
 
 	if app.GetAllVersions {
 		if filepath.Base(config.EntryPoint) != "terragrunt" {
-			printError(("--all-version works only with terragrunt as the entrypoint"))
+			log.Error("--all-version works only with terragrunt as the entrypoint")
 			return 1
 		}
-		Println("TGF version", version)
+		fmt.Println("TGF version", version)
 		app.Unmanaged = []string{"get-versions"}
 	}
 
@@ -59,9 +60,9 @@ func (config *TGFConfig) Run() int {
 		return 0
 	}
 
-	if config.EntryPoint == "terragrunt" && app.Unmanaged == nil && !app.DebugMode && !app.GetImageName {
+	if config.EntryPoint == "terragrunt" && app.Unmanaged == nil && !app.GetImageName {
 		title := color.New(color.FgYellow, color.Underline).SprintFunc()
-		ErrPrintln(title("\nTGF Usage\n"))
+		log.Println(title("\nTGF Usage"))
 		app.Usage(nil)
 	}
 

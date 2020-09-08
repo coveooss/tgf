@@ -10,6 +10,7 @@ import (
 	"github.com/coveooss/multilogger/errors"
 	"github.com/coveord/kingpin/v2"
 	"github.com/fatih/color"
+	"github.com/sirupsen/logrus"
 )
 
 const description = `@color("underline", "DESCRIPTION:")
@@ -74,7 +75,6 @@ type TGFApplication struct {
 	AwsProfile        string
 	ConfigFiles       string
 	ConfigLocation    string
-	DebugMode         bool
 	DisableUserConfig bool
 	DockerBuild       bool
 	DockerInteractive bool
@@ -123,7 +123,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("current-version", "Get current version information").BoolVar(&app.GetCurrentVersion)
 	app.Flag("all-versions", "Get versions of TGF & all others underlying utilities").BoolVar(&app.GetAllVersions)
 	app.Flag("logging-level", "Set the logging level (panic=0, fatal=1, error=2, warning=3, info=4, debug=5, trace=6, full=7)").Short('L').PlaceHolder("<level>").StringVar(&app.LoggingLevel)
-	app.Flag("debug", "Print debug messages and docker commands issued").Short('D').Default(String(os.Getenv(envDebug)).ParseBool()).BoolVar(&app.DebugMode)
+	debug := app.Flag("debug", "Print debug messages and docker commands issued").Short('D').Bool()
 	app.Flag("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache").Short('F').BoolVar(&app.FlushCache)
 	swFlagON("interactive", "Launch Docker in interactive mode").Alias("it").BoolVar(&app.DockerInteractive)
 	swFlagON("docker-build", "Enable docker build instructions configured in the config files").BoolVar(&app.DockerBuild)
@@ -146,6 +146,9 @@ func NewTGFApplication(args []string) *TGFApplication {
 	kingpin.HelpFlag = app.GetFlag("help-tgf")
 
 	app.Parse(args)
+	if *debug {
+		log.SetDefaultConsoleHookLevel(logrus.DebugLevel)
+	}
 	return &app
 }
 
@@ -187,13 +190,6 @@ func (app *TGFApplication) Parse(args []string) (command string, err error) {
 	return
 }
 
-// Debug print debug information
-func (app *TGFApplication) Debug(format string, args ...interface{}) {
-	if app.DebugMode {
-		ErrPrintf(color.HiBlackString(format+"\n", args...))
-	}
-}
-
 // ShowHelp simply display the help context and quit execution
 func (app *TGFApplication) ShowHelp(c *kingpin.ParseContext) error {
 	app.Writer(os.Stdout)
@@ -209,9 +205,9 @@ func (app *TGFApplication) ShowHelp(c *kingpin.ParseContext) error {
 func (app *TGFApplication) Run() int {
 	if app.GetCurrentVersion {
 		if version == locallyBuilt {
-			Printf("tgf (built from source)\n")
+			fmt.Println("tgf (built from source)")
 		} else {
-			Printf("tgf v%s\n", version)
+			fmt.Printf("tgf v%s\n", version)
 		}
 		return 0
 	}
