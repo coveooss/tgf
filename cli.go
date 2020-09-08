@@ -180,13 +180,12 @@ func resolveTempMountLocation(temp bool, tempIsSetByUser bool, tempLocation Moun
 	}
 
 	// If --temp/--no-temp were provided on the command line, use them
-	if tempIsSetByUser {
-		switch temp {
-		case true:
-			return mountLocHost
-		case false:
-			return mountLocNone
-		}
+	if tempIsSetByUser && temp {
+		return mountLocHost
+	}
+
+	if tempIsSetByUser && !temp {
+		return mountLocNone
 	}
 
 	// No options were provided on the command line, return default
