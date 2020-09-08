@@ -32,7 +32,7 @@ func setupUpdaterMock(localVersion string, latestVersion string) *RunnerUpdaterM
 	}
 }
 
-func TestAutoUpdateLower(t *testing.T) {
+func TestRunWithUpdateCheck(t *testing.T) {
 	tests := []struct {
 		name               string
 		local              string
