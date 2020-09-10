@@ -143,7 +143,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	swFlagON("interactive", "Launch Docker in interactive mode").Alias("it").BoolVar(&app.DockerInteractive)
 	swFlagON("docker-build", "Enable docker build instructions configured in the config files").BoolVar(&app.DockerBuild)
 	swFlagON("home", "Enable mapping of the home directory").BoolVar(&app.MountHomeDir)
-	swFlagON("temp", "Map the temp folder to a local folder (Deprecated: Use --temp-location host and --temp-location none").IsSetByUser(&tempIsSetByUser).BoolVar(&temp)
+	swFlagON("temp", "Map the temp folder to a local folder (Deprecated: Use --temp-location host and --temp-location none)").IsSetByUser(&tempIsSetByUser).BoolVar(&temp)
 	app.Flag("temp-location",
 		fmt.Sprintf(`Determine where the temporary work folder '%s' inside the docker image is mounted:
    %s: mounts the work folder in the docker volume named “tgf”. The volume is created if it doesn't exist.
