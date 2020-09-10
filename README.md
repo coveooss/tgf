@@ -6,7 +6,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/coveooss/tgf)](https://goreportcard.com/report/github.com/coveooss/tgf)
 [![Coverage Status](https://coveralls.io/repos/github/coveooss/tgf/badge.svg?branch=master)](https://coveralls.io/github/coveooss/tgf?branch=master)
 
-A **T**erra**g**runt **f**rontend that allow execution of Terragrunt/Terraform through Docker.
+A **T**erra**g**runt **f**rontend that allows execution of Terragrunt/Terraform through Docker.
 
 Table of content:
 
@@ -26,20 +26,20 @@ By default, TGF is used as a frontend for [our fork of terragrunt](https://githu
 
 ### Why use TGF
 
-Using `TGF` ensure that all your users are using the same set of tools to run infrastructure configuration even if they are working on different environments (`linux`, `Microsoft Windows`, `Mac OSX`, etc).
+Using `TGF` ensures all your users are using the same set of tools to run infrastructure configuration even if they are working on different environments (`linux`, `Microsoft Windows`, `Mac OSX`, etc).
 
-`Terraform` is very sensitive to the version used and if one user update to a newer version, the state files will be marked with the latest version and
-all other user will have to update their `Terraform` version to the latest used one.
+`Terraform` is very sensitive to the version used and if one user updates to a newer version, the state files will be marked with the latest version and
+all other users will have to update their `Terraform` version to the latest used one.
 
-Also, tools such as `AWS CLI` are updated on a regular basis and people don't tend to update their version regularly, resulting in many different version
-among your users. If someone make a script calling a new feature of the `AWS` api, that script may break when executed by another user that has an
+Also, tools such as `AWS CLI` are updated on a regular basis and people don't tend to update their version regularly, resulting in many versions
+among your users. If someone makes a script calling a new feature of the `AWS` api, that script may break when executed by another user that has an
 outdated version.
 
 ## Installation
 
 On `mac` and `linux`:  
 
-You can run the `get-latest-tgf.sh` script to check if you have the latest version of tgf installed and install it if needed:
+You can run the `get-latest-tgf.sh` script to check if you have the latest version of tgf installed and install it as needed:
 
 ```bash
 curl https://raw.githubusercontent.com/coveooss/tgf/master/get-latest-tgf.sh | bash
@@ -56,19 +56,19 @@ On `Windows`, run `get-latest-tgf.ps1` with Powershell:
 ## Configuration
 
 TGF has multiple levels of configuration. It first looks through the [AWS parameter store](https://aws.amazon.com/ec2/systems-manager/parameter-store/)
-under `/default/tgf` using your current [AWS CLI configuration](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html) if any. There it tries to find parameters called `config-location` (example: bucket.s3.amazonaws.com/foo) and `config-paths` (example: my-file.json:my-second-file.json, default: TGFConfig). If it finds `config-location`, it fetches its config from that path using the [go-getter library](https://github.com/hashicorp/go-getter). Otherwise, it looks directly in SSM for configuration keys (ex: `/default/tgf/logging-level`).
+under `/default/tgf` using your current [AWS CLI configuration](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html) if any. There, it tries to find parameters called `config-location` (example: bucket.s3.amazonaws.com/foo) and `config-paths` (example: my-file.json:my-second-file.json, default: TGFConfig). If it finds `config-location`, it fetches its config from that path using the [go-getter library](https://github.com/hashicorp/go-getter). Otherwise, it looks directly in SSM for configuration keys (ex: `/default/tgf/logging-level`).
 
 TGF then looks for a file named .tgf.config or tgf.user.config in the current working folder (and recursively in any parent folders) to get its parameters. These configuration files overwrite the remote configurations.
-Your configuration file could be expressed in  [YAML](http://www.yaml.org/start.html) or [JSON](http://www.json.org/)
+Your configuration file could be expressed in  [YAML](http://www.yaml.org/start.html) or [JSON](http://www.json.org/).
 
-Example of YAML configuration file:
+Example of a YAML configuration file:
 
 ```yaml
 docker-refresh: 1h
 logging-level: notice
 ```
 
-Example of JSON configuration file:
+Example of a JSON configuration file:
 
 ```json
 {
@@ -88,8 +88,8 @@ Key | Description | Default value
 | docker-image-build-folder | Folder where the docker build command should be executed |
 | docker-refresh | Delay before checking if a newer version of the docker image is available | 1h (1 hour)
 | docker-options | Additional options to supply to the Docker command |
-| logging-level | Terragrunt logging level (only apply to Terragrunt entry point).<br>*Critical (0), Error (1), Warning (2), Notice (3), Info (4), Debug (5), Full (6)* | Notice
-| entry-point | The program that will be automatically launched when the docker starts | terragrunt
+| logging-level | Terragrunt logging level (only applies to Terragrunt entry point).<br>*Critical (0), Error (1), Warning (2), Notice (3), Info (4), Debug (5), Full (6)* | Notice
+| entry-point | The program that will be automatically launched when the docker container starts | terragrunt
 | tgf-recommended-version | The minimal tgf version recommended in your context  (should not be placed in `.tgf.config file`) | *no default*
 | recommended-image | The tgf image recommended in your context (should not be placed in `.tgf.config file`) | *no default*
 | environment | Allows temporary addition of environment variables | *no default*
@@ -98,15 +98,15 @@ Key | Description | Default value
 | alias | Allows to set short aliases for long commands<br>`my_command: "--ri --with-docker-mount --image=my-image --image-version=my-tag -E my-script.py"` | *no default*
 | auto-update | Toggles the auto update check. Will only perform the update after the delay | true
 | auto-update-delay | Delay before running auto-update again  | 2h (2 hours)
-| update-version | The version to update to when running auto update | Latest fetched from Github's API
+| update-version | The version to update to when running auto update | Latest fetched from Github's API
 
-Note: *The key names are not case sensitive*
+Note: *The key names are not case-sensitive*
 
 ### Configuration section
 
-It is possible to specify configuration elements that only apply on specific os.
+It is possible to specify configuration elements that only apply on a specific os.
 
-Example of HCL configuration file:
+Example of an HCL configuration file:
 
 ```text
 docker-refresh: 1h
@@ -216,6 +216,12 @@ Flags:
       --docker-build            ON by default: Enable docker build instructions configured in the config files, use --no-docker-build to disable
       --home                    ON by default: Enable mapping of the home directory, use --no-home to disable
       --temp                    ON by default: Map the temp folder to a local folder, use --no-temp to disable
+      --temp-location=TEMP-LOCATION  
+                                Determine where the temporary work folder 'tgf' inside the docker image is mounted:
+                                
+                                  volume: mounts the work folder in the docker volume named “tgf”. The volume is created if it doesn't exist.
+                                  host: mounts the work folder in a directory on the host.
+                                  none: The work folder is not mounted and is private to the docker container.
       --mount-point=<folder>    Specify a mount point for the current folder
       --prune                   Remove all previous versions of the targeted image
       --docker-arg=<opt> ...    Supply extra argument to Docker
@@ -337,19 +343,19 @@ executed according to dependencies that are defined by the [dependencies stateme
 ### Other usages
 
 ```bash
-> tgf -e aws s3 ls
+> tgf -E aws s3 ls
 ```
 
 Invoke `AWS CLI` as entry point and list all s3 buckets
 
 ```bash
-> tgf -e fish
+> tgf -E fish
 ```
 
 Start a shell `fish` in the current folder
 
 ```bash
-> tgf -e my_command -i my_image:latest
+> tgf -E my_command -i my_image:latest
 ```
 
 Invokes `my_command` in your own docker image. As you can see, you can do whatever you need to with `tgf`. It is not restricted to only the pre-packaged
@@ -357,7 +363,7 @@ Docker images, you can use it to run any program in any Docker images. Your imag
 
 ## Development
 
-Build are automatically launched on tagging.
+Builds are automatically launched on tagging.
 
-Tags with format image-0.0.0 automatically launch a Docker images build that are available through Docker Hub.
-Tags with format v0.0.0 automatically launch a new release on Github for the TGF executable.
+Tags with the format image-0.0.0 automatically launch a Docker images build that are available through Docker Hub.
+Tags with the format v0.0.0 automatically launch a new release on Github for the TGF executable.

@@ -39,6 +39,8 @@ const (
 	dockerSocketFile     = "/var/run/docker.sock"
 	dockerfilePattern    = "TGF_dockerfile"
 	maxDockerTagLength   = 128
+	dockerMountImagePath = "/var/tgf"
+	dockerVolumeName     = "tgf"
 )
 
 type dockerConfig struct{ *TGFConfig }
@@ -115,18 +117,27 @@ func (docker *dockerConfig) call() int {
 		dockerArgs = append(dockerArgs, config.DockerOptions...)
 	}
 
-	if app.MountTempDir {
+	switch app.TempDirMountLocation {
+	case mountLocHost:
 		temp := filepath.ToSlash(filepath.Join(must(filepath.EvalSymlinks(os.TempDir())).(string), "tgf-cache"))
 		tempDrive := fmt.Sprintf("%s/", filepath.VolumeName(temp))
 		tempFolder := strings.TrimPrefix(temp, tempDrive)
 		if runtime.GOOS == "windows" {
 			os.Mkdir(temp, 0755)
 		}
-		dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:/var/tgf", convertDrive(tempDrive), tempFolder))
+		dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:%s", convertDrive(tempDrive), tempFolder, dockerMountImagePath))
 		config.Environment["TGF_TEMP_FOLDER"] = path.Join(tempDrive, tempFolder)
-		config.Environment["TERRAGRUNT_CACHE"] = "/var/tgf"
+	case mountLocNone:
+		// Nothing to do
+	case mountLocVolume:
+		// docker's -v option will automatically create the volume if it doesn't already exist
+		dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s:%s", dockerVolumeName, dockerMountImagePath))
+	default:
+		// We added a mount location and forgot to handle it...
+		panic(fmt.Sprintf("Unknown mount location '%s'.  Please report a bug.", app.TempDirMountLocation))
 	}
 
+	config.Environment["TERRAGRUNT_CACHE"] = dockerMountImagePath
 	config.Environment["TGF_COMMAND"] = config.EntryPoint
 	config.Environment["TGF_VERSION"] = version
 	config.Environment["TGF_ARGS"] = strings.Join(os.Args, " ")
