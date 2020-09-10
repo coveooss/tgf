@@ -148,7 +148,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 		fmt.Sprintf(`Determine where the temporary work folder '%s' inside the docker image is mounted:
    %s: mounts the work folder in the docker volume named “tgf”. The volume is created if it doesn't exist.
    %s: mounts the work folder in a directory on the host.
-   %s: The work folder is not mounted and is private to the docker container.`, dockerVolumeName, mountLocVolume, mountLocHost, mountLocNone)).IsSetByUser(&tempLocationIsSetByUser).EnumVar((*string)(&tempLocation), "volume", "host", "none")
+   %s: The work folder is not mounted and is private to the docker container.`, dockerVolumeName, mountLocVolume, mountLocHost, mountLocNone)).IsSetByUser(&tempLocationIsSetByUser).EnumVar((*string)(&tempLocation), string(mountLocVolume), string(mountLocHost), string(mountLocNone))
 	app.Flag("mount-point", "Specify a mount point for the current folder").PlaceHolder("<folder>").Default("current_sources").StringVar(&app.MountPoint)
 	app.Flag("prune", "Remove all previous versions of the targeted image").BoolVar(&app.PruneImages)
 	app.Flag("docker-arg", "Supply extra argument to Docker").PlaceHolder("<opt>").StringsVar(&app.DockerOptions)
@@ -167,7 +167,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 
 	_, _ = app.Parse(args)
 	if *debug {
-		log.SetDefaultConsoleHookLevel(logrus.DebugLevel)
+		_ = log.SetDefaultConsoleHookLevel(logrus.DebugLevel)
 	}
 	app.TempDirMountLocation = resolveTempMountLocation(temp, tempIsSetByUser, tempLocation, tempLocationIsSetByUser)
 	return &app
