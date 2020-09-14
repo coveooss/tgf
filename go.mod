@@ -8,7 +8,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/coveooss/gotemplate/v3 v3.5.2
 	github.com/coveooss/multilogger v0.5.2
-	github.com/coveooss/terragrunt/v2 v2.3.0
+	github.com/coveooss/terragrunt/v2 v2.3.3
 	github.com/coveord/kingpin/v2 v2.3.1
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v1.13.1

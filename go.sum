@@ -117,6 +117,8 @@ github.com/coveooss/multilogger v0.5.2 h1:HmuMT1RTD0d6tkqrrO9FlUBbp2p7QYbcAR6gus
 github.com/coveooss/multilogger v0.5.2/go.mod h1:Pw3jXW2Y4KEd+j5vFTTGSAFRX4fIOvJZzDPnvf9dr7U=
 github.com/coveooss/terragrunt/v2 v2.3.0 h1:cKok2Pody2MJ8HCIOEn9zxHKmtD7j3bR7gp8W7u6Ekc=
 github.com/coveooss/terragrunt/v2 v2.3.0/go.mod h1:RT19Wb0ASmyeF/jLUem+iKWU9p8TWvJokT+S0DokEC8=
+github.com/coveooss/terragrunt/v2 v2.3.3 h1:MdrZIwoERCfVdIUg/SqahQ0fxVqD0xNze5Zx/ceeXK8=
+github.com/coveooss/terragrunt/v2 v2.3.3/go.mod h1:RT19Wb0ASmyeF/jLUem+iKWU9p8TWvJokT+S0DokEC8=
 github.com/coveord/kingpin/v2 v2.3.1 h1:GWdfhOpRbIE+5Bt/hGgDbfWkntsCC5484xFWXaor+sg=
 github.com/coveord/kingpin/v2 v2.3.1/go.mod h1:G7snIuRD09h58XUezPxWrLPuZplFdreCh6cmJZMtNUU=
 github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d h1:U+s90UTSYgptZMwQh2aRr3LuazLJIa+Pg3Kc1ylSYVY=
