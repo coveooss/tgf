@@ -25,7 +25,6 @@ import (
 	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/coveooss/gotemplate/v3/utils"
 	"github.com/coveooss/multilogger/reutils"
-	"github.com/coveooss/terragrunt/v2/util"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
@@ -52,7 +51,7 @@ func (docker *dockerConfig) call() int {
 
 	// Change the default log level for terragrunt
 	const logLevelArg = "--terragrunt-logging-level"
-	if !util.ListContainsElement(command, logLevelArg) && filepath.Base(config.EntryPoint) == "terragrunt" {
+	if !listContainsElement(command, logLevelArg) && filepath.Base(config.EntryPoint) == "terragrunt" {
 		level, _ := strconv.Atoi(config.LogLevel)
 		if level > 6 || strings.ToLower(config.LogLevel) == "full" {
 			config.LogLevel = "trace"
@@ -174,7 +173,7 @@ func (docker *dockerConfig) call() int {
 		dockerArgs = append(dockerArgs, strings.Split(do, " ")...)
 	}
 
-	if !util.ListContainsElement(dockerArgs, "--name") {
+	if !listContainsElement(dockerArgs, "--name") {
 		// We do not remove the image after execution if a name has been provided
 		dockerArgs = append(dockerArgs, "--rm")
 	}
@@ -553,3 +552,13 @@ to the drive letter:
 	...
 	Z:\ ==> /Z
 `
+
+func listContainsElement(list []string, element string) bool {
+	for _, item := range list {
+		if item == element {
+			return true
+		}
+	}
+
+	return false
+}
