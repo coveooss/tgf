@@ -64,5 +64,5 @@ func TestAllVersions(t *testing.T) {
 		exitCode := InitConfig(app).Run()
 		assert.Equal(t, 1, exitCode, "exitCode")
 	})
-	assert.Equal(t, "ERROR: --all-version works only with terragrunt as the entrypoint\n", output)
+	assert.Contains(t, output, "ERROR: --all-version works only with terragrunt as the entrypoint\n")
 }
