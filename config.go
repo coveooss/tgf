@@ -481,29 +481,38 @@ func parseSsmConfig(parameterValues map[string]string) string {
 func (config TGFConfig) awsConfigExist() bool {
 	app := config.tgf
 	if !app.UseAWS {
+		log.Debugln("Not trying to read the config from AWS. It is disabled")
 		return false
 	}
 
-	if os.Getenv("AWS_PROFILE")+os.Getenv("AWS_ACCESS_KEY_ID")+os.Getenv("AWS_CONFIG_FILE") != "" {
+	log.Debugln("Checking if the TGF configuration should be read from AWS SSM. This will happen if any of the following are true:")
+
+	environmentVariablesExist := os.Getenv("AWS_PROFILE")+os.Getenv("AWS_ACCESS_KEY_ID")+os.Getenv("AWS_CONFIG_FILE")+os.Getenv("TGF_USE_AWS_CONFIG") != ""
+	log.Debugln(" - One of these env variables exist (AWS_PROFILE, AWS_ACCESS_KEY_ID, AWS_CONFIG_FILE, TGF_USE_AWS_CONFIG):", environmentVariablesExist)
+	if environmentVariablesExist {
 		// If any AWS identification variable is defined, we consider that we are in an AWS environment.
 		return true
 	}
 
-	if _, err := exec.LookPath("aws"); err == nil {
+	_, err := exec.LookPath("aws")
+	awsCliIsInstalled := err == nil
+	log.Debugln(" - The AWS CLI is installed:", awsCliIsInstalled)
+	if awsCliIsInstalled {
 		// If aws program is installed, we also consider that we are in an AWS environment.
 		return true
 	}
 
 	// Otherwise, we check if the current user has a folder named .aws defined under its home directory.
-	currentUser, err := user.Current()
-	if err != nil {
-		return false
+	awsFolderExists := false
+	if currentUser, err := user.Current(); err != nil {
+		awsFolder, err := os.Stat(filepath.Join(currentUser.HomeDir, ".aws"))
+		if err != nil {
+			awsFolderExists = awsFolder.IsDir()
+		}
 	}
-	awsFolder, err := os.Stat(filepath.Join(currentUser.HomeDir, ".aws"))
-	if err != nil {
-		return false
-	}
-	return awsFolder.IsDir()
+	log.Debugln(" - The ~/.aws folder exists:", awsFolderExists)
+
+	return awsFolderExists
 }
 
 // Return the list of configuration files found from the current working directory up to the root folder

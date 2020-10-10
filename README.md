@@ -58,6 +58,8 @@ On `Windows`, run `get-latest-tgf.ps1` with Powershell:
 TGF has multiple levels of configuration. It first looks through the [AWS parameter store](https://aws.amazon.com/ec2/systems-manager/parameter-store/)
 under `/default/tgf` using your current [AWS CLI configuration](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html) if any. There, it tries to find parameters called `config-location` (example: bucket.s3.amazonaws.com/foo) and `config-paths` (example: my-file.json:my-second-file.json, default: TGFConfig). If it finds `config-location`, it fetches its config from that path using the [go-getter library](https://github.com/hashicorp/go-getter). Otherwise, it looks directly in SSM for configuration keys (ex: `/default/tgf/logging-level`).
 
+**Note**: The SSM configuration will only be read if AWS environment variables are set, the AWS CLI is installed or the ~/.aws folder exists. If you wish to force TGF to read the SSM config and these conditions are not met, you can set the `TGF_USE_AWS_CONFIG=true` environment variable
+
 TGF then looks for a file named .tgf.config or tgf.user.config in the current working folder (and recursively in any parent folders) to get its parameters. These configuration files overwrite the remote configurations.
 Your configuration file could be expressed in  [YAML](http://www.yaml.org/start.html) or [JSON](http://www.json.org/).
 
@@ -218,7 +220,7 @@ Flags:
       --temp                    ON by default: Map the temp folder to a local folder, use --no-temp to disable
       --temp-location=TEMP-LOCATION  
                                 Determine where the temporary work folder 'tgf' inside the docker image is mounted:
-                                
+
                                   volume: mounts the work folder in the docker volume named “tgf”. The volume is created if it doesn't exist.
                                   host: mounts the work folder in a directory on the host.
                                   none: The work folder is not mounted and is private to the docker container.
