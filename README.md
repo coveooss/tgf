@@ -196,7 +196,7 @@ argument will be passed to the entry point wherever it is located on the invocat
 
 It is also possible to specify additional arguments through environment variable TGF_ARGS.
 
-VERSION: 1.22.0
+VERSION: 1.23.1
 
 AUTHOR: Coveo
 
@@ -211,18 +211,18 @@ Flags:
   -E, --entrypoint=terragrunt   Override the entry point for docker
       --current-version         Get current version information
       --all-versions            Get versions of TGF & all others underlying utilities
-  -L, --logging-level=<level>   Set the logging level (panic=0, fatal=1, error=2, warning=3, info=4, debug=5, trace=6)
+  -L, --logging-level=<level>   Set the logging level (panic=0, fatal=1, error=2, warning=3, info=4, debug=5, trace=6, full=7)
   -D, --debug                   Print debug messages and docker commands issued
   -F, --flush-cache             Invoke terragrunt with --terragrunt-update-source to flush the cache
       --interactive             ON by default: Launch Docker in interactive mode, use --no-interactive to disable
-      --docker-build            ON by default: Enable docker build instructions configured in the config files, use --no-docker-build to disable
+      --docker-build            ON by default: Enable docker build instructions configured in the config files, use
+                                --no-docker-build to disable
       --home                    ON by default: Enable mapping of the home directory, use --no-home to disable
-      --temp                    ON by default: Map the temp folder to a local folder, use --no-temp to disable
-      --temp-location=TEMP-LOCATION  
-                                Determine where the temporary work folder 'tgf' inside the docker image is mounted:
-
-                                  volume: mounts the work folder in the docker volume named “tgf”. The volume is created if it doesn't exist.
-                                  host: mounts the work folder in a directory on the host.
+      --temp                    ON by default: Map the temp folder to a local folder (Deprecated: Use --temp-location host and
+                                --temp-location none), use --no-temp to disable
+      --temp-location=folder    Determine where the temporary work folder 'tgf' inside the docker image is mounted:
+                                  volume: Mounts the work folder in the docker volume named “tgf”. The volume is created if it doesn't exist.
+                                  host: Mounts the work folder in a directory on the host.
                                   none: The work folder is not mounted and is private to the docker container.
       --mount-point=<folder>    Specify a mount point for the current folder
       --prune                   Remove all previous versions of the targeted image

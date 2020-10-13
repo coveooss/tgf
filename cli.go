@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/coveooss/gotemplate/v3/hcl"
@@ -145,10 +147,12 @@ func NewTGFApplication(args []string) *TGFApplication {
 	swFlagON("home", "Enable mapping of the home directory").BoolVar(&app.MountHomeDir)
 	swFlagON("temp", "Map the temp folder to a local folder (Deprecated: Use --temp-location host and --temp-location none)").IsSetByUser(&tempIsSetByUser).BoolVar(&temp)
 	app.Flag("temp-location",
-		fmt.Sprintf(`Determine where the temporary work folder '%s' inside the docker image is mounted:
-   %s: mounts the work folder in the docker volume named “tgf”. The volume is created if it doesn't exist.
-   %s: mounts the work folder in a directory on the host.
-   %s: The work folder is not mounted and is private to the docker container.`, dockerVolumeName, mountLocVolume, mountLocHost, mountLocNone)).IsSetByUser(&tempLocationIsSetByUser).EnumVar((*string)(&tempLocation), string(mountLocVolume), string(mountLocHost), string(mountLocNone))
+		fmt.Sprintf("Determine where the temporary work folder '%s' inside the docker image is mounted:", dockerVolumeName)+
+			fmt.Sprintf("\n %s: Mounts the work folder in the docker volume named “tgf”. The volume is created if it doesn't exist.", mountLocVolume)+
+			fmt.Sprintf("\n %s: Mounts the work folder in a directory on the host.", mountLocHost)+
+			fmt.Sprintf("\n %s: The work folder is not mounted and is private to the docker container.", mountLocNone),
+	).IsSetByUser(&tempLocationIsSetByUser).PlaceHolder("folder").
+		EnumVar((*string)(&tempLocation), string(mountLocVolume), string(mountLocHost), string(mountLocNone))
 	app.Flag("mount-point", "Specify a mount point for the current folder").PlaceHolder("<folder>").Default("current_sources").StringVar(&app.MountPoint)
 	app.Flag("prune", "Remove all previous versions of the targeted image").BoolVar(&app.PruneImages)
 	app.Flag("docker-arg", "Supply extra argument to Docker").PlaceHolder("<opt>").StringsVar(&app.DockerOptions)
@@ -236,12 +240,19 @@ func (app *TGFApplication) Parse(args []string) (command string, err error) {
 
 // ShowHelp simply display the help context and quit execution
 func (app *TGFApplication) ShowHelp(c *kingpin.ParseContext) error {
-	app.ErrorWriter(os.Stdout)
-	app.UsageWriter(os.Stdout)
+	usageBuffer := new(bytes.Buffer)
+	app.UsageWriter(usageBuffer)
+
+	// The default usage template breaks the desired formatting
 	usage := strings.Replace(kingpin.DefaultUsageTemplate, "{{.Help|Wrap 0}}", "{{.Help}}", -1)
+
+	// Always use the same width to display help
+	os.Setenv("COLUMNS", "132")
 	if err := app.UsageForContextWithTemplate(c, 2, usage); err != nil {
 		return err
 	}
+	// The default rendering insert unwanted blank line in the argument description
+	fmt.Print(regexp.MustCompile(`:\n +\n`).ReplaceAllString(usageBuffer.String(), ":\n"))
 	os.Exit(0)
 	return nil
 }
