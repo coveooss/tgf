@@ -20,10 +20,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/blang/semver"
 	"github.com/coveooss/gotemplate/v3/collections"
-	"github.com/coveooss/terragrunt/v2/awshelper"
 	"github.com/fatih/color"
 	"github.com/hashicorp/go-getter"
 	"github.com/inconshreveable/go-update"
@@ -148,19 +150,23 @@ func (config TGFConfig) String() string {
 
 // InitAWS tries to open an AWS session and init AWS environment variable on success
 func (config *TGFConfig) InitAWS(profile string) error {
-	_, err := awshelper.InitAwsSession(profile)
+	sess, err := getAwsSession(profile)
 	if err != nil {
 		return err
 	}
-
-	for _, s := range os.Environ() {
-		if strings.HasPrefix(s, "AWS_") {
-			split := strings.SplitN(s, "=", 2)
-			if len(split) < 2 {
-				continue
-			}
-			config.Environment[split[0]] = split[1]
-		}
+	creds, err := sess.Config.Credentials.Get()
+	if err != nil {
+		return err
+	}
+	os.Unsetenv("AWS_PROFILE")
+	os.Unsetenv("AWS_DEFAULT_PROFILE")
+	for key, value := range map[string]string{
+		"AWS_ACCESS_KEY_ID":     creds.AccessKeyID,
+		"AWS_SECRET_ACCESS_KEY": creds.SecretAccessKey,
+		"AWS_SESSION_TOKEN":     creds.SessionToken,
+	} {
+		os.Setenv(key, value)
+		config.Environment[key] = value
 	}
 	return nil
 }
@@ -383,7 +389,22 @@ func (config *TGFConfig) ParseAliases() {
 func (config *TGFConfig) readSSMParameterStore(ssmParameterFolder string) map[string]string {
 	log.Debugln("Reading configuration from SSM", ssmParameterFolder)
 	values := make(map[string]string)
-	for _, parameter := range must(awshelper.GetSSMParametersByPath(ssmParameterFolder, "")).([]*ssm.Parameter) {
+	sess, err := getAwsSession("")
+	if err != nil {
+		log.Warningf("Caught an error while creating an AWS session: %v", err)
+		return values
+	}
+	svc := ssm.New(sess)
+	response, err := svc.GetParametersByPath(&ssm.GetParametersByPathInput{
+		Path:           aws.String(ssmParameterFolder),
+		Recursive:      aws.Bool(true),
+		WithDecryption: aws.Bool(true),
+	})
+	if err != nil {
+		log.Warningf("Caught an error while reading from `%s` in SSM: %v", ssmParameterFolder, err)
+		return values
+	}
+	for _, parameter := range response.Parameters {
 		key := strings.TrimLeft(strings.Replace(*parameter.Name, ssmParameterFolder, "", 1), "/")
 		values[key] = *parameter.Value
 	}
@@ -460,29 +481,38 @@ func parseSsmConfig(parameterValues map[string]string) string {
 func (config TGFConfig) awsConfigExist() bool {
 	app := config.tgf
 	if !app.UseAWS {
+		log.Debugln("Not trying to read the config from AWS. It is disabled")
 		return false
 	}
 
-	if os.Getenv("AWS_PROFILE")+os.Getenv("AWS_ACCESS_KEY_ID")+os.Getenv("AWS_CONFIG_FILE") != "" {
+	log.Debugln("Checking if the TGF configuration should be read from AWS SSM. This will happen if any of the following are true:")
+
+	environmentVariablesExist := os.Getenv("AWS_PROFILE")+os.Getenv("AWS_ACCESS_KEY_ID")+os.Getenv("AWS_CONFIG_FILE")+os.Getenv("TGF_USE_AWS_CONFIG") != ""
+	log.Debugln(" - One of these env variables exist (AWS_PROFILE, AWS_ACCESS_KEY_ID, AWS_CONFIG_FILE, TGF_USE_AWS_CONFIG):", environmentVariablesExist)
+	if environmentVariablesExist {
 		// If any AWS identification variable is defined, we consider that we are in an AWS environment.
 		return true
 	}
 
-	if _, err := exec.LookPath("aws"); err == nil {
+	_, err := exec.LookPath("aws")
+	awsCliIsInstalled := err == nil
+	log.Debugln(" - The AWS CLI is installed:", awsCliIsInstalled)
+	if awsCliIsInstalled {
 		// If aws program is installed, we also consider that we are in an AWS environment.
 		return true
 	}
 
 	// Otherwise, we check if the current user has a folder named .aws defined under its home directory.
-	currentUser, err := user.Current()
-	if err != nil {
-		return false
+	awsFolderExists := false
+	if currentUser, err := user.Current(); err != nil {
+		awsFolder, err := os.Stat(filepath.Join(currentUser.HomeDir, ".aws"))
+		if err != nil {
+			awsFolderExists = awsFolder.IsDir()
+		}
 	}
-	awsFolder, err := os.Stat(filepath.Join(currentUser.HomeDir, ".aws"))
-	if err != nil {
-		return false
-	}
-	return awsFolder.IsDir()
+	log.Debugln(" - The ~/.aws folder exists:", awsFolderExists)
+
+	return awsFolderExists
 }
 
 // Return the list of configuration files found from the current working directory up to the root folder
@@ -670,4 +700,12 @@ func (config *TGFConfig) GetLastRefresh(autoUpdateFile string) time.Duration {
 // SetLastRefresh set the lastime the tgf update file was updated
 func (config *TGFConfig) SetLastRefresh(autoUpdateFile string) {
 	touchImageRefresh(autoUpdateFile)
+}
+
+func getAwsSession(profile string) (*session.Session, error) {
+	return session.NewSessionWithOptions(session.Options{
+		Profile:                 profile,
+		SharedConfigState:       session.SharedConfigEnable,
+		AssumeRoleTokenProvider: stscreds.StdinTokenProvider,
+	})
 }

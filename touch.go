@@ -1,22 +1,24 @@
 package main
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"os"
 	"os/user"
 	"path/filepath"
 	"time"
-
-	"github.com/coveooss/terragrunt/v2/util"
 )
 
 func getTouchFilename(image string) string {
 	usr := must(user.Current()).(*user.User)
-	return filepath.Join(usr.HomeDir, ".tgf", util.EncodeBase64Sha1(image))
+	hash := sha1.Sum([]byte(image))
+	return filepath.Join(usr.HomeDir, ".tgf", base64.RawURLEncoding.EncodeToString(hash[:]))
 }
 
 func getLastRefresh(image string) time.Time {
 	filename := getTouchFilename(image)
-	if util.FileExists(filename) {
+	if _, err := os.Stat(filename); err == nil {
+		// File exists
 		info := must(os.Stat(filename)).(os.FileInfo)
 		return info.ModTime()
 	}
@@ -29,7 +31,8 @@ func touchImageRefresh(image string) {
 		os.Mkdir(filepath.Dir(filename), 0755)
 	}
 
-	if util.FileExists(filename) {
+	if _, err := os.Stat(filename); err == nil {
+		// File exists
 		must(os.Chtimes(filename, time.Now(), time.Now()))
 	} else {
 		fp := must(os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0644)).(*os.File)
