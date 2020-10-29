@@ -9,7 +9,7 @@ if [ ! -d "${TGF_PATH}" ]; then
 fi
 
 if [ ! -w "${TGF_PATH}" ]; then
-  if [ ${TGF_PATH} == "${DEFAULT_INSTALL_DIR}" ]; then
+  if [ "${TGF_PATH}" == "${DEFAULT_INSTALL_DIR}" ]; then
     # This is a system directory.  It's not a good idea to try to make it writeable.
     echo "System installation directory ${TGF_PATH} is not writeable."
     echo "Please set the TGF_PATH environment variable to install to an alternate, writeable directory."
@@ -17,7 +17,7 @@ if [ ! -w "${TGF_PATH}" ]; then
   fi
 
 
-  if ! chmod ugo+w ${TGF_PATH}; then
+  if ! chmod ugo+w "${TGF_PATH}"; then
     echo "Cannot make installation directory ${TGF_PATH} writeable."
     echo "Please set the TGF_PATH environment variable to install to an alternate, writeable directory."
     exit 1
@@ -66,7 +66,7 @@ get_latest_tgf_version
 echo '- tgf version (local) :' "${TGF_LOCAL_VERSION}"
 echo '- tgf version (latest):' "${TGF_LATEST_VERSION}"
 
-if [[ ${TGF_LOCAL_VERSION} == "${TGF_LATEST_VERSION}" ]]
+if [[ "${TGF_LOCAL_VERSION}" == "${TGF_LATEST_VERSION}" ]]
 then 
     echo 'Local version is up to date.'
 else
