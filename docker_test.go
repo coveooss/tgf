@@ -82,7 +82,7 @@ func TestGetImage(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			assert.NotPanics(t, func() {
-				app := NewTestApplication(nil)
+				app := NewTestApplication(nil, true)
 				tt.config.tgf = app
 				app.DockerBuild = tt.dockerBuild
 				app.Refresh = tt.refresh

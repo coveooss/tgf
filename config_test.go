@@ -95,7 +95,7 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	`).UnIndent().TrimSpace())
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
-	app := NewTestApplication(nil)
+	app := NewTestApplication(nil, true)
 	app.PsPath = testSSMParameterFolder
 	config := InitConfig(app)
 
@@ -144,7 +144,7 @@ func TestTwoLevelsOfTgfConfig(t *testing.T) {
 	tgfConfig := []byte(String(`docker-image-version: 2.0.2`))
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
-	app := NewTestApplication(nil)
+	app := NewTestApplication(nil, true)
 	app.PsPath = testSSMParameterFolder
 	config := InitConfig(app)
 
@@ -169,7 +169,7 @@ func TestWeirdDirName(t *testing.T) {
 	`).UnIndent().TrimSpace())
 	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
-	app := NewTestApplication(nil)
+	app := NewTestApplication(nil, true)
 	app.PsPath = testSSMParameterFolder
 	config := InitConfig(app)
 
