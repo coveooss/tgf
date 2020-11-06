@@ -227,9 +227,16 @@ func formatDescription() string {
 
 // Parse overrides the base Parse method
 func (app *TGFApplication) Parse(args []string) (command string, err error) {
-	// Split up the managed parameters from the unmanaged ones
+	// Add args from the TGF_ARGS env variable
 	if extraArgs, ok := os.LookupEnv(envArgs); ok {
-		args = append(args, strings.Split(extraArgs, " ")...)
+		nonEmptyArgs := []string{}
+		for _, extraArg := range strings.Split(extraArgs, " ") {
+			extraArg = strings.TrimSpace(extraArg)
+			if extraArg != "" {
+				nonEmptyArgs = append(nonEmptyArgs, extraArg)
+			}
+		}
+		args = append(nonEmptyArgs, args...)
 	}
 	if command, err = app.Application.Parse(args); err != nil {
 		panic(errors.Managed(err.Error()))
