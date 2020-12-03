@@ -148,15 +148,38 @@ func (config TGFConfig) String() string {
 	return string(bytes)
 }
 
+func (config *TGFConfig) getAwsSession() (*session.Session, error) {
+	return session.NewSessionWithOptions(session.Options{
+		Profile:                 config.tgf.AwsProfile,
+		SharedConfigState:       session.SharedConfigEnable,
+		AssumeRoleTokenProvider: stscreds.StdinTokenProvider,
+	})
+}
+
 // InitAWS tries to open an AWS session and init AWS environment variable on success
-func (config *TGFConfig) InitAWS(profile string) error {
-	sess, err := getAwsSession(profile)
+func (config *TGFConfig) InitAWS() error {
+	if config.tgf.AwsProfile == "" && os.Getenv("AWS_ACCESS_KEY_ID") != "" && os.Getenv("AWS_PROFILE") != "" {
+		log.Warning("You set both AWS_ACCESS_KEY_ID and AWS_PROFILE, AWS_PROFILE will be ignored")
+	}
+	session, err := config.getAwsSession()
 	if err != nil {
 		return err
 	}
-	creds, err := sess.Config.Credentials.Get()
+	creds, err := session.Config.Credentials.Get()
 	if err != nil {
 		return err
+	}
+	expiration, _ := session.Config.Credentials.ExpiresAt()
+	if duration := time.Until(expiration).Round(time.Minute); duration > 0 && duration < 55*time.Minute {
+		var profile string
+		if profile = config.tgf.AwsProfile; profile == "" {
+			if profile = os.Getenv("AWS_PROFILE"); profile == "" {
+				profile = "default"
+			}
+		}
+		log.Warningf("Your AWS configuration is set to expire your session in %v", duration)
+		log.Warningf(color.WhiteString("You should consider defining %s in your AWS config profile %s"),
+			color.HiBlueString("duration_seconds = 14400"), color.HiBlueString(profile))
 	}
 	os.Unsetenv("AWS_PROFILE")
 	os.Unsetenv("AWS_DEFAULT_PROFILE")
@@ -164,6 +187,7 @@ func (config *TGFConfig) InitAWS(profile string) error {
 		"AWS_ACCESS_KEY_ID":     creds.AccessKeyID,
 		"AWS_SECRET_ACCESS_KEY": creds.SecretAccessKey,
 		"AWS_SESSION_TOKEN":     creds.SessionToken,
+		"AWS_REGION":            *session.Config.Region,
 	} {
 		os.Setenv(key, value)
 		config.Environment[key] = value
@@ -190,7 +214,7 @@ func (config *TGFConfig) setDefaultValues() {
 
 	// Fetch SSM configs
 	if config.awsConfigExist() {
-		if err := config.InitAWS(""); err != nil {
+		if err := config.InitAWS(); err != nil {
 			log.Errorf("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err)
 		} else {
 			if app.ConfigLocation == "" {
@@ -387,14 +411,14 @@ func (config *TGFConfig) ParseAliases() {
 }
 
 func (config *TGFConfig) readSSMParameterStore(ssmParameterFolder string) map[string]string {
-	log.Debugln("Reading configuration from SSM", ssmParameterFolder)
 	values := make(map[string]string)
-	sess, err := getAwsSession("")
+	session, err := config.getAwsSession()
+	log.Debugf("Reading configuration from SSM %s in %s", ssmParameterFolder, *session.Config.Region)
 	if err != nil {
 		log.Warningf("Caught an error while creating an AWS session: %v", err)
 		return values
 	}
-	svc := ssm.New(sess)
+	svc := ssm.New(session)
 	response, err := svc.GetParametersByPath(&ssm.GetParametersByPathInput{
 		Path:           aws.String(ssmParameterFolder),
 		Recursive:      aws.Bool(true),
@@ -478,7 +502,11 @@ func parseSsmConfig(parameterValues map[string]string) string {
 //
 // We call this function before trying to init an AWS session. This avoid trying to init a session in a non AWS context
 // and having to wait for metadata resolution or generating an error.
-func (config TGFConfig) awsConfigExist() bool {
+func (config TGFConfig) awsConfigExist() (result bool) {
+	if cachedAWSConfigExistCheck != nil {
+		return *cachedAWSConfigExistCheck
+	}
+	defer func() { cachedAWSConfigExistCheck = &result }()
 	app := config.tgf
 	if !app.UseAWS {
 		log.Debugln("Not trying to read the config from AWS. It is disabled")
@@ -514,6 +542,8 @@ func (config TGFConfig) awsConfigExist() bool {
 
 	return awsFolderExists
 }
+
+var cachedAWSConfigExistCheck *bool
 
 // Return the list of configuration files found from the current working directory up to the root folder
 func (config TGFConfig) findConfigFiles(folder string) (result []string) {
@@ -679,12 +709,17 @@ func (config *TGFConfig) getTgfFile(url string) (tgfFile io.ReadCloser, err erro
 
 // DoUpdate fetch the executable from the link, unzip it and replace it with the current
 func (config *TGFConfig) DoUpdate(url string) (err error) {
+	savePath, err := ioutil.TempFile("", "tgf.previous-version")
+	if err != nil {
+		return
+	}
+
 	tgfFile, err := config.getTgfFile(url)
 	if err != nil {
 		return
 	}
-	err = update.Apply(tgfFile, update.Options{})
-	if err != nil {
+
+	if err = update.Apply(tgfFile, update.Options{OldSavePath: savePath.Name()}); err != nil {
 		if err := update.RollbackError(err); err != nil {
 			log.Errorln("Failed to rollback from bad update:", err)
 		}
@@ -700,12 +735,4 @@ func (config *TGFConfig) GetLastRefresh(autoUpdateFile string) time.Duration {
 // SetLastRefresh set the lastime the tgf update file was updated
 func (config *TGFConfig) SetLastRefresh(autoUpdateFile string) {
 	touchImageRefresh(autoUpdateFile)
-}
-
-func getAwsSession(profile string) (*session.Session, error) {
-	return session.NewSessionWithOptions(session.Options{
-		Profile:                 profile,
-		SharedConfigState:       session.SharedConfigEnable,
-		AssumeRoleTokenProvider: stscreds.StdinTokenProvider,
-	})
 }

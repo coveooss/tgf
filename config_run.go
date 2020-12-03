@@ -11,11 +11,6 @@ import (
 func (config *TGFConfig) Run() int {
 	app := config.tgf
 
-	// If AWS profile is supplied, we freeze the current session
-	if app.AwsProfile != "" {
-		must(config.InitAWS(app.AwsProfile))
-	}
-
 	if app.Image != "" {
 		config.Image = app.Image
 		config.RecommendedImageVersion = ""
