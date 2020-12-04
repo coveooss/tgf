@@ -63,7 +63,7 @@ func TestCheckVersionRange(t *testing.T) {
 
 func TestSetConfigDefaultValues(t *testing.T) {
 	// We must reset the cached AWS config check since it could have been modified by another test
-	cachedAWSConfigExistCheck = nil
+	resetCache()
 	tempDir, _ := filepath.EvalSymlinks(must(ioutil.TempDir("", "TestGetConfig")).(string))
 	currentDir, _ := os.Getwd()
 	assert.NoError(t, os.Chdir(tempDir))

@@ -21,14 +21,17 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
+	awsSession "github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/blang/semver"
 	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/fatih/color"
 	"github.com/hashicorp/go-getter"
 	"github.com/inconshreveable/go-update"
+	"golang.org/x/crypto/ssh/terminal"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -82,6 +85,16 @@ type TGFConfigBuild struct {
 	Folder       string
 	Tag          string
 	source       string
+}
+
+var (
+	cachedAWSConfigExistCheck *bool
+	cachedSession             *session.Session
+)
+
+func resetCache() {
+	cachedAWSConfigExistCheck = nil
+	cachedSession = nil
 }
 
 func (cb TGFConfigBuild) hash() string {
@@ -148,12 +161,65 @@ func (config TGFConfig) String() string {
 	return string(bytes)
 }
 
-func (config *TGFConfig) getAwsSession() (*session.Session, error) {
-	return session.NewSessionWithOptions(session.Options{
-		Profile:                 config.tgf.AwsProfile,
-		SharedConfigState:       session.SharedConfigEnable,
-		AssumeRoleTokenProvider: stscreds.StdinTokenProvider,
-	})
+func (config *TGFConfig) getAwsSession(duration int64) (*session.Session, error) {
+	if cachedSession != nil {
+		return cachedSession, nil
+	}
+	options := awsSession.Options{
+		Profile:           config.tgf.AwsProfile,
+		SharedConfigState: awsSession.SharedConfigEnable,
+		AssumeRoleTokenProvider: func() (string, error) {
+			fmt.Fprintf(os.Stderr, "Assume Role MFA token code: ")
+			v, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+			fmt.Fprintln(os.Stderr)
+			return string(v), err
+		},
+	}
+	if duration > 0 {
+		options.AssumeRoleDuration = time.Duration(duration) * time.Second
+	}
+
+	session, err := awsSession.NewSessionWithOptions(options)
+
+	if err == nil {
+		// We must get the current credentials before verifying the expiration
+		_, err = session.Config.Credentials.Get()
+	}
+	if err != nil {
+		return session, err
+	}
+
+	expiration, _ := session.Config.Credentials.ExpiresAt()
+	if duration := time.Until(expiration).Round(time.Minute); duration > 0 && duration < 55*time.Minute {
+		// The duration is less that 1 hour, we try to extend the session
+
+		// We try to find the maximum role session duration allowed (but not complain if not successful)
+		maxDuration := int64(3600)
+		roleRegex := regexp.MustCompile(".*:assumed-role/(.*)/.*")
+		if identity, err := sts.New(session).GetCallerIdentity(&sts.GetCallerIdentityInput{}); err == nil {
+			if matches := roleRegex.FindStringSubmatch(*identity.Arn); len(matches) > 0 {
+				if role, err := iam.New(session).GetRole(&iam.GetRoleInput{RoleName: &matches[1]}); err == nil {
+					maxDuration = *role.Role.MaxSessionDuration
+				}
+			}
+		}
+		var profile string
+		if profile = config.tgf.AwsProfile; profile == "" {
+			if profile = os.Getenv("AWS_PROFILE"); profile == "" {
+				profile = "default"
+			}
+		}
+		log.Warningf("Your AWS configuration is set to expire your session in %v (automatically extended to %v)",
+			duration,
+			time.Duration(maxDuration)*time.Second)
+		log.Warningf(color.WhiteString("You should consider defining %s in your AWS config profile %s"),
+			color.HiBlueString("duration_seconds = %d", maxDuration), color.HiBlueString(profile))
+		session, err = config.getAwsSession(maxDuration)
+	}
+	if err == nil {
+		cachedSession = session
+	}
+	return session, err
 }
 
 // InitAWS tries to open an AWS session and init AWS environment variable on success
@@ -161,25 +227,13 @@ func (config *TGFConfig) InitAWS() error {
 	if config.tgf.AwsProfile == "" && os.Getenv("AWS_ACCESS_KEY_ID") != "" && os.Getenv("AWS_PROFILE") != "" {
 		log.Warning("You set both AWS_ACCESS_KEY_ID and AWS_PROFILE, AWS_PROFILE will be ignored")
 	}
-	session, err := config.getAwsSession()
+	session, err := config.getAwsSession(0)
 	if err != nil {
 		return err
 	}
 	creds, err := session.Config.Credentials.Get()
 	if err != nil {
 		return err
-	}
-	expiration, _ := session.Config.Credentials.ExpiresAt()
-	if duration := time.Until(expiration).Round(time.Minute); duration > 0 && duration < 55*time.Minute {
-		var profile string
-		if profile = config.tgf.AwsProfile; profile == "" {
-			if profile = os.Getenv("AWS_PROFILE"); profile == "" {
-				profile = "default"
-			}
-		}
-		log.Warningf("Your AWS configuration is set to expire your session in %v", duration)
-		log.Warningf(color.WhiteString("You should consider defining %s in your AWS config profile %s"),
-			color.HiBlueString("duration_seconds = 14400"), color.HiBlueString(profile))
 	}
 	os.Unsetenv("AWS_PROFILE")
 	os.Unsetenv("AWS_DEFAULT_PROFILE")
@@ -215,14 +269,13 @@ func (config *TGFConfig) setDefaultValues() {
 	// Fetch SSM configs
 	if config.awsConfigExist() {
 		if err := config.InitAWS(); err != nil {
-			log.Errorf("Unable to authentify to AWS: %v\nPararameter store is ignored\n", err)
-		} else {
-			if app.ConfigLocation == "" {
-				values := config.readSSMParameterStore(app.PsPath)
-				app.ConfigLocation = values[remoteConfigLocationParameter]
-				if app.ConfigFiles == "" {
-					app.ConfigFiles = values[remoteConfigPathsParameter]
-				}
+			log.Fatal(err)
+		}
+		if app.ConfigLocation == "" {
+			values := config.readSSMParameterStore(app.PsPath)
+			app.ConfigLocation = values[remoteConfigLocationParameter]
+			if app.ConfigFiles == "" {
+				app.ConfigFiles = values[remoteConfigPathsParameter]
 			}
 		}
 	}
@@ -412,7 +465,7 @@ func (config *TGFConfig) ParseAliases() {
 
 func (config *TGFConfig) readSSMParameterStore(ssmParameterFolder string) map[string]string {
 	values := make(map[string]string)
-	session, err := config.getAwsSession()
+	session, err := config.getAwsSession(0)
 	log.Debugf("Reading configuration from SSM %s in %s", ssmParameterFolder, *session.Config.Region)
 	if err != nil {
 		log.Warningf("Caught an error while creating an AWS session: %v", err)
@@ -542,8 +595,6 @@ func (config TGFConfig) awsConfigExist() (result bool) {
 
 	return awsFolderExists
 }
-
-var cachedAWSConfigExistCheck *bool
 
 // Return the list of configuration files found from the current working directory up to the root folder
 func (config TGFConfig) findConfigFiles(folder string) (result []string) {

@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/Microsoft/go-winio v0.4.15 // indirect
-	github.com/aws/aws-sdk-go v1.36.0
+	github.com/aws/aws-sdk-go v1.36.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/coveooss/gotemplate/v3 v3.6.0
 	github.com/coveooss/multilogger v0.5.2
@@ -19,5 +19,6 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.6.1
+	golang.org/x/crypto v0.0.0-20201124201722-c8d3bf9c5392
 	gopkg.in/yaml.v2 v2.4.0
 )
