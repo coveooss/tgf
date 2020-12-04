@@ -163,7 +163,11 @@ func (docker *dockerConfig) call() int {
 		if log.GetLevel() >= logrus.DebugLevel {
 			exportedVariables := make(collections.StringArray, len(config.Environment))
 			for i, key := range collections.AsDictionary(config.Environment).KeysAsString() {
-				exportedVariables[i] = String(fmt.Sprintf("%s = %s", key, config.Environment[key.String()]))
+				if key == "AWS_SECRET_ACCESS_KEY" || key == "AWS_SESSION_TOKEN" {
+					exportedVariables[i] = String(fmt.Sprintf("%s = ******", key))
+				} else {
+					exportedVariables[i] = String(fmt.Sprintf("%s = %s", key, config.Environment[key.String()]))
+				}
 			}
 			log.Debugf("Environment variables\n%s", color.HiBlackString(exportedVariables.Join("\n").IndentN(4).Str()))
 		}
