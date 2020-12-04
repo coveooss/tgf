@@ -22,6 +22,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	awsSession "github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/sts"
@@ -160,13 +161,13 @@ func (config TGFConfig) String() string {
 	return string(bytes)
 }
 
-func (config *TGFConfig) getAwsSession(duration int64) (result *session.Session, err error) {
+func (config *TGFConfig) getAwsSession(duration int64) (*session.Session, error) {
 	if cachedSession != nil {
 		return cachedSession, nil
 	}
-	options := session.Options{
+	options := awsSession.Options{
 		Profile:           config.tgf.AwsProfile,
-		SharedConfigState: session.SharedConfigEnable,
+		SharedConfigState: awsSession.SharedConfigEnable,
 		AssumeRoleTokenProvider: func() (string, error) {
 			fmt.Fprintf(os.Stderr, "Assume Role MFA token code: ")
 			v, err := terminal.ReadPassword(int(os.Stdin.Fd()))
@@ -177,47 +178,48 @@ func (config *TGFConfig) getAwsSession(duration int64) (result *session.Session,
 	if duration > 0 {
 		options.AssumeRoleDuration = time.Duration(duration) * time.Second
 	}
-	defer func() {
-		if err == nil {
-			// We must get the current credentials before verifying the expiration
-			_, err = result.Config.Credentials.Get()
-		}
-		if err != nil {
-			return
-		}
 
-		expiration, _ := result.Config.Credentials.ExpiresAt()
-		if duration := time.Until(expiration).Round(time.Minute); duration > 0 && duration < 55*time.Minute {
-			// The duration is less that 1 hour, we try to extend the session
+	session, err := awsSession.NewSessionWithOptions(options)
 
-			// We try to find the maximum role session duration allowed (but not complain if not successful)
-			maxDuration := int64(3600)
-			roleRegex := regexp.MustCompile(".*:assumed-role/(.*)/.*")
-			if identity, err := sts.New(result).GetCallerIdentity(&sts.GetCallerIdentityInput{}); err == nil {
-				if matches := roleRegex.FindStringSubmatch(*identity.Arn); len(matches) > 0 {
-					if role, err := iam.New(result).GetRole(&iam.GetRoleInput{RoleName: &matches[1]}); err == nil {
-						maxDuration = *role.Role.MaxSessionDuration
-					}
+	if err == nil {
+		// We must get the current credentials before verifying the expiration
+		_, err = session.Config.Credentials.Get()
+	}
+	if err != nil {
+		return session, err
+	}
+
+	expiration, _ := session.Config.Credentials.ExpiresAt()
+	if duration := time.Until(expiration).Round(time.Minute); duration > 0 && duration < 55*time.Minute {
+		// The duration is less that 1 hour, we try to extend the session
+
+		// We try to find the maximum role session duration allowed (but not complain if not successful)
+		maxDuration := int64(3600)
+		roleRegex := regexp.MustCompile(".*:assumed-role/(.*)/.*")
+		if identity, err := sts.New(session).GetCallerIdentity(&sts.GetCallerIdentityInput{}); err == nil {
+			if matches := roleRegex.FindStringSubmatch(*identity.Arn); len(matches) > 0 {
+				if role, err := iam.New(session).GetRole(&iam.GetRoleInput{RoleName: &matches[1]}); err == nil {
+					maxDuration = *role.Role.MaxSessionDuration
 				}
 			}
-			var profile string
-			if profile = config.tgf.AwsProfile; profile == "" {
-				if profile = os.Getenv("AWS_PROFILE"); profile == "" {
-					profile = "default"
-				}
+		}
+		var profile string
+		if profile = config.tgf.AwsProfile; profile == "" {
+			if profile = os.Getenv("AWS_PROFILE"); profile == "" {
+				profile = "default"
 			}
-			log.Warningf("Your AWS configuration is set to expire your session in %v (automatically extended to %v)",
-				duration,
-				time.Duration(maxDuration)*time.Second)
-			log.Warningf(color.WhiteString("You should consider defining %s in your AWS config profile %s"),
-				color.HiBlueString("duration_seconds = %d", maxDuration), color.HiBlueString(profile))
-			result, err = config.getAwsSession(maxDuration)
 		}
-		if err == nil {
-			cachedSession = result
-		}
-	}()
-	return session.NewSessionWithOptions(options)
+		log.Warningf("Your AWS configuration is set to expire your session in %v (automatically extended to %v)",
+			duration,
+			time.Duration(maxDuration)*time.Second)
+		log.Warningf(color.WhiteString("You should consider defining %s in your AWS config profile %s"),
+			color.HiBlueString("duration_seconds = %d", maxDuration), color.HiBlueString(profile))
+		session, err = config.getAwsSession(maxDuration)
+	}
+	if err == nil {
+		cachedSession = session
+	}
+	return session, err
 }
 
 // InitAWS tries to open an AWS session and init AWS environment variable on success
@@ -267,8 +269,7 @@ func (config *TGFConfig) setDefaultValues() {
 	// Fetch SSM configs
 	if config.awsConfigExist() {
 		if err := config.InitAWS(); err != nil {
-			log.Error(err)
-			os.Exit(1)
+			log.Fatal(err)
 		}
 		if app.ConfigLocation == "" {
 			values := config.readSSMParameterStore(app.PsPath)
