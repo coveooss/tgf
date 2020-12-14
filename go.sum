@@ -50,6 +50,7 @@ github.com/cheggaaa/pb v1.0.27/go.mod h1:pQciLPpbU0oxA0h+VJYYLxO+XeDQb5pZijXscXH
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/coveooss/gotemplate/v3 v3.6.0 h1:1OStqNCUxfvHeej4eUfrv9JvdPQt/bD4iAmjq5n4Cbg=
 github.com/coveooss/gotemplate/v3 v3.6.0/go.mod h1:X0Acra05ZhW8VNqbAbgh9VFtqvYcT7/dzjCESkcCM2s=
+github.com/coveooss/gotemplate/v3 v3.6.1/go.mod h1:X0Acra05ZhW8VNqbAbgh9VFtqvYcT7/dzjCESkcCM2s=
 github.com/coveooss/multilogger v0.5.2 h1:HmuMT1RTD0d6tkqrrO9FlUBbp2p7QYbcAR6guszlifc=
 github.com/coveooss/multilogger v0.5.2/go.mod h1:Pw3jXW2Y4KEd+j5vFTTGSAFRX4fIOvJZzDPnvf9dr7U=
 github.com/coveord/kingpin/v2 v2.3.1 h1:GWdfhOpRbIE+5Bt/hGgDbfWkntsCC5484xFWXaor+sg=
