@@ -501,7 +501,9 @@ func getEnviron(noHome bool) (result []string) {
 		split := strings.Split(env, "=")
 		varName := strings.TrimSpace(split[0])
 		varUpper := strings.ToUpper(varName)
-		if varName == "" || strings.Contains(varUpper, "PATH") {
+
+		if varName == "" || strings.Contains(varUpper, "PATH") && strings.HasPrefix(split[1], string(os.PathSeparator)) {
+			// We exclude path variables that actually point to local host folders
 			continue
 		}
 
