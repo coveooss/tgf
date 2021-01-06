@@ -515,7 +515,7 @@ func getEnviron(noHome bool) (result []string) {
 
 		switch varName {
 		case
-			"_", "PWD", "OLDPWD", "TMPDIR",
+			"_", "PWD", "PS1", "OLDPWD", "TMPDIR",
 			"PROMPT", "SHELL", "SH", "ZSH", "HOME",
 			"LANG", "LC_CTYPE", "DISPLAY", "TERM":
 		default:
