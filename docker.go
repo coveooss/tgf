@@ -93,7 +93,7 @@ func (docker *dockerConfig) call() int {
 	dockerArgs = append(dockerArgs, "-v", fmt.Sprintf("%s%s:/%s", convertDrive(currentDrive), rootFolder, app.MountPoint), "-w", sourceFolder)
 
 	if app.WithDockerMount {
-		withDockerMountArgs := []string{"-v", fmt.Sprintf(dockerSocketMountPattern, dockerSocketFile), "--group-add", getDockerGroup()}
+		withDockerMountArgs := getDockerMountArgs()
 		dockerArgs = append(dockerArgs, withDockerMountArgs...)
 	}
 
