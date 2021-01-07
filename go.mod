@@ -4,14 +4,14 @@ go 1.13
 
 require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
-	github.com/aws/aws-sdk-go v1.36.19
+	github.com/aws/aws-sdk-go v1.36.22
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/containerd v1.4.3 // indirect
 	github.com/coveooss/gotemplate/v3 v3.6.1
 	github.com/coveooss/multilogger v0.5.2
 	github.com/coveord/kingpin/v2 v2.3.1
 	github.com/docker/distribution v2.7.1+incompatible // indirect
-	github.com/docker/docker v20.10.1+incompatible
+	github.com/docker/docker v20.10.2+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/fatih/color v1.10.0
@@ -25,7 +25,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.6.1
-	golang.org/x/crypto v0.0.0-20201208171446-5f87f3452ae9
+	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3 // indirect
 )
