@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 const dockerSocketMountPattern = "/%[1]s:%[1]s"
 
 func getDockerMountArgs() []string {
