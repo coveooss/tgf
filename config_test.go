@@ -116,8 +116,8 @@ func TestSetConfigDefaultValues(t *testing.T) {
 
 	assert.Equal(t, "AWS/ParametersStore", config.imageBuildConfigs[1].source)
 	assert.Equal(t, "RUN ls test", config.imageBuildConfigs[1].Instructions)
-	assert.Equal(t, absPath, filepath.Clean(config.imageBuildConfigs[1].Folder))
-	assert.Equal(t, absPath, filepath.Clean(config.imageBuildConfigs[1].Dir()))
+	assert.Equal(t, filepath.Clean(absPath), filepath.Clean(config.imageBuildConfigs[1].Folder))
+	assert.Equal(t, filepath.Clean(absPath), filepath.Clean(config.imageBuildConfigs[1].Dir()))
 	assert.Equal(t, "AWS-b74da21c62057607be2582b50624bf40", config.imageBuildConfigs[1].GetTag())
 
 	assert.Equal(t, "coveo/stuff", config.Image)
