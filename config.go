@@ -326,6 +326,10 @@ func (config *TGFConfig) setDefaultValues() {
 	// Special case for image build configs and run before/after, we must build a list of instructions from all configs
 	for i := range configsData {
 		configData := &configsData[i]
+		if configData.Config == nil {
+			log.Errorf("Config from %s is nil. It did not load correctly", configData.Name)
+			continue
+		}
 		if configData.Config.ImageBuild != "" {
 			config.imageBuildConfigs = append([]TGFConfigBuild{{
 				Instructions: configData.Config.ImageBuild,
