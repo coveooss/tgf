@@ -76,7 +76,7 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	testTgfUserConfigFile := fmt.Sprintf("%s/tgf.user.config", tempDir)
 	testSSMParameterFolder := fmt.Sprintf("/test/tgf-%v", randInt())
 
-	absPath, _ := filepath.Abs(path.Join(tempDir, "abspath", "my-folder"))
+	absPath, _ := filepath.Abs(filepath.Join(tempDir, "abspath", "my-folder"))
 
 	writeSSMConfig(testSSMParameterFolder, "docker-image-build", "RUN ls test")
 	writeSSMConfig(testSSMParameterFolder, "docker-image-build-folder", absPath)
@@ -105,16 +105,16 @@ func TestSetConfigDefaultValues(t *testing.T) {
 
 	assert.Len(t, config.imageBuildConfigs, 2)
 
-	assert.Equal(t, path.Clean(path.Join(tempDir, ".tgf.config")), path.Clean(config.imageBuildConfigs[0].source))
+	assert.Equal(t, filepath.Clean(filepath.Join(tempDir, ".tgf.config")), path.Clean(config.imageBuildConfigs[0].source))
 	assert.Equal(t, "RUN ls test2", config.imageBuildConfigs[0].Instructions)
 	assert.Equal(t, "my-folder", config.imageBuildConfigs[0].Folder)
-	assert.Equal(t, path.Clean(path.Join(tempDir, "my-folder")), path.Clean(config.imageBuildConfigs[0].Dir()))
+	assert.Equal(t, filepath.Clean(filepath.Join(tempDir, "my-folder")), path.Clean(config.imageBuildConfigs[0].Dir()))
 	assert.Equal(t, "hello", config.imageBuildConfigs[0].GetTag())
 
 	assert.Equal(t, "AWS/ParametersStore", config.imageBuildConfigs[1].source)
 	assert.Equal(t, "RUN ls test", config.imageBuildConfigs[1].Instructions)
-	assert.Equal(t, absPath, path.Clean(config.imageBuildConfigs[1].Folder))
-	assert.Equal(t, absPath, path.Clean(config.imageBuildConfigs[1].Dir()))
+	assert.Equal(t, absPath, filepath.Clean(config.imageBuildConfigs[1].Folder))
+	assert.Equal(t, absPath, filepath.Clean(config.imageBuildConfigs[1].Dir()))
 	assert.Equal(t, "AWS-b74da21c62057607be2582b50624bf40", config.imageBuildConfigs[1].GetTag())
 
 	assert.Equal(t, "coveo/stuff", config.Image)
