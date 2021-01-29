@@ -318,7 +318,7 @@ func (config *TGFConfig) setDefaultValues() {
 	for i := range configsData {
 		configData := &configsData[i]
 		if err := collections.ConvertData(configData.Raw, config); err != nil {
-			log.Errorf("Error while loading configuration from %s\nConfiguration file must be valid YAML, JSON or HCL\n%v", configData.Name, err)
+			log.Errorf("Error while loading configuration from %s\nConfiguration file must be valid YAML, JSON or HCL\n%v\nContent:\n%s", configData.Name, err, configData.Raw)
 		}
 		collections.ConvertData(configData.Raw, &configData.Config)
 	}
