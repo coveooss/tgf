@@ -165,10 +165,12 @@ func (config *TGFConfig) getAwsSession(duration int64) (*session.Session, error)
 	if cachedSession != nil {
 		return cachedSession, nil
 	}
+	askedForMfa := false
 	options := awsSession.Options{
 		Profile:           config.tgf.AwsProfile,
 		SharedConfigState: awsSession.SharedConfigEnable,
 		AssumeRoleTokenProvider: func() (string, error) {
+			askedForMfa = true
 			fmt.Fprintf(os.Stderr, "Assume Role MFA token code: ")
 			v, err := terminal.ReadPassword(int(os.Stdin.Fd()))
 			fmt.Fprintln(os.Stderr)
@@ -209,12 +211,18 @@ func (config *TGFConfig) getAwsSession(duration int64) (*session.Session, error)
 				profile = "default"
 			}
 		}
-		log.Warningf("Your AWS configuration is set to expire your session in %v (automatically extended to %v)",
-			duration,
-			time.Duration(maxDuration)*time.Second)
+		if askedForMfa {
+			log.Warningf("Your AWS configuration is set to expire your session in %v. This timeout could not be automatically extended due to the session's MFA",
+				duration)
+		} else {
+			session, err = config.getAwsSession(maxDuration)
+			log.Warningf("Your AWS configuration is set to expire your session in %v (automatically extended to %v)",
+				duration,
+				time.Duration(maxDuration)*time.Second)
+		}
+
 		log.Warningf(color.WhiteString("You should consider defining %s in your AWS config profile %s"),
 			color.HiBlueString("duration_seconds = %d", maxDuration), color.HiBlueString(profile))
-		session, err = config.getAwsSession(maxDuration)
 	}
 	if err == nil {
 		cachedSession = session
@@ -310,7 +318,7 @@ func (config *TGFConfig) setDefaultValues() {
 	for i := range configsData {
 		configData := &configsData[i]
 		if err := collections.ConvertData(configData.Raw, config); err != nil {
-			log.Errorf("Error while loading configuration from %s\nConfiguration file must be valid YAML, JSON or HCL\n%v", configData.Name, err)
+			log.Errorf("Error while loading configuration from %s\nConfiguration file must be valid YAML, JSON or HCL\n%v\nContent:\n%s", configData.Name, err, configData.Raw)
 		}
 		collections.ConvertData(configData.Raw, &configData.Config)
 	}
@@ -318,6 +326,10 @@ func (config *TGFConfig) setDefaultValues() {
 	// Special case for image build configs and run before/after, we must build a list of instructions from all configs
 	for i := range configsData {
 		configData := &configsData[i]
+		if configData.Config == nil {
+			log.Errorf("Config from %s is nil. It did not load correctly", configData.Name)
+			continue
+		}
 		if configData.Config.ImageBuild != "" {
 			config.imageBuildConfigs = append([]TGFConfigBuild{{
 				Instructions: configData.Config.ImageBuild,

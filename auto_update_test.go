@@ -42,7 +42,7 @@ func TestRunWithUpdateCheck(t *testing.T) {
 		expectedlogPattern []string
 	}{
 		{"lower", "1.20.0", "1.21.0", 0, 1, []string{
-			`WARNING: Updating .*/tgf.test from 1.20.0 ==> 1.21.0`,
+			`WARNING: Updating .*tgf.test(?:\.exe)? from 1.20.0 ==> 1.21.0`,
 			`INFO: TGF updated to 1.21.0`,
 			`WARNING: TGF is restarting...`,
 		}},
