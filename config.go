@@ -215,10 +215,10 @@ func (config *TGFConfig) getAwsSession(duration int64) (*session.Session, error)
 			log.Warningf("Your AWS configuration is set to expire your session in %v. This timeout could not be automatically extended due to the session's MFA",
 				duration)
 		} else {
+			session, err = config.getAwsSession(maxDuration)
 			log.Warningf("Your AWS configuration is set to expire your session in %v (automatically extended to %v)",
 				duration,
 				time.Duration(maxDuration)*time.Second)
-			session, err = config.getAwsSession(maxDuration)
 		}
 
 		log.Warningf(color.WhiteString("You should consider defining %s in your AWS config profile %s"),
