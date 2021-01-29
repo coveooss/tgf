@@ -79,6 +79,7 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	testSSMParameterFolder := fmt.Sprintf("/test/tgf-%v", randInt())
 
 	absPath, _ := filepath.Abs(filepath.Join(tempDir, "abspath", "my-folder"))
+	absPath = strings.ReplaceAll(absPath, "\\", "/")
 
 	writeSSMConfig(testSSMParameterFolder, "docker-image-build", "RUN ls test")
 	writeSSMConfig(testSSMParameterFolder, "docker-image-build-folder", absPath)
