@@ -103,8 +103,8 @@ func (docker *dockerConfig) call() int {
 		dockerArgs = append(dockerArgs, fmt.Sprintf("--user=%s:%s", currentUser.Uid, currentUser.Gid))
 	}
 
+	currentUser := must(user.Current()).(*user.User)
 	if app.MountHomeDir {
-		currentUser := must(user.Current()).(*user.User)
 		home := filepath.ToSlash(currentUser.HomeDir)
 		mountingHome := fmt.Sprintf("/home/%s", filepath.Base(home))
 
@@ -112,9 +112,10 @@ func (docker *dockerConfig) call() int {
 			"-v", fmt.Sprintf("%v:%v", convertDrive(home), mountingHome),
 			"-e", fmt.Sprintf("HOME=%v", mountingHome),
 		}...)
-
-		dockerArgs = append(dockerArgs, config.DockerOptions...)
+	} else {
+		dockerArgs = append(dockerArgs, "-e", fmt.Sprintf("HOME=%s/home/%s", dockerMountImagePath, currentUser.Username))
 	}
+	dockerArgs = append(dockerArgs, config.DockerOptions...)
 
 	switch app.TempDirMountLocation {
 	case mountLocHost:
