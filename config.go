@@ -524,7 +524,7 @@ func (config *TGFConfig) findRemoteConfigFiles(location, files string) []string 
 		log.Debugln("Reading configuration from", fullConfigPath)
 		source := must(getter.Detect(fullConfigPath, must(os.Getwd()).(string), getter.Detectors)).(string)
 
-		err := getter.Get(destConfigPath, source)
+		err := getter.GetFile(destConfigPath, source)
 		if err == nil {
 			_, err = os.Stat(destConfigPath)
 			if os.IsNotExist(err) {
