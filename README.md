@@ -369,3 +369,9 @@ Builds are automatically launched on tagging.
 
 Tags with the format image-0.0.0 automatically launch a Docker images build that are available through Docker Hub.
 Tags with the format v0.0.0 automatically launch a new release on Github for the TGF executable.
+
+Tests that involve docker builds are not compatible with docker buildkit.  Run them with:
+
+```bash
+DOCKER_BUILDKIT=0 go test ./...
+```
