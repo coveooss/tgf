@@ -113,7 +113,7 @@ func (docker *dockerConfig) call() int {
 			"-e", fmt.Sprintf("HOME=%v", mountingHome),
 		}...)
 	} else {
-		dockerArgs = append(dockerArgs, "-e", fmt.Sprintf("HOME=%s/home/%s", dockerMountImagePath, currentUser.Username))
+		// dockerArgs = append(dockerArgs, "-e", fmt.Sprintf("HOME=%s/home/%s", dockerMountImagePath, currentUser.Username))
 	}
 	dockerArgs = append(dockerArgs, config.DockerOptions...)
 
