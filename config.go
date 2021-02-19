@@ -276,9 +276,12 @@ func (config *TGFConfig) setDefaultValues() {
 
 	// Fetch SSM configs
 	if config.awsConfigExist() {
-		if err := config.InitAWS(); err != nil {
-			log.Fatal(err)
+		if !config.tgf.DisableCredsConfig {
+			if err := config.InitAWS(); err != nil {
+				log.Fatal(err)
+			}
 		}
+
 		if app.ConfigLocation == "" {
 			values := config.readSSMParameterStore(app.PsPath)
 			app.ConfigLocation = values[remoteConfigLocationParameter]

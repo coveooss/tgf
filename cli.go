@@ -87,7 +87,9 @@ type TGFApplication struct {
 	AwsProfile           string
 	ConfigFiles          string
 	ConfigLocation       string
+	ConfigDump           bool
 	DisableUserConfig    bool
+	DisableCredsConfig   bool
 	DockerBuild          bool
 	DockerInteractive    bool
 	DockerOptions        []string
@@ -159,11 +161,13 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("with-current-user", "Runs the docker command with the current user, using the --user arg").Alias("cu").BoolVar(&app.WithCurrentUser)
 	app.Flag("with-docker-mount", "Mounts the docker socket to the image so the host's docker api is usable").Alias("wd", "dm").BoolVar(&app.WithDockerMount)
 	app.Flag("ignore-user-config", "Ignore all tgf.user.config files").Alias("iu", "iuc").NoAutoShortcut().BoolVar(&app.DisableUserConfig)
+	app.Flag("ignore-credentials-config", "Ignore all credentials configuration").BoolVar(&app.DisableCredsConfig)
 	swFlagON("aws", "Use AWS Parameter store to get configuration").BoolVar(&app.UseAWS)
 	app.Flag("profile", "Set the AWS profile configuration to use").Short('P').NoAutoShortcut().PlaceHolder("<AWS profile>").StringVar(&app.AwsProfile)
 	app.Flag("ssm-path", "Parameter Store path used to find AWS common configuration shared by a team").PlaceHolder("<path>").Default(defaultSSMParameterFolder).StringVar(&app.PsPath)
 	app.Flag("config-files", "Set the files to look for (default: "+remoteDefaultConfigPath+")").PlaceHolder("<files>").StringVar(&app.ConfigFiles)
 	app.Flag("config-location", "Set the configuration location").PlaceHolder("<path>").StringVar(&app.ConfigLocation)
+	app.Flag("config-dump", "Print the TGF configuration and exit.").BoolVar(&app.ConfigDump)
 	app.Flag("update", "Run auto update script").IsSetByUser(&app.AutoUpdateSet).BoolVar(&app.AutoUpdate)
 
 	kingpin.CommandLine = app.Application
@@ -275,5 +279,12 @@ func (app *TGFApplication) Run() int {
 		return 0
 	}
 
-	return RunWithUpdateCheck(InitConfig(app))
+	tgfConfig := InitConfig(app)
+
+	if app.ConfigDump {
+		println(tgfConfig.String())
+		return 0
+	}
+
+	return RunWithUpdateCheck(tgfConfig)
 }
