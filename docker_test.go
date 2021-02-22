@@ -17,6 +17,7 @@ import (
 
 func TestGetImage(t *testing.T) {
 
+	os.Setenv("DOCKER_BUILDKIT", "0") // For docker tests to pass on Mac, docker buildkit must be disabled
 	testImageName := "test-image" + strconv.Itoa(randInt())
 	testTag := "test" + strconv.Itoa(randInt())
 	testImageNameTagged := testImageName + ":" + testTag
