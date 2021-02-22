@@ -126,6 +126,42 @@ func TestSetConfigDefaultValues(t *testing.T) {
 	assert.Nil(t, config.ImageVersion)
 }
 
+/*
+Test that --config-dump filters out AWS secrets.
+This allows the dumped configuration to be used in more contexts, without exposing secrets.
+See https://coveord.atlassian.net/browse/DT-3750
+*/
+func TestConfigDumpFiltersOutAWSEnvironment(t *testing.T) {
+	log.SetOut(os.Stdout)
+
+	// We must reset the cached AWS config check since it could have been modified by another test
+	resetCache()
+	tempDir, _ := filepath.EvalSymlinks(must(ioutil.TempDir("", "TestGetConfig")).(string))
+	currentDir, _ := os.Getwd()
+	assert.NoError(t, os.Chdir(tempDir))
+	defer func() {
+		assert.NoError(t, os.Chdir(currentDir))
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
+
+	testTgfConfigFile := fmt.Sprintf("%s/.tgf.config", tempDir)
+
+	tgfConfig := []byte(String(`
+		docker-image: coveo/stuff
+		docker-image-build: RUN ls test2
+		docker-image-build-tag: hello
+		docker-image-build-folder: my-folder
+	`).UnIndent().TrimSpace())
+	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
+
+	app := NewTestApplication([]string{"--config-dump"}, true)
+	config := InitConfig(app)
+
+	for key := range config.Environment {
+		assert.False(t, strings.Contains(key, "AWS"), "Environment must not contain any AWS_* key, but found %s", key)
+	}
+}
+
 func TestTwoLevelsOfTgfConfig(t *testing.T) {
 	tempDir, _ := filepath.EvalSymlinks(must(ioutil.TempDir("", "TestGetConfig")).(string))
 	currentDir, _ := os.Getwd()

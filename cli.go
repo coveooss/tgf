@@ -87,6 +87,7 @@ type TGFApplication struct {
 	AwsProfile           string
 	ConfigFiles          string
 	ConfigLocation       string
+	ConfigDump           bool
 	DisableUserConfig    bool
 	DockerBuild          bool
 	DockerInteractive    bool
@@ -164,6 +165,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("ssm-path", "Parameter Store path used to find AWS common configuration shared by a team").PlaceHolder("<path>").Default(defaultSSMParameterFolder).StringVar(&app.PsPath)
 	app.Flag("config-files", "Set the files to look for (default: "+remoteDefaultConfigPath+")").PlaceHolder("<files>").StringVar(&app.ConfigFiles)
 	app.Flag("config-location", "Set the configuration location").PlaceHolder("<path>").StringVar(&app.ConfigLocation)
+	app.Flag("config-dump", "Print the TGF configuration and exit").BoolVar(&app.ConfigDump)
 	app.Flag("update", "Run auto update script").IsSetByUser(&app.AutoUpdateSet).BoolVar(&app.AutoUpdate)
 
 	kingpin.CommandLine = app.Application
@@ -266,14 +268,5 @@ func (app *TGFApplication) ShowHelp(c *kingpin.ParseContext) error {
 
 // Run execute the application
 func (app *TGFApplication) Run() int {
-	if app.GetCurrentVersion {
-		if version == locallyBuilt {
-			fmt.Println("tgf (built from source)")
-		} else {
-			fmt.Printf("tgf v%s\n", version)
-		}
-		return 0
-	}
-
 	return RunWithUpdateCheck(InitConfig(app))
 }

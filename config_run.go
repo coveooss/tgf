@@ -31,6 +31,20 @@ func (config *TGFConfig) Run() int {
 		return 1
 	}
 
+	if app.GetCurrentVersion {
+		if version == locallyBuilt {
+			fmt.Println("tgf (built from source)")
+		} else {
+			fmt.Printf("tgf v%s\n", version)
+		}
+		return 0
+	}
+
+	if app.ConfigDump {
+		fmt.Println(config.String())
+		return 0
+	}
+
 	if app.GetAllVersions {
 		if filepath.Base(config.EntryPoint) != "terragrunt" {
 			log.Error("--all-version works only with terragrunt as the entrypoint")
