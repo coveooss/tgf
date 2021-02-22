@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
-	github.com/aws/aws-sdk-go v1.37.5
+	github.com/aws/aws-sdk-go v1.37.15
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/containerd v1.4.3 // indirect
 	github.com/coveooss/gotemplate/v3 v3.6.1
@@ -23,9 +23,9 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
-	github.com/sirupsen/logrus v1.7.0
-	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
+	github.com/sirupsen/logrus v1.8.0
+	github.com/stretchr/testify v1.6.1
+	golang.org/x/crypto v0.0.0-20201124201722-c8d3bf9c5392
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3 // indirect
 )
