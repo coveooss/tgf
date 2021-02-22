@@ -252,7 +252,10 @@ func (config *TGFConfig) InitAWS() error {
 		"AWS_REGION":            *session.Config.Region,
 	} {
 		os.Setenv(key, value)
-		config.Environment[key] = value
+		if !config.tgf.ConfigDump {
+			// If we are saving the current configuration, we do not want to save the current credentials
+			config.Environment[key] = value
+		}
 	}
 	return nil
 }
@@ -276,10 +279,8 @@ func (config *TGFConfig) setDefaultValues() {
 
 	// Fetch SSM configs
 	if config.awsConfigExist() {
-		if !config.tgf.DisableCredsConfig {
-			if err := config.InitAWS(); err != nil {
-				log.Fatal(err)
-			}
+		if err := config.InitAWS(); err != nil {
+			log.Fatal(err)
 		}
 
 		if app.ConfigLocation == "" {

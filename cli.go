@@ -89,7 +89,6 @@ type TGFApplication struct {
 	ConfigLocation       string
 	ConfigDump           bool
 	DisableUserConfig    bool
-	DisableCredsConfig   bool
 	DockerBuild          bool
 	DockerInteractive    bool
 	DockerOptions        []string
@@ -161,7 +160,6 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("with-current-user", "Runs the docker command with the current user, using the --user arg").Alias("cu").BoolVar(&app.WithCurrentUser)
 	app.Flag("with-docker-mount", "Mounts the docker socket to the image so the host's docker api is usable").Alias("wd", "dm").BoolVar(&app.WithDockerMount)
 	app.Flag("ignore-user-config", "Ignore all tgf.user.config files").Alias("iu", "iuc").NoAutoShortcut().BoolVar(&app.DisableUserConfig)
-	app.Flag("ignore-credentials-config", "Ignore all credentials configuration").BoolVar(&app.DisableCredsConfig)
 	swFlagON("aws", "Use AWS Parameter store to get configuration").BoolVar(&app.UseAWS)
 	app.Flag("profile", "Set the AWS profile configuration to use").Short('P').NoAutoShortcut().PlaceHolder("<AWS profile>").StringVar(&app.AwsProfile)
 	app.Flag("ssm-path", "Parameter Store path used to find AWS common configuration shared by a team").PlaceHolder("<path>").Default(defaultSSMParameterFolder).StringVar(&app.PsPath)
@@ -270,21 +268,5 @@ func (app *TGFApplication) ShowHelp(c *kingpin.ParseContext) error {
 
 // Run execute the application
 func (app *TGFApplication) Run() int {
-	if app.GetCurrentVersion {
-		if version == locallyBuilt {
-			fmt.Println("tgf (built from source)")
-		} else {
-			fmt.Printf("tgf v%s\n", version)
-		}
-		return 0
-	}
-
-	tgfConfig := InitConfig(app)
-
-	if app.ConfigDump {
-		println(tgfConfig.String())
-		return 0
-	}
-
-	return RunWithUpdateCheck(tgfConfig)
+	return RunWithUpdateCheck(InitConfig(app))
 }
