@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -51,6 +52,7 @@ func setup(t *testing.T, testFunction func()) string {
 func TestCurrentVersion(t *testing.T) {
 	version = locallyBuilt
 	output := setup(t, func() {
+		log.SetDefaultConsoleHookLevel(logrus.WarnLevel)
 		app := NewTGFApplication([]string{"--current-version"})
 		exitCode := app.Run()
 		assert.Equal(t, 0, exitCode, "exitCode")
