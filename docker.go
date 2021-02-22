@@ -53,9 +53,12 @@ func (docker *dockerConfig) call() int {
 	const logLevelArg = "--terragrunt-logging-level"
 	if !listContainsElement(command, logLevelArg) && filepath.Base(config.EntryPoint) == "terragrunt" {
 		level, _ := strconv.Atoi(config.LogLevel)
-		if level > 6 || strings.ToLower(config.LogLevel) == "full" {
-			config.LogLevel = "trace"
+		if strings.ToLower(config.LogLevel) == "full" {
 			config.Environment["TF_LOG"] = "TRACE"
+			config.LogLevel = "trace"
+		}
+
+		if level > int(logrus.TraceLevel) {
 			config.Environment["TERRAGRUNT_DEBUG"] = "1"
 		}
 
