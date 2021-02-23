@@ -601,9 +601,8 @@ func (config TGFConfig) awsConfigExist() (result bool) {
 
 	// Otherwise, we check if the current user has a folder named .aws defined under its home directory.
 	awsFolderExists := false
-	if currentUser, err := user.Current(); err != nil {
-		awsFolder, err := os.Stat(filepath.Join(currentUser.HomeDir, ".aws"))
-		if err != nil {
+	if currentUser, _ := user.Current(); currentUser != nil {
+		if awsFolder, err := os.Stat(filepath.Join(currentUser.HomeDir, ".aws")); err == nil {
 			awsFolderExists = awsFolder.IsDir()
 		}
 	}
