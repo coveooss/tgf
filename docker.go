@@ -115,7 +115,23 @@ func (docker *dockerConfig) call() int {
 			"-v", fmt.Sprintf("%v:%v", convertDrive(home), mountingHome),
 			"-e", fmt.Sprintf("HOME=%v", mountingHome),
 		}...)
+	} else if app.TempDirMountLocation != mountLocNone {
+		// If temp location is not disabled, we persist the home folder in a docker volume
+		imageSummary := getImageSummary(imageName)
+		image := inspectImage(imageSummary.ID)
+		user := currentUser.Username
+		if image.Config.User != "" {
+			// If an explicit user is defined in the image, we use that user instead of the actual one
+			// This ensure to not mount a folder with no permission to write into it
+			user = image.Config.User
+		}
+		homePath := fmt.Sprintf("/home/%s", user)
+		dockerArgs = append(dockerArgs,
+			"-e", fmt.Sprintf("HOME=%s", homePath),
+			"-v", fmt.Sprintf("%s-%s:%s", dockerVolumeName, user, homePath),
+		)
 	}
+
 	dockerArgs = append(dockerArgs, config.DockerOptions...)
 
 	switch app.TempDirMountLocation {
@@ -426,12 +442,17 @@ func getImageHash(imageName string) string {
 	return ""
 }
 
-func getActualImageVersionFromImageID(imageID string) string {
+func inspectImage(imageID string) types.ImageInspect {
 	cli, ctx := getDockerClient()
 	inspect, _, err := cli.ImageInspectWithRaw(ctx, imageID)
 	if err != nil {
 		panic(err)
 	}
+	return inspect
+}
+
+func getActualImageVersionFromImageID(imageID string) string {
+	inspect := inspectImage(imageID)
 	for _, v := range inspect.ContainerConfig.Env {
 		values := strings.SplitN(v, "=", 2)
 		if values[0] == tgfImageVersion {
