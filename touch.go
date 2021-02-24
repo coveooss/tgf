@@ -9,14 +9,17 @@ import (
 	"time"
 )
 
-func getTouchFilename(image string) string {
-	usr := must(user.Current()).(*user.User)
+func getTouchFilename(image string) (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
 	hash := sha1.Sum([]byte(image))
-	return filepath.Join(usr.HomeDir, ".tgf", base64.RawURLEncoding.EncodeToString(hash[:]))
+	return filepath.Join(usr.HomeDir, ".tgf", base64.RawURLEncoding.EncodeToString(hash[:])), nil
 }
 
 func getLastRefresh(image string) time.Time {
-	filename := getTouchFilename(image)
+	filename, _ := getTouchFilename(image)
 	if _, err := os.Stat(filename); err == nil {
 		// File exists
 		info := must(os.Stat(filename)).(os.FileInfo)
@@ -26,7 +29,10 @@ func getLastRefresh(image string) time.Time {
 }
 
 func touchImageRefresh(image string) {
-	filename := getTouchFilename(image)
+	filename, err := getTouchFilename(image)
+	if err != nil {
+		return
+	}
 	if _, err := os.Stat(filepath.Dir(filename)); os.IsNotExist(err) {
 		os.Mkdir(filepath.Dir(filename), 0755)
 	}
