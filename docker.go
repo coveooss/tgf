@@ -116,7 +116,7 @@ func (docker *dockerConfig) call() int {
 			"-e", fmt.Sprintf("HOME=%v", mountingHome),
 		}...)
 	} else if app.TempDirMountLocation != mountLocNone {
-		// If temp localtion is disabled, we do not persist the home folder in a docker volume neither
+		// If temp location is not disabled, we persist the home folder in a docker volume
 		imageSummary := getImageSummary(imageName)
 		image := inspectImage(imageSummary.ID)
 		user := currentUser.Username
