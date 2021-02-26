@@ -277,6 +277,12 @@ func (config *TGFConfig) setDefaultValues() {
 	}
 	configsData := []configData{}
 
+	// --config-dump output must not contain any logs to be valid YAML
+	// so make sure logs go to stderr in this case
+	if config.tgf.ConfigDump {
+		log.SetStdout(os.Stdout)
+	}
+
 	// Fetch SSM configs
 	if config.awsConfigExist() {
 		if err := config.InitAWS(); err != nil {
