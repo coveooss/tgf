@@ -119,16 +119,23 @@ func (docker *dockerConfig) call() int {
 		// If temp location is not disabled, we persist the home folder in a docker volume
 		imageSummary := getImageSummary(imageName)
 		image := inspectImage(imageSummary.ID)
-		user := currentUser.Username
+		username := currentUser.Username
+
 		if image.Config.User != "" {
 			// If an explicit user is defined in the image, we use that user instead of the actual one
 			// This ensure to not mount a folder with no permission to write into it
-			user = image.Config.User
+			username = image.Config.User
 		}
-		homePath := fmt.Sprintf("/home/%s", user)
+
+		// Fix for Windows containing the domain name in the Username (e.g. ACME\jsmith)
+		// The backslash is not accepted for a Docker volume path
+		splitUsername := strings.Split(username, "\\")
+		username = splitUsername[len(splitUsername) - 1]
+
+		homePath := fmt.Sprintf("/home/%s", username)
 		dockerArgs = append(dockerArgs,
 			"-e", fmt.Sprintf("HOME=%s", homePath),
-			"-v", fmt.Sprintf("%s-%s:%s", dockerVolumeName, user, homePath),
+			"-v", fmt.Sprintf("%s-%s:%s", dockerVolumeName, username, homePath),
 		)
 	}
 
