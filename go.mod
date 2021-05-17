@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
-	github.com/aws/aws-sdk-go v1.37.15
+	github.com/aws/aws-sdk-go v1.38.40
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/containerd v1.4.3 // indirect
 	github.com/coveooss/gotemplate/v3 v3.6.1
