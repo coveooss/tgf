@@ -130,7 +130,7 @@ func (docker *dockerConfig) call() int {
 		// Fix for Windows containing the domain name in the Username (e.g. ACME\jsmith)
 		// The backslash is not accepted for a Docker volume path
 		splitUsername := strings.Split(username, "\\")
-		username = splitUsername[len(splitUsername) - 1]
+		username = splitUsername[len(splitUsername)-1]
 
 		homePath := fmt.Sprintf("/home/%s", username)
 		dockerArgs = append(dockerArgs,
@@ -167,6 +167,7 @@ func (docker *dockerConfig) call() int {
 	config.Environment["TGF_ARGS"] = strings.Join(os.Args, " ")
 	config.Environment["TGF_LAUNCH_FOLDER"] = sourceFolder
 	config.Environment["TGF_IMAGE_NAME"] = imageName // sha256 of image
+	config.Environment["DOCKER_BUILDKIT"] = "0"
 
 	if !strings.Contains(config.Image, "coveo/tgf") { // the tgf image injects its own image info
 		config.Environment["TGF_IMAGE"] = config.Image
