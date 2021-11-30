@@ -8,10 +8,10 @@ builds:
     goarch:
       - amd64
       - arm64
-
-# Build one binary for Mac OS (arm64 and amd64)
-universal_binaries:
-  - replace: true
+    ignore:
+      # Windows arm64 is not used and does not compile well as of writing
+      - goos: windows
+        goarch: arm64
 
 # Archive customization
 archives:
