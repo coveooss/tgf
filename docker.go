@@ -18,9 +18,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/blang/semver"
 	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/coveooss/gotemplate/v3/utils"
@@ -510,10 +508,9 @@ func (docker *dockerConfig) refreshImage(image string) {
 }
 
 func loginToECR(account string, region string) {
-	awsSession := session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
-	svc := ecr.New(awsSession, &aws.Config{Region: aws.String(region)})
-	requestInput := &ecr.GetAuthorizationTokenInput{RegistryIds: []*string{aws.String(account)}}
-	result := must(svc.GetAuthorizationToken(requestInput)).(*ecr.GetAuthorizationTokenOutput)
+	svc := ecr.New(ecr.Options{Region: region})
+	requestInput := &ecr.GetAuthorizationTokenInput{RegistryIds: []string{account}}
+	result := must(svc.GetAuthorizationToken(context.TODO(), requestInput)).(*ecr.GetAuthorizationTokenOutput)
 
 	decodedLogin := string(must(base64.StdEncoding.DecodeString(*result.AuthorizationData[0].AuthorizationToken)).([]byte))
 	dockerUpdateCmd := exec.Command("docker", "login", "-u", strings.Split(decodedLogin, ":")[0],
@@ -576,7 +573,7 @@ var windowsMessage = `
 You may have to share your drives with your Docker virtual machine to make them accessible.
 
 On Windows 10+ using Hyper-V to run Docker, simply right click on Docker icon in your tray and
-choose "Settings", then go to "Shared Drives" and enable the share for the drives you want to 
+choose "Settings", then go to "Shared Drives" and enable the share for the drives you want to
 be accessible to your dockers.
 
 On previous version using VirtualBox, start the VirtualBox application and add shared drives
