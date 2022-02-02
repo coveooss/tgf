@@ -422,7 +422,7 @@ func (config *TGFConfig) validate() (errors []error) {
 
 	if config.RecommendedTGFVersion != "" && version != locallyBuilt {
 		if valid, err := CheckVersionRange(version, config.RecommendedTGFVersion); err != nil {
-			errors = append(errors, fmt.Errorf("Unable to check recommended tgf version %s vs %s: %v", version, config.RecommendedTGFVersion, err))
+			errors = append(errors, fmt.Errorf("unable to check recommended tgf version %s vs %s: %v", version, config.RecommendedTGFVersion, err))
 		} else if !valid {
 			errors = append(errors, ConfigWarning(fmt.Sprintf("TGF v%s does not meet the recommended version range %s", version, config.RecommendedTGFVersion)))
 		}
@@ -430,7 +430,7 @@ func (config *TGFConfig) validate() (errors []error) {
 
 	if config.RequiredVersionRange != "" && config.ImageVersion != nil && *config.ImageVersion != "" && reVersion.MatchString(*config.ImageVersion) {
 		if valid, err := CheckVersionRange(*config.ImageVersion, config.RequiredVersionRange); err != nil {
-			errors = append(errors, fmt.Errorf("Unable to check recommended image version %s vs %s: %v", *config.ImageVersion, config.RequiredVersionRange, err))
+			errors = append(errors, fmt.Errorf("unable to check recommended image version %s vs %s: %v", *config.ImageVersion, config.RequiredVersionRange, err))
 			return
 		} else if !valid {
 			errors = append(errors, VersionMistmatchError(fmt.Sprintf("Image %s does not meet the required version range %s", config.GetImageName(), config.RequiredVersionRange)))
@@ -440,7 +440,7 @@ func (config *TGFConfig) validate() (errors []error) {
 
 	if config.RecommendedImageVersion != "" && config.ImageVersion != nil && *config.ImageVersion != "" && reVersion.MatchString(*config.ImageVersion) {
 		if valid, err := CheckVersionRange(*config.ImageVersion, config.RecommendedImageVersion); err != nil {
-			errors = append(errors, fmt.Errorf("Unable to check recommended image version %s vs %s: %v", *config.ImageVersion, config.RecommendedImageVersion, err))
+			errors = append(errors, fmt.Errorf("unable to check recommended image version %s vs %s: %v", *config.ImageVersion, config.RecommendedImageVersion, err))
 		} else if !valid {
 			errors = append(errors, ConfigWarning(fmt.Sprintf("Image %s does not meet the recommended version range %s", config.GetImageName(), config.RecommendedImageVersion)))
 		}
@@ -575,7 +575,7 @@ func (config *TGFConfig) findRemoteConfigFiles(location, files string) []string 
 		if err == nil {
 			_, err = os.Stat(destConfigPath)
 			if os.IsNotExist(err) {
-				err = errors.New("Config file was not found at the source")
+				err = errors.New("config file was not found at the source")
 			}
 		}
 
