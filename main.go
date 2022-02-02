@@ -35,6 +35,9 @@ func main() {
 func init() {
 	multilogger.SetGlobalFormat("%module:Italic,Green,Square,IgnoreEmpty,Space%%time% %6globaldelay% %5delta:Round% %-8level:upper,color% %message:color%", false)
 	log = multilogger.New("tgf").SetStdout(os.Stderr)
+
+	awsLogger = NewAwsLogger("tgf.awsSdk")
+	awsLogger.SetStdout(os.Stderr)
 }
 
 type (
@@ -43,6 +46,7 @@ type (
 )
 
 var (
-	must = errors.Must
-	log  *multilogger.Logger
+	must      = errors.Must
+	log       *multilogger.Logger
+	awsLogger *AwsLogger
 )

@@ -142,6 +142,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("all-versions", "Get versions of TGF & all others underlying utilities").BoolVar(&app.GetAllVersions)
 	app.Flag("logging-level", "Set the logging level (panic=0, fatal=1, error=2, warning=3, info=4, debug=5, trace=6, full=7)").Short('L').PlaceHolder("<level>").StringVar(&app.LoggingLevel)
 	debug := app.Flag("debug", "Print debug messages and docker commands issued").Short('D').Bool()
+	awsDebug := app.Flag("aws-debug", "Activate debug logging for the AWS SDK. This will print requests & responses made by the AWS SDK.").Bool()
 	app.Flag("flush-cache", "Invoke terragrunt with --terragrunt-update-source to flush the cache").Short('F').BoolVar(&app.FlushCache)
 	swFlagON("interactive", "Launch Docker in interactive mode").Alias("it").BoolVar(&app.DockerInteractive)
 	swFlagON("docker-build", "Enable docker build instructions configured in the config files").BoolVar(&app.DockerBuild)
@@ -175,6 +176,11 @@ func NewTGFApplication(args []string) *TGFApplication {
 	if *debug {
 		_ = log.SetDefaultConsoleHookLevel(logrus.DebugLevel)
 	}
+
+	if *awsDebug {
+		_ = awsLogger.SetDefaultConsoleHookLevel(logrus.DebugLevel)
+	}
+
 	app.TempDirMountLocation = resolveTempMountLocation(temp, tempIsSetByUser, tempLocation, tempLocationIsSetByUser)
 	return &app
 }
