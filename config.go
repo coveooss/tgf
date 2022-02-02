@@ -23,7 +23,10 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"github.com/blang/semver"
 	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/fatih/color"
@@ -156,96 +159,99 @@ func (config TGFConfig) String() string {
 	return string(bytes)
 }
 
-func (tgfConfig *TGFConfig) getAwsConfig() (aws.Config, error) {
-	config, err := awsConfig.LoadDefaultConfig(
+var cachedAwsConfig *aws.Config
+
+func (tgfConfig *TGFConfig) getAwsConfig(assumeRoleDuration time.Duration) (*aws.Config, error) {
+	if cachedAwsConfig != nil {
+		log.Debug("Using cached AWS config")
+		return cachedAwsConfig, nil
+	}
+
+	log.Debugf("Creating new AWS config (assumeRoleDuration=%s)", assumeRoleDuration)
+	_config, err := awsConfig.LoadDefaultConfig(
 		context.TODO(),
 		awsConfig.WithSharedConfigProfile(tgfConfig.tgf.AwsProfile),
+		awsConfig.WithAssumeRoleCredentialOptions(func(o *stscreds.AssumeRoleOptions) {
+			o.TokenProvider = stscreds.StdinTokenProvider
+			if assumeRoleDuration > 0 {
+				o.Duration = assumeRoleDuration
+			}
+		}),
 	)
+
+	if err != nil {
+		return nil, err
+	}
+	config := &_config
+
+	log.Debug("Fetching credentials for current AWS config")
+	creds, err := config.Credentials.Retrieve(context.TODO())
+	if err != nil {
+		return config, nil
+	}
+
+	expiresIn := time.Until(creds.Expires)
+	if expiresIn < (1 * time.Hour) {
+		newDuration := guessAwsMaxAssumeRoleDuration(*config)
+
+		log.Warningf(
+			"Credentials for current AWS session are set to expire in less than one hour (%s). Will extend to %s.",
+			expiresIn,
+			newDuration,
+		)
+
+		config, err = tgfConfig.getAwsConfig(newDuration)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	log.Debug("Caching newly created AWS config for future calls")
+	cachedAwsConfig = config
 
 	return config, err
 }
 
-// func (config *TGFConfig) getAwsSession(duration int64) (*awsConfig.Config, error) {
-// 	// TODO: cached session
-// 	// if cachedSession != nil {
-// 	// 	return cachedSession, nil
-// 	// }
-// 	// TODO: MFA & what not, is it built in?
-// 	askedForMfa := false
-// 	options := awsSession.Options{
-// 		Profile:           config.tgf.AwsProfile,
-// 		SharedConfigState: awsSession.SharedConfigEnable,
-// 		AssumeRoleTokenProvider: func() (string, error) {
-// 			askedForMfa = true
-// 			fmt.Fprintf(os.Stderr, "Assume Role MFA token code: ")
-// 			v, err := terminal.ReadPassword(int(os.Stdin.Fd()))
-// 			fmt.Fprintln(os.Stderr)
-// 			return string(v), err
-// 		},
-// 	}
-// 	if duration > 0 {
-// 		options.AssumeRoleDuration = time.Duration(duration) * time.Second
-// 	}
+func guessAwsMaxAssumeRoleDuration(awsConfig aws.Config) time.Duration {
+	fallback := 1 * time.Hour
+	log.Debugf("Trying to figure out the max duration of an AWS assume role operation (fallback=%s)", fallback)
 
-// 	session, err := awsSession.NewSessionWithOptions(options)
-// 	awsConfig, err := awsConfig.LoadDefaultConfig(
-// 		context.TODO(),
-// 		awsConfig.WithSharedConfigProfile(config.tgf.AwsProfile),
-// 	)
+	roleRegex := regexp.MustCompile(".*:assumed-role/(.*)/.*")
 
-// 	if err == nil {
-// 		// We must get the current credentials before verifying the expiration
-// 		_, err = session.Config.Credentials.Get()
-// 	}
-// 	if err != nil {
-// 		return session, err
-// 	}
+	identity, err := sts.NewFromConfig(awsConfig).GetCallerIdentity(context.TODO(), &sts.GetCallerIdentityInput{})
+	if err != nil {
+		log.Debug("Failed, using fallback:", err)
+		return fallback
+	}
 
-// 	expiration, _ := session.Config.Credentials.ExpiresAt()
-// 	if duration := time.Until(expiration).Round(time.Minute); duration > 0 && duration < 55*time.Minute {
-// 		// The duration is less that 1 hour, we try to extend the session
+	matches := roleRegex.FindStringSubmatch(*identity.Arn)
+	if len(matches) == 0 {
+		log.Debug("Failed, using fallback: Current role is not an assumed role")
+		return fallback
+	}
 
-// 		// We try to find the maximum role session duration allowed (but not complain if not successful)
-// 		maxDuration := int64(3600)
-// 		roleRegex := regexp.MustCompile(".*:assumed-role/(.*)/.*")
-// 		if identity, err := sts.New(session).GetCallerIdentity(&sts.GetCallerIdentityInput{}); err == nil {
-// 			if matches := roleRegex.FindStringSubmatch(*identity.Arn); len(matches) > 0 {
-// 				if role, err := iam.New(session).GetRole(&iam.GetRoleInput{RoleName: &matches[1]}); err == nil {
-// 					maxDuration = *role.Role.MaxSessionDuration
-// 				}
-// 			}
-// 		}
-// 		var profile string
-// 		if profile = config.tgf.AwsProfile; profile == "" {
-// 			if profile = os.Getenv("AWS_PROFILE"); profile == "" {
-// 				profile = "default"
-// 			}
-// 		}
-// 		if askedForMfa {
-// 			log.Warningf("Your AWS configuration is set to expire your session in %v. This timeout could not be automatically extended due to the session's MFA",
-// 				duration)
-// 		} else {
-// 			session, err = config.getAwsSession(maxDuration)
-// 			log.Warningf("Your AWS configuration is set to expire your session in %v (automatically extended to %v)",
-// 				duration,
-// 				time.Duration(maxDuration)*time.Second)
-// 		}
+	role, err := iam.NewFromConfig(awsConfig).GetRole(
+		context.TODO(),
+		&iam.GetRoleInput{
+			RoleName: &matches[1],
+		},
+	)
+	if err != nil {
+		log.Debug("Failed, using fallback:", err)
+		return fallback
+	}
 
-// 		log.Warningf(color.WhiteString("You should consider defining %s in your AWS config profile %s"),
-// 			color.HiBlueString("duration_seconds = %d", maxDuration), color.HiBlueString(profile))
-// 	}
-// 	if err == nil {
-// 		cachedSession = session
-// 	}
-// 	return session, err
-// }
+	maxDuration := time.Duration(*role.Role.MaxSessionDuration) * time.Second
+	log.Debugf("Max duration is %s", maxDuration)
+	return maxDuration
+}
 
 // InitAWS tries to open an AWS session and init AWS environment variable on success
 func (config *TGFConfig) InitAWS() error {
 	if config.tgf.AwsProfile == "" && os.Getenv("AWS_ACCESS_KEY_ID") != "" && os.Getenv("AWS_PROFILE") != "" {
 		log.Warning("You set both AWS_ACCESS_KEY_ID and AWS_PROFILE, AWS_PROFILE will be ignored")
 	}
-	awsConfig, err := config.getAwsConfig()
+	awsConfig, err := config.getAwsConfig(0)
 	if err != nil {
 		return err
 	}
@@ -497,13 +503,13 @@ func (config *TGFConfig) ParseAliases() {
 
 func (config *TGFConfig) readSSMParameterStore(ssmParameterFolder string) map[string]string {
 	values := make(map[string]string)
-	awsConfig, err := config.getAwsConfig()
+	awsConfig, err := config.getAwsConfig(0)
 	log.Debugf("Reading configuration from SSM %s in %s", ssmParameterFolder, awsConfig.Region)
 	if err != nil {
 		log.Warningf("Caught an error while creating an AWS session: %v", err)
 		return values
 	}
-	svc := ssm.NewFromConfig(awsConfig)
+	svc := ssm.NewFromConfig(*awsConfig)
 	response, err := svc.GetParametersByPath(context.TODO(), &ssm.GetParametersByPathInput{
 		Path:           aws.String(ssmParameterFolder),
 		Recursive:      true,
