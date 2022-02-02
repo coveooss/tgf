@@ -93,6 +93,7 @@ var (
 
 func resetCache() {
 	cachedAWSConfigExistCheck = nil
+	cachedAwsConfig = nil
 }
 
 func (cb TGFConfigBuild) hash() string {
