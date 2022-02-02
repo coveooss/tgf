@@ -163,10 +163,6 @@ func (config TGFConfig) String() string {
 var cachedAwsConfig *aws.Config
 
 func (tgfConfig *TGFConfig) getAwsConfig(assumeRoleDuration time.Duration) (*aws.Config, error) {
-	if assumeRoleDuration < 0 {
-		log.Fatalf("getAwsConfig was called with negative assumeRoleDuration (%s)", assumeRoleDuration)
-	}
-
 	if cachedAwsConfig != nil {
 		log.Debug("Using cached AWS config")
 		return cachedAwsConfig, nil
@@ -196,7 +192,7 @@ func (tgfConfig *TGFConfig) getAwsConfig(assumeRoleDuration time.Duration) (*aws
 	}
 
 	expiresIn := time.Until(creds.Expires)
-	if expiresIn < (1 * time.Hour) {
+	if creds.CanExpire && expiresIn < (1*time.Hour) {
 		newDuration := guessAwsMaxAssumeRoleDuration(*config)
 
 		log.Warningf(
