@@ -206,16 +206,18 @@ func (tgfConfig *TGFConfig) getAwsConfig(assumeRoleDuration time.Duration) (*aws
 			color.HiBlueString(getPrettyAwsProfileName(*tgfConfig)),
 		)
 
+		shortConfig := config
 		config, err = tgfConfig.getAwsConfig(newDuration)
 		if err != nil {
-			return nil, err
+			log.Warning("Failed to extend current AWS session, will use the current short duration.", err)
+			config = shortConfig
 		}
 	}
 
 	log.Debug("Caching newly created AWS config for future calls")
 	cachedAwsConfig = config
 
-	return config, err
+	return config, nil
 }
 
 func guessAwsMaxAssumeRoleDuration(awsConfig aws.Config) time.Duration {
