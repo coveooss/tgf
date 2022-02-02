@@ -6,8 +6,11 @@ require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.13.0
 	github.com/aws/aws-sdk-go-v2/config v1.13.1
+	github.com/aws/aws-sdk-go-v2/credentials v1.8.0
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.14.0
+	github.com/aws/aws-sdk-go-v2/service/iam v1.16.0
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.20.0
+	github.com/aws/aws-sdk-go-v2/service/sts v1.14.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/containerd v1.4.3 // indirect
 	github.com/coveooss/gotemplate/v3 v3.6.1
@@ -43,15 +46,12 @@ require (
 	github.com/alecthomas/units v0.0.0-20201120081800-1786d5ef83d4 // indirect
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/aws/aws-sdk-go v1.37.15 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.8.0 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.10.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.4 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.2.0 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.5 // indirect
-	github.com/aws/aws-sdk-go-v2/service/iam v1.16.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.7.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.9.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.14.0 // indirect
 	github.com/aws/smithy-go v1.10.0 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
