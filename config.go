@@ -200,6 +200,12 @@ func (tgfConfig *TGFConfig) getAwsConfig(assumeRoleDuration time.Duration) (*aws
 			newDuration,
 		)
 
+		log.Warningf(
+			color.WhiteString("You should consider defining %s in your AWS config profile %s"),
+			color.HiBlueString("duration_seconds = %d", newDuration/time.Second),
+			color.HiBlueString(getPrettyAwsProfileName(*tgfConfig)),
+		)
+
 		config, err = tgfConfig.getAwsConfig(newDuration)
 		if err != nil {
 			return nil, err
@@ -244,6 +250,18 @@ func guessAwsMaxAssumeRoleDuration(awsConfig aws.Config) time.Duration {
 	maxDuration := time.Duration(*role.Role.MaxSessionDuration) * time.Second
 	log.Debugf("Max duration is %s", maxDuration)
 	return maxDuration
+}
+
+func getPrettyAwsProfileName(tgfConfig TGFConfig) string {
+	if profile := tgfConfig.tgf.AwsProfile; profile != "" {
+		return profile
+	}
+
+	if profile := os.Getenv("AWS_PROFILE"); profile != "" {
+		return profile
+	}
+
+	return "default"
 }
 
 // InitAWS tries to open an AWS session and init AWS environment variable on success
