@@ -413,7 +413,7 @@ func (docker *dockerConfig) GetActualImageVersion() string {
 func getDockerClient() (*client.Client, context.Context) {
 	if dockerClient == nil {
 		os.Setenv("DOCKER_API_VERSION", minimumDockerVersion)
-		dockerClient = must(client.NewEnvClient()).(*client.Client)
+		dockerClient = must(client.NewClientWithOpts(client.FromEnv)).(*client.Client)
 		dockerContext = context.Background()
 	}
 	return dockerClient, dockerContext
