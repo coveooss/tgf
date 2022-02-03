@@ -3,6 +3,7 @@ package main
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -16,9 +17,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ssm"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -445,11 +447,11 @@ func writeSSMConfig(parameterFolder, parameterKey, parameterValue string) {
 	putParameterInput := &ssm.PutParameterInput{
 		Name:      aws.String(fullParameterKey),
 		Value:     aws.String(parameterValue),
-		Overwrite: aws.Bool(true),
-		Type:      aws.String(ssm.ParameterTypeString),
+		Overwrite: true,
+		Type:      types.ParameterTypeString,
 	}
 
-	if _, err := client.PutParameter(putParameterInput); err != nil {
+	if _, err := client.PutParameter(context.TODO(), putParameterInput); err != nil {
 		panic(err)
 	}
 }
@@ -462,16 +464,18 @@ func deleteSSMConfig(parameterFolder, parameterKey string) {
 		Name: aws.String(fullParameterKey),
 	}
 
-	if _, err := client.DeleteParameter(deleteParameterInput); err != nil {
+	if _, err := client.DeleteParameter(context.TODO(), deleteParameterInput); err != nil {
 		panic(err)
 	}
 }
 
-func getSSMClient() *ssm.SSM {
-	awsSession := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
-	return ssm.New(awsSession, &aws.Config{Region: aws.String("us-east-1")})
+func getSSMClient() *ssm.Client {
+	awsConfig, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion("us-east-1"))
+	if err != nil {
+		panic(err)
+	}
+
+	return ssm.NewFromConfig(awsConfig)
 }
 
 func randInt() int {
