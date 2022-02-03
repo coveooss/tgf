@@ -251,7 +251,7 @@ func guessAwsMaxAssumeRoleDuration(awsConfig aws.Config) time.Duration {
 	}
 
 	maxDuration := time.Duration(*role.Role.MaxSessionDuration) * time.Second
-	log.Debugf("Max duration is %s", maxDuration)
+	log.Debugf("Max duration for current role (%s) is %s", *role.Role.Arn, maxDuration)
 	return maxDuration
 }
 
