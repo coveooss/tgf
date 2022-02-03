@@ -188,7 +188,7 @@ func (tgfConfig *TGFConfig) getAwsConfig(assumeRoleDuration time.Duration) (*aws
 	log.Debug("Fetching credentials for current AWS config")
 	creds, err := config.Credentials.Retrieve(context.TODO())
 	if err != nil {
-		return config, nil
+		return nil, err
 	}
 
 	expiresIn := time.Until(creds.Expires)
