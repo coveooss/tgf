@@ -173,8 +173,8 @@ func (tgfConfig *TGFConfig) getAwsConfig(assumeRoleDuration time.Duration) (*aws
 		context.TODO(),
 		awsConfig.WithSharedConfigProfile(tgfConfig.tgf.AwsProfile),
 		awsConfig.WithLogger(awsLogger),
-		// The logger level controlled by the --aws-debug flag whether or not the logs are shown.
-		// With that in mind, we just let it blindly log and rely on the logger to decide if it should print or not.
+		// The logger level controlled by the --aws-debug flag controls whether or not the logs are shown.
+		// With that in mind, we just let the AWS SDK blindly log and rely on the logger to decide if it should print or not.
 		awsConfig.WithClientLogMode(
 			aws.LogRetries|
 				aws.LogRequestWithBody|
