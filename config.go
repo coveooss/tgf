@@ -162,14 +162,14 @@ func (config TGFConfig) String() string {
 
 var cachedAwsConfig *aws.Config
 
-func (tgfConfig *TGFConfig) getAwsConfig(assumeRoleDuration time.Duration) (*aws.Config, error) {
+func (tgfConfig *TGFConfig) getAwsConfig(assumeRoleDuration time.Duration) (aws.Config, error) {
 	if cachedAwsConfig != nil {
 		log.Debug("Using cached AWS config")
-		return cachedAwsConfig, nil
+		return *cachedAwsConfig, nil
 	}
 
 	log.Debugf("Creating new AWS config (assumeRoleDuration=%s)", assumeRoleDuration)
-	_config, err := awsConfig.LoadDefaultConfig(
+	config, err := awsConfig.LoadDefaultConfig(
 		context.TODO(),
 		awsConfig.WithSharedConfigProfile(tgfConfig.tgf.AwsProfile),
 		awsConfig.WithLogger(awsLogger),
@@ -191,19 +191,18 @@ func (tgfConfig *TGFConfig) getAwsConfig(assumeRoleDuration time.Duration) (*aws
 	)
 
 	if err != nil {
-		return nil, err
+		return config, err
 	}
-	config := &_config
 
 	log.Debug("Fetching credentials for current AWS config")
 	creds, err := config.Credentials.Retrieve(context.TODO())
 	if err != nil {
-		return nil, err
+		return config, err
 	}
 
 	expiresIn := time.Until(creds.Expires)
 	if creds.CanExpire && expiresIn < (1*time.Hour) {
-		newDuration := guessAwsMaxAssumeRoleDuration(*config)
+		newDuration := guessAwsMaxAssumeRoleDuration(config)
 
 		log.Warningf(
 			"Credentials for current AWS session are set to expire in less than one hour (%s). Will extend to %s.",
@@ -226,7 +225,7 @@ func (tgfConfig *TGFConfig) getAwsConfig(assumeRoleDuration time.Duration) (*aws
 	}
 
 	log.Debug("Caching newly created AWS config for future calls")
-	cachedAwsConfig = config
+	cachedAwsConfig = &config
 
 	return config, nil
 }
@@ -540,7 +539,7 @@ func (config *TGFConfig) readSSMParameterStore(ssmParameterFolder string) map[st
 		log.Warningf("Caught an error while creating an AWS session: %v", err)
 		return values
 	}
-	svc := ssm.NewFromConfig(*awsConfig)
+	svc := ssm.NewFromConfig(awsConfig)
 	response, err := svc.GetParametersByPath(context.TODO(), &ssm.GetParametersByPathInput{
 		Path:           aws.String(ssmParameterFolder),
 		Recursive:      true,
