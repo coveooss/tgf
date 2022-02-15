@@ -23,6 +23,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/coveooss/gotemplate/v3/utils"
+	"github.com/coveooss/multilogger/errors"
 	"github.com/coveooss/multilogger/reutils"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -117,6 +118,9 @@ func (docker *dockerConfig) call() int {
 	} else if app.TempDirMountLocation != mountLocNone {
 		// If temp location is not disabled, we persist the home folder in a docker volume
 		imageSummary := getImageSummary(imageName)
+		if imageSummary == nil {
+			panic(errors.Managed(fmt.Sprintf("Unable to load image %v", imageName)))
+		}
 		image := inspectImage(imageSummary.ID)
 		username := currentUser.Username
 
@@ -491,40 +495,51 @@ func (docker *dockerConfig) refreshImage(image string) {
 	}
 
 	log.Debugln("Checking if there is a newer version of docker image", image)
-	err := getDockerUpdateCmd(image).Run()
-	if err != nil {
-		if docker.awsConfigExist() {
-			must(docker.tryLoginToECR(image))
+
+	for try := 0; try < 2; try++ {
+		var stderr bytes.Buffer
+		cmd := getDockerUpdateCmd(image)
+		cmd.Stderr = &stderr
+		if err := cmd.Run(); err == nil {
+			break
+		} else if try == 0 && docker.awsConfigExist() {
+			log.Debugf("Failed to pull %v. It is an ECR image, trying again after login to AWS ECR.", image)
+			if err = docker.tryLoginToECR(image); err == nil {
+				continue
+			} else {
+				panic(err)
+			}
+		} else if stderr.Len() > 0 {
+			panic(errors.Managed(stderr.String()))
 		} else {
 			panic(err)
 		}
 	}
 	touchImageRefresh(image)
-	log.Println()
 }
 
 func (docker *dockerConfig) tryLoginToECR(image string) error {
 	matches, _ := reutils.MultiMatch(image, reECR)
 	account, accountOk := matches["account"]
 	if !accountOk {
-		return fmt.Errorf("%v is not an ECR image", image)
+		return errors.Managed(fmt.Sprintf("%v is not an ECR image", image))
 	}
-	log.Debugf("Failed to pull %v. It is an ECR image, trying again after login to AWS ECR.", image)
 	svc := ecr.NewFromConfig(must(docker.getAwsConfig(0)).(aws.Config))
 	requestInput := &ecr.GetAuthorizationTokenInput{RegistryIds: []string{account}}
 	result := must(svc.GetAuthorizationToken(context.TODO(), requestInput)).(*ecr.GetAuthorizationTokenOutput)
 
 	decodedLogin := string(must(base64.StdEncoding.DecodeString(*result.AuthorizationData[0].AuthorizationToken)).([]byte))
-	dockerUpdateCmd := exec.Command(
+	dockerLoginCmd := exec.Command(
 		"docker", "login", "-u",
 		strings.Split(decodedLogin, ":")[0],
 		"-p", strings.Split(decodedLogin, ":")[1],
 		*result.AuthorizationData[0].ProxyEndpoint,
 	)
-	if err := dockerUpdateCmd.Run(); err != nil {
-		return err
+	if err := dockerLoginCmd.Run(); err != nil {
+		return errors.Managed(err.Error())
 	}
-	return getDockerUpdateCmd(image).Run()
+
+	return nil
 }
 
 func getDockerUpdateCmd(image string) *exec.Cmd {
