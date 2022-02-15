@@ -18,6 +18,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/blang/semver"
 	"github.com/coveooss/gotemplate/v3/collections"
@@ -492,13 +493,8 @@ func (docker *dockerConfig) refreshImage(image string) {
 	log.Debugln("Checking if there is a newer version of docker image", image)
 	err := getDockerUpdateCmd(image).Run()
 	if err != nil {
-		matches, _ := reutils.MultiMatch(image, reECR)
-		account, accountOk := matches["account"]
-		region, regionOk := matches["region"]
-		if accountOk && regionOk && docker.awsConfigExist() {
-			log.Debugf("Failed to pull %v. It is an ECR image, trying again after a login.\n", image)
-			loginToECR(account, region)
-			must(getDockerUpdateCmd(image).Run())
+		if docker.awsConfigExist() {
+			must(docker.tryLoginToECR(image))
 		} else {
 			panic(err)
 		}
@@ -507,15 +503,28 @@ func (docker *dockerConfig) refreshImage(image string) {
 	log.Println()
 }
 
-func loginToECR(account string, region string) {
-	svc := ecr.New(ecr.Options{Region: region})
+func (docker *dockerConfig) tryLoginToECR(image string) error {
+	matches, _ := reutils.MultiMatch(image, reECR)
+	account, accountOk := matches["account"]
+	if !accountOk {
+		return fmt.Errorf("%v is not an ECR image", image)
+	}
+	log.Debugf("Failed to pull %v. It is an ECR image, trying again after login to AWS ECR.", image)
+	svc := ecr.NewFromConfig(must(docker.getAwsConfig(0)).(aws.Config))
 	requestInput := &ecr.GetAuthorizationTokenInput{RegistryIds: []string{account}}
 	result := must(svc.GetAuthorizationToken(context.TODO(), requestInput)).(*ecr.GetAuthorizationTokenOutput)
 
 	decodedLogin := string(must(base64.StdEncoding.DecodeString(*result.AuthorizationData[0].AuthorizationToken)).([]byte))
-	dockerUpdateCmd := exec.Command("docker", "login", "-u", strings.Split(decodedLogin, ":")[0],
-		"-p", strings.Split(decodedLogin, ":")[1], *result.AuthorizationData[0].ProxyEndpoint)
-	must(dockerUpdateCmd.Run())
+	dockerUpdateCmd := exec.Command(
+		"docker", "login", "-u",
+		strings.Split(decodedLogin, ":")[0],
+		"-p", strings.Split(decodedLogin, ":")[1],
+		*result.AuthorizationData[0].ProxyEndpoint,
+	)
+	if err := dockerUpdateCmd.Run(); err != nil {
+		return err
+	}
+	return getDockerUpdateCmd(image).Run()
 }
 
 func getDockerUpdateCmd(image string) *exec.Cmd {
