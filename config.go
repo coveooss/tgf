@@ -27,11 +27,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
-	"github.com/blang/semver"
+	"github.com/blang/semver/v4"
 	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/fatih/color"
 	"github.com/hashicorp/go-getter"
-	"github.com/inconshreveable/go-update"
+	"github.com/minio/selfupdate"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -837,8 +837,8 @@ func (config *TGFConfig) DoUpdate(url string) (err error) {
 		return
 	}
 
-	if err = update.Apply(tgfFile, update.Options{OldSavePath: savePath.Name()}); err != nil {
-		if err := update.RollbackError(err); err != nil {
+	if err = selfupdate.Apply(tgfFile, selfupdate.Options{OldSavePath: savePath.Name()}); err != nil {
+		if err := selfupdate.RollbackError(err); err != nil {
 			log.Errorln("Failed to rollback from bad update:", err)
 		}
 	}
