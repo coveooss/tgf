@@ -20,7 +20,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
-	"github.com/blang/semver"
+	"github.com/blang/semver/v4"
 	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/coveooss/gotemplate/v3/utils"
 	"github.com/coveooss/multilogger/errors"
@@ -521,10 +521,13 @@ func (docker *dockerConfig) refreshImage(image string) {
 func (docker *dockerConfig) tryLoginToECR(image string) error {
 	matches, _ := reutils.MultiMatch(image, reECR)
 	account, accountOk := matches["account"]
-	if !accountOk {
+	region, regionOk := matches["region"]
+	if !(accountOk && regionOk) {
 		return errors.Managed(fmt.Sprintf("%v is not an ECR image", image))
 	}
-	svc := ecr.NewFromConfig(must(docker.getAwsConfig(0)).(aws.Config))
+	config := must(docker.getAwsConfig(0)).(aws.Config)
+	config.Region = region
+	svc := ecr.NewFromConfig(config)
 	requestInput := &ecr.GetAuthorizationTokenInput{RegistryIds: []string{account}}
 	result := must(svc.GetAuthorizationToken(context.TODO(), requestInput)).(*ecr.GetAuthorizationTokenOutput)
 
