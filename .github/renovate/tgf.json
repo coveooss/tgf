@@ -1,0 +1,30 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "separateMinorPatch": true,
+  "logLevel": "debug",
+  "enabledManagers": ["regex"],
+  "packageRules": [
+    {
+      "matchFiles": ["(^|/|\\\\.).tgf.config"],
+      "matchDatasources": ["github-tags"],
+      "matchUpdateTypes": ["major","minor"],
+      "enabled": true,
+      "automerge": false
+    }
+  ],
+  "branchTopic": "{{{depNameSanitized}}}-{{{newMajor}}}.{{{newMinor}}}",
+  "regexManagers": [
+    {
+      "fileMatch": ["(^|/|\\\\.).tgf.config"],
+      "matchStrings": [
+        "docker-image-version: (?<currentValue>.* ?)",
+        "docker-image-version: '(?<currentValue>.* ?)'",
+        "docker-image-version: \"(?<currentValue>.* ?)\""
+      ],
+      "depNameTemplate": "coveo/tgf-images-coveo",
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "regex:^(?<major>\\d+)\\.(?<minor>\\d+)?$",
+      "extractVersionTemplate": "^(?<version>\\d+\\.\\d+)"
+    }
+  ]
+}
