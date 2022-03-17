@@ -535,9 +535,11 @@ func (docker *dockerConfig) tryLoginToECR(image string) error {
 	dockerLoginCmd := exec.Command(
 		"docker", "login", "-u",
 		strings.Split(decodedLogin, ":")[0],
-		"-p", strings.Split(decodedLogin, ":")[1],
+		"--password-stdin",
 		*result.AuthorizationData[0].ProxyEndpoint,
 	)
+	dockerLoginCmd.Stdin = strings.NewReader(strings.Split(decodedLogin, ":")[1])
+	dockerLoginCmd.Stdout, dockerLoginCmd.Stderr = os.Stdout, os.Stderr
 	if err := dockerLoginCmd.Run(); err != nil {
 		return errors.Managed(err.Error())
 	}
