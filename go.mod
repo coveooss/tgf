@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/iam v1.18.0
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.22.0
 	github.com/aws/aws-sdk-go-v2/service/sts v1.16.0
-	github.com/aws/smithy-go v1.11.1
+	github.com/aws/smithy-go v1.11.2
 	github.com/blang/semver/v4 v4.0.0
 	github.com/coveooss/gotemplate/v3 v3.7.2
 	github.com/coveooss/multilogger v0.5.2
