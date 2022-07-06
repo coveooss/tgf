@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.12.7
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.17.7
 	github.com/aws/aws-sdk-go-v2/service/iam v1.18.8
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.27.2
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.27.3
 	github.com/aws/aws-sdk-go-v2/service/sts v1.16.8
 	github.com/aws/smithy-go v1.12.0
 	github.com/blang/semver/v4 v4.0.0
