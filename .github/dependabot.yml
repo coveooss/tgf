@@ -1,44 +1,28 @@
 version: 2
 updates:
-- package-ecosystem: gomod
-  directory: "/"
-  schedule:
-    interval: weekly
-  open-pull-requests-limit: 99
-  reviewers:
-  - dblanchette
-  - dlevesque-coveo
-  - dotboris
-  - jocgir
-  - jonapich
-  - pballandras
-  - wtrep
-  ignore:
-  - dependency-name: github.com/aws/aws-sdk-go
-    versions:
-    - 1.36.31
-    - 1.37.1
-    - 1.37.10
-    - 1.37.15
-    - 1.37.20
-    - 1.37.25
-    - 1.37.30
-    - 1.37.6
-    - 1.38.1
-    - 1.38.12
-    - 1.38.17
-    - 1.38.21
-    - 1.38.7
-  - dependency-name: github.com/docker/docker
-    versions:
-    - 20.10.4+incompatible
-    - 20.10.5+incompatible
-  - dependency-name: github.com/sirupsen/logrus
-    versions:
-    - 1.8.0
-  - dependency-name: github.com/stretchr/testify
-    versions:
-    - 1.7.0
-  - dependency-name: github.com/hashicorp/go-getter
-    versions:
-    - 1.5.2
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 20
+    reviewers:
+      - dblanchette
+      - dlevesque-coveo
+      - dotboris
+      - jocgir
+      - jonapich
+      - pballandras
+      - wtrep
+  - package-ecosystem: github-actions
+    directory: "/"
+    open-pull-requests-limit: 20
+    schedule:
+      interval: weekly
+    reviewers:
+      - dblanchette
+      - dlevesque-coveo
+      - dotboris
+      - jocgir
+      - jonapich
+      - pballandras
+      - wtrep
