@@ -15,7 +15,7 @@ jobs:
         id: go
 
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
