@@ -17,7 +17,7 @@ require (
 	github.com/coveord/kingpin/v2 v2.4.0
 	github.com/docker/docker v20.10.12+incompatible
 	github.com/fatih/color v1.13.0
-	github.com/hashicorp/go-getter v1.5.11
+	github.com/hashicorp/go-getter v1.6.2
 	github.com/minio/selfupdate v0.4.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0
