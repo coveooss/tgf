@@ -18,7 +18,7 @@ require (
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/fatih/color v1.13.0
 	github.com/hashicorp/go-getter v1.6.2
-	github.com/minio/selfupdate v0.4.0
+	github.com/minio/selfupdate v0.5.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0
 	gopkg.in/yaml.v2 v2.4.0
