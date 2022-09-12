@@ -15,7 +15,7 @@ require (
 	github.com/coveooss/gotemplate/v3 v3.7.2
 	github.com/coveooss/multilogger v0.5.2
 	github.com/coveord/kingpin/v2 v2.4.0
-	github.com/docker/docker v20.10.17+incompatible
+	github.com/docker/docker v20.10.18+incompatible
 	github.com/fatih/color v1.13.0
 	github.com/hashicorp/go-getter v1.6.2
 	github.com/minio/selfupdate v0.4.0
