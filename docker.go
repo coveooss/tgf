@@ -433,7 +433,16 @@ func getImageSummary(imageName string) *types.ImageSummary {
 	filters := filters.NewArgs()
 	filters.Add("reference", imageName)
 	images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters})
-	if err != nil || len(images) != 1 {
+	if err != nil {
+		log.Debugf("unable to retrieve image summary: %s", err.Error())
+		return nil
+	}
+	if len(images) > 1 {
+		log.Debugf("multiple images returned by ImageList: %#v", images)
+		return nil
+	}
+	if len(images) == 0 {
+		log.Debugf("no image match reference %s", imageName)
 		return nil
 	}
 	return &images[0]
