@@ -6,10 +6,15 @@ on:
 jobs:
   build:
     name: Test
-    runs-on: ${{ matrix.os }}
+
+    permissions:
+      id-token: write # required for AWS assume role
+
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Setup Go
         uses: actions/setup-go@v3
