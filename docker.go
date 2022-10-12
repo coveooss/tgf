@@ -33,13 +33,13 @@ import (
 )
 
 const (
-	minimumDockerVersion = "1.25"
-	tgfImageVersion      = "TGF_IMAGE_VERSION"
-	dockerSocketFile     = "/var/run/docker.sock"
-	dockerfilePattern    = "TGF_dockerfile"
-	maxDockerTagLength   = 128
-	dockerMountImagePath = "/var/tgf"
-	dockerVolumeName     = "tgf"
+	allowedDockerVersions = ">=1.32.0"
+	tgfImageVersion       = "TGF_IMAGE_VERSION"
+	dockerSocketFile      = "/var/run/docker.sock"
+	dockerfilePattern     = "TGF_dockerfile"
+	maxDockerTagLength    = 128
+	dockerMountImagePath  = "/var/tgf"
+	dockerVolumeName      = "tgf"
 )
 
 type dockerConfig struct{ *TGFConfig }
@@ -415,12 +415,50 @@ func (docker *dockerConfig) GetActualImageVersion() string {
 	return getActualImageVersionInternal(docker.getImage())
 }
 
+func validateDockerVersionString(version string) (bool, error) {
+	v, err := semver.ParseTolerant(version)
+	if err != nil {
+		return false, fmt.Errorf("unable to parse version: %s: %w", version, err)
+	}
+
+	expectedRange, err := semver.ParseRange(allowedDockerVersions)
+	if err != nil {
+		return false, fmt.Errorf("unable to parse range: %s: %w", allowedDockerVersions, err)
+	}
+
+	return expectedRange(v), nil
+}
+
+func validateDockerVersion(version string) (bool, error) {
+	v, err := semver.ParseTolerant(version)
+	if err != nil {
+		return false, fmt.Errorf("Cannot parse %s: %w", version, err)
+	}
+
+	expectedRange, err := semver.ParseRange(allowedDockerVersions)
+	if err != nil {
+		// this is a developer error, allowedDockerVersions is a const
+		log.Fatalf("Unable to parse range: %s: %v", allowedDockerVersions, err)
+	}
+
+	return expectedRange(v), nil
+}
+
 func getDockerClient() (*client.Client, context.Context) {
 	if dockerClient == nil {
-		os.Setenv("DOCKER_API_VERSION", minimumDockerVersion)
 		dockerClient = must(client.NewClientWithOpts(client.FromEnv)).(*client.Client)
 		dockerContext = context.Background()
 	}
+
+	currentVersion := dockerClient.ClientVersion()
+	valid, err := validateDockerVersion(currentVersion)
+
+	if err != nil {
+		log.Errorf("Skipping Docker API validation because of an error: %v", err)
+	} else if !valid {
+		log.Fatalf("Docker API reported version %s which is too old, required version rangfe is %s", currentVersion, allowedDockerVersions)
+	}
+
 	return dockerClient, dockerContext
 }
 
