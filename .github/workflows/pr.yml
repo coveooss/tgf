@@ -6,10 +6,15 @@ on:
 jobs:
   build:
     name: Test
-    runs-on: ${{ matrix.os }}
+
+    permissions:
+      id-token: write # required for AWS assume role
+
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Setup Go
         uses: actions/setup-go@v3
@@ -20,9 +25,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - uses: coveooss/configure-aws-credentials-action@v1.7.0
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::043612128888:role/nrd-oss-tgf-github-actions-ci
+
       - name: Run tests
         env:
           AWS_REGION: us-east-1
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: go test -v ./...
