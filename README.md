@@ -168,7 +168,7 @@ Check for new version at https://github.com/coveooss/tgf/releases/latest.
 
 Any docker image could be used, but TGF specialized images could be found at: https://hub.docker.com/r/coveo/tgf/tags.
 
-Terragrunt documentation could be found at https://github.com/coveo/terragrunt/blob/master/README.md (Coveo fork)
+Terragrunt documentation could be found at https://github.com/coveo/terragrunt/blob/master/README.md (Coveo fork).
 
 Terraform documentation could be found at https://www.terraform.io/docs/index.html.
 
