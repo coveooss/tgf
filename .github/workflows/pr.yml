@@ -25,7 +25,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: coveooss/configure-aws-credentials-action@v1.7
+      - uses: coveooss/configure-aws-credentials-action@v1.7.0
         with:
           aws-region: us-east-1
           role-to-assume: arn:aws:iam::043612128888:role/nrd-oss-tgf-github-actions-ci
