@@ -415,20 +415,6 @@ func (docker *dockerConfig) GetActualImageVersion() string {
 	return getActualImageVersionInternal(docker.getImage())
 }
 
-func validateDockerVersionString(version string) (bool, error) {
-	v, err := semver.ParseTolerant(version)
-	if err != nil {
-		return false, fmt.Errorf("unable to parse version: %s: %w", version, err)
-	}
-
-	expectedRange, err := semver.ParseRange(allowedDockerVersions)
-	if err != nil {
-		return false, fmt.Errorf("unable to parse range: %s: %w", allowedDockerVersions, err)
-	}
-
-	return expectedRange(v), nil
-}
-
 func validateDockerVersion(version string) (bool, error) {
 	v, err := semver.ParseTolerant(version)
 	if err != nil {
@@ -456,7 +442,7 @@ func getDockerClient() (*client.Client, context.Context) {
 	if err != nil {
 		log.Errorf("Skipping Docker API validation because of an error: %v", err)
 	} else if !valid {
-		log.Fatalf("Docker API reported version %s which is too old, required version rangfe is %s", currentVersion, allowedDockerVersions)
+		log.Fatalf("Docker API reported version %s which is too old, required version range is %s", currentVersion, allowedDockerVersions)
 	}
 
 	return dockerClient, dockerContext
