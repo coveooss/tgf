@@ -2,6 +2,8 @@ package main
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDockerVersion(t *testing.T) {
@@ -45,25 +47,21 @@ func TestDockerVersion(t *testing.T) {
 		},
 	}
 
+	assert := assert.New(t)
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			valid, err := validateDockerVersion(tt.version)
-			if err != nil {
-				t.Error(err)
-			}
-			if valid != tt.valid {
-				t.Errorf("Expected valid to be %v.", tt.valid)
-			}
+			assert.NoError(err)
+			assert.Equal(valid, tt.valid)
 		})
 	}
 }
 
 func TestGetDockerClient(t *testing.T) {
 	dockerClient, _ := getDockerClient()
-
 	valid, err := validateDockerVersion(dockerClient.ClientVersion())
 
-	if err != nil || !valid {
-		t.Fail()
-	}
+	assert.NoError(t, err)
+	assert.True(t, valid)
 }
