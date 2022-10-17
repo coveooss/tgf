@@ -424,7 +424,7 @@ func validateDockerVersion(version string) (bool, error) {
 	expectedRange, err := semver.ParseRange(allowedDockerVersions)
 	if err != nil {
 		// this is a developer error, allowedDockerVersions is a const
-		log.Fatalf("Unable to parse range: %s: %v", allowedDockerVersions, err)
+		log.Panicf("Unable to parse range: %s: %v", allowedDockerVersions, err)
 	}
 
 	return expectedRange(v), nil
