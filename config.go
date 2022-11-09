@@ -545,8 +545,8 @@ func (config *TGFConfig) readSSMParameterStore(ssmParameterFolder string) map[st
 	svc := ssm.NewFromConfig(awsConfig)
 	response, err := svc.GetParametersByPath(context.TODO(), &ssm.GetParametersByPathInput{
 		Path:           aws.String(ssmParameterFolder),
-		Recursive:      true,
-		WithDecryption: true,
+		Recursive:      aws.Bool(true),
+		WithDecryption: aws.Bool(true),
 	})
 	if err != nil {
 		log.Warningf("Caught an error while reading from `%s` in SSM: %v", ssmParameterFolder, err)

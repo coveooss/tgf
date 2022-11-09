@@ -447,7 +447,7 @@ func writeSSMConfig(parameterFolder, parameterKey, parameterValue string) {
 	putParameterInput := &ssm.PutParameterInput{
 		Name:      aws.String(fullParameterKey),
 		Value:     aws.String(parameterValue),
-		Overwrite: true,
+		Overwrite: aws.Bool(true),
 		Type:      types.ParameterTypeString,
 	}
 
