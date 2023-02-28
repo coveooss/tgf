@@ -200,12 +200,12 @@ func TestApplicationUnmanagedArgs(t *testing.T) {
 			// This test is a safety to catch if someone adds a -v flag to not break
 			// Terraform "-var" single dash flag. It will crash trying to parse -ar
 			// because the underlying flag parser will consider -var as equivalent to
-			// writing "-v -a -r" and so will try to continue reading "-a" and "-r"
+			// writing "-v -a -r" and so may try to continue reading "-a" and "-r" or
+			// "ar" as a value
 			"[case 1] tgf leaves every argument unmanaged",
 			[]string{"-v", "-a", "-r", "-var", "region=us-west-2", "-auto-approve"},
 			[]string{"-v", "-a", "-r", "-var", "region=us-west-2", "-auto-approve"},
 		},
-		// This one needs the fix in kingpin to work
 		{
 			"[case 2] tgf leaves every argument unmanaged",
 			[]string{"apply", "-auto-approve", "-var", "region=us-west-2"},
