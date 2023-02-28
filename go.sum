@@ -462,8 +462,8 @@ github.com/coveooss/gotemplate/v3 v3.7.3/go.mod h1:9yJD1GLPopmgNfE3Nra6G04yKX8Wm
 github.com/coveooss/multilogger v0.5.2 h1:HmuMT1RTD0d6tkqrrO9FlUBbp2p7QYbcAR6guszlifc=
 github.com/coveooss/multilogger v0.5.2/go.mod h1:Pw3jXW2Y4KEd+j5vFTTGSAFRX4fIOvJZzDPnvf9dr7U=
 github.com/coveord/kingpin/v2 v2.4.0/go.mod h1:Qw3FnQuB068XW8vcP58GH4c03MYzCmiK00/yLDfqQA8=
-github.com/coveord/kingpin/v2 v2.4.1 h1:nqqSel2A5VoQp7TR6Q/vGqvwGs0fE7Qwg/RdBmdHSk0=
-github.com/coveord/kingpin/v2 v2.4.1/go.mod h1:Qw3FnQuB068XW8vcP58GH4c03MYzCmiK00/yLDfqQA8=
+github.com/coveord/kingpin/v2 v2.4.2 h1:d37EYf8mGw0n/S7uH6GtMFxBmrJvFD3uldZu4JC5ZLo=
+github.com/coveord/kingpin/v2 v2.4.2/go.mod h1:Qw3FnQuB068XW8vcP58GH4c03MYzCmiK00/yLDfqQA8=
 github.com/creack/pty v1.1.7/go.mod h1:lj5s0c3V2DBrqTV7llrYr5NG6My20zk30Fl46Y7DoTY=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/creack/pty v1.1.11/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
