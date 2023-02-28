@@ -177,3 +177,126 @@ func TestNewApplicationWithOptionsAndAliases(t *testing.T) {
 		})
 	}
 }
+
+func TestApplicationUnmanagedArgs(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name              string   // The name of the test to find the failing one
+		args              []string // The args passed to the Application
+		expectedUnmanaged []string // What we expect to be marked as unmanaged
+	}{
+		{
+			"tgf leave every unmanaged arg intact after its own args",
+			[]string{"--temp-location", "host", "-var", "region=us-west-2", "-auto-approve"},
+			[]string{"-var", "region=us-west-2", "-auto-approve"},
+		},
+		{
+			"tgf leave every unmanaged arg intact when they're before its own args",
+			[]string{"-var", "region=us-west-2", "-auto-approve", "--temp-location", "host"},
+			[]string{"-var", "region=us-west-2", "-auto-approve"},
+		},
+		{
+			// This test is a safety to catch if someone adds a -v flag to not break
+			// Terraform "-var" single dash flag. It will crash trying to parse -ar
+			// because the underlying flag parser will consider -var as equivalent to
+			// writing "-v -a -r" and so will try to continue reading "-a" and "-r"
+			"[case 1] tgf leaves every argument unmanaged",
+			[]string{"-v", "-a", "-r", "-var", "region=us-west-2", "-auto-approve"},
+			[]string{"-v", "-a", "-r", "-var", "region=us-west-2", "-auto-approve"},
+		},
+		// This one needs the fix in kingpin to work
+		{
+			"[case 2] tgf leaves every argument unmanaged",
+			[]string{"apply", "-auto-approve", "-var", "region=us-west-2"},
+			[]string{"apply", "-auto-approve", "-var", "region=us-west-2"},
+		},
+		{
+			"[case 3] tgf leaves every argument unmanaged",
+			[]string{"plan", "plan-all", "apply", "apply-all"},
+			[]string{"plan", "plan-all", "apply", "apply-all"},
+		},
+		{
+			"[case 4] tgf leaves every argument unmanaged",
+			[]string{"output-all", "destroy-all", "-profile", "aprofile"},
+			[]string{"output-all", "destroy-all", "-profile", "aprofile"},
+		},
+		{
+			"tgf catches its own --profile flag",
+			[]string{"output-all", "destroy-all", "--profile", "aprofile"},
+			[]string{"output-all", "destroy-all"},
+		},
+		{
+			"tgf catches its own -P (short flag for --profile)",
+			[]string{"output-all", "destroy-all", "-P", "aprofile"},
+			[]string{"output-all", "destroy-all"},
+		},
+		{
+			"tgf leaves Terragrunt options unmanaged",
+			[]string{
+				// One in two purposely have double dash just to play with parsing
+				// to make sure they always get parsed correctly
+				"plan",
+				"-terragrunt-config", "somevalue",
+				"--terragrunt-tfpath", "somevalue",
+				"-terragrunt-non-interactive", "somevalue",
+				"--terragrunt-working-dir", "somevalue",
+				"-terragrunt-source", "somevalue",
+				"--terragrunt-source-update", "somevalue",
+				"-terragrunt-ignore-dependency-errors", "somevalue",
+				"--terragrunt-logging-level", "somevalue",
+				"-terragrunt-logging-file-dir", "somevalue",
+				"--terragrunt-logging-file-level", "somevalue",
+				"-terragrunt-approval", "somevalue",
+				"--terragrunt-flush-delay", "somevalue",
+				"-terragrunt-workers", "somevalue",
+				"--terragrunt-include-empty-folders", "somevalue",
+			},
+			[]string{
+				"plan",
+				"-terragrunt-config", "somevalue",
+				"--terragrunt-tfpath", "somevalue",
+				"-terragrunt-non-interactive", "somevalue",
+				"--terragrunt-working-dir", "somevalue",
+				"-terragrunt-source", "somevalue",
+				"--terragrunt-source-update", "somevalue",
+				"-terragrunt-ignore-dependency-errors", "somevalue",
+				"--terragrunt-logging-level", "somevalue",
+				"-terragrunt-logging-file-dir", "somevalue",
+				"--terragrunt-logging-file-level", "somevalue",
+				"-terragrunt-approval", "somevalue",
+				"--terragrunt-flush-delay", "somevalue",
+				"-terragrunt-workers", "somevalue",
+				"--terragrunt-include-empty-folders", "somevalue",
+			},
+		},
+		{
+			"tgf leaves Terraform commands and options unmanaged",
+			// Testing only a subset and mostly those we use and haven't tested yet
+			// and those which have dashes
+			[]string{
+				"destroy",
+				"force-unlock",
+				"-chdir=DIR",
+				"-help",
+				"-version",
+			},
+			[]string{
+				"destroy",
+				"force-unlock",
+				"-chdir=DIR",
+				"-help",
+				"-version",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.NotPanics(t, func() {
+				app := NewTestApplication(tt.args, false)
+				assert.Equal(t, tt.expectedUnmanaged, app.Unmanaged, "Unmanaged args are not equal")
+			})
+		})
+	}
+}
