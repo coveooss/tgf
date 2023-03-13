@@ -14,7 +14,7 @@ if [ ! -w "${TGF_PATH}" ]; then
     echo "System installation directory ${TGF_PATH} is not writeable."
     if [[ "$OSTYPE" == "darwin"* && "${TGF_PATH}" == "${DEFAULT_INSTALL_DIR}" ]]; then
         # Mac OSX
-        echo "Since MacOS Ventura (13.X), the default install path is owned by 'root'."
+        echo "Since MacOS Ventura (13.X), $TGF_PATH is owned by 'root'."
         echo "You can fix this by either"
         echo "  1. Running 'sudo chown -R $(id -un):$(id -gn) $TGF_PATH'."
         echo "  2. Setting the TGF_PATH variable to an alternate, writable directory."
