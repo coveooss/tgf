@@ -76,7 +76,7 @@ spec:
   # somewhere in the catalog. In practice this means that it'll need to be
   # defined in a catalog-info.yaml file. It could be this file.
   # See: https://backstage.io/docs/features/software-catalog/descriptor-format/#specsystem-optional
-  # system: ...
+  system: tgf-stack
 
   # See: https://backstage.io/docs/features/software-catalog/descriptor-format/#specsubcomponentof-optional
   # subcomponentOf: ...
