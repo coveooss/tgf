@@ -1,0 +1,106 @@
+# yaml-language-server: $schema=https://json.schemastore.org/catalog-info.json
+
+# Changes to this file are automatically picked up by Dev Portal once they are
+# merged into the default branch (main, master, etc.). Dev Portal refreshes its
+# software catalog periodically so there may be some small delay for updates.
+
+# This file (catalog-info.yaml) is what lets you integrate your project in
+# Dev Portal. Here, you define entities that end up being part of the Software
+# Catalog. These entities are what you end up seeing in the Dev Portal UI. You
+# can learn more about the software catalog here:
+# - High level view of entities and how they relate to one another: https://backstage.io/docs/features/software-catalog/system-model
+# - Reference for catalog-info.yaml: https://backstage.io/docs/features/software-catalog/descriptor-format
+
+# Note that while the entities in this file look like Kubernetes manifests, they
+# are not. These are not meant to be deployed into a Kubernetes cluster.
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  # Machine readable unique id for the component. This is what other entities
+  # use to reference this one.
+  # See: https://backstage.io/docs/features/software-catalog/descriptor-format/#name-required
+  name: tgf
+
+  # Human readable display name for this component.
+  # See: https://backstage.io/docs/features/software-catalog/descriptor-format/#title-optional
+  title: TGF
+
+  # Human readable description for your component. Helps other understand what
+  # it's all about.
+  # See: https://backstage.io/docs/features/software-catalog/descriptor-format/#description-optional
+  description: >
+    Small utility used to launch a Docker image and automatically map the current folder, 
+    your HOME folder and your current environment variables to the underlying container.
+    It is commonly used to provide a standard environment to run terragrunt and terraform but it
+    is not limited to that. It is able to automatically discover configuration settings from the current
+    AWS environment which allows for organizations defaults for all their employees.
+
+  # Annotations are used as references for external systems. This is where you
+  # will configure integrations with external systems if you need to.
+  # See: https://backstage.io/docs/features/software-catalog/descriptor-format#annotations-optional
+  annotations:
+
+  # List of tags. They have no special semantics. They are shown in some
+  # interfaces and can be used for filtering.
+  # See: https://backstage.io/docs/features/software-catalog/descriptor-format/#tags-optional
+  # tags:
+  #   - tag-a
+  #   - tag-b
+
+  # A list of hyperlinks related to this entity. They are shown on the component
+  # page and are useful to give quick access to some relevant links.
+  # See: https://backstage.io/docs/features/software-catalog/descriptor-format/#links-optional
+  # links:
+  #   - url: https://coveo.com
+  #   - title: Documentation
+  #     # Available icons: https://backstage.io/docs/reference/core-app-api.appicons/
+  #     icon: docs
+  #     url: https://example.com
+
+spec:
+  # See: https://backstage.io/docs/features/software-catalog/descriptor-format/#spectype-required
+  type: library
+
+  # See: https://backstage.io/docs/features/software-catalog/descriptor-format/#speclifecycle-required
+  lifecycle: production
+
+  # Who owns this component. This is normally the team that maintains and
+  # contributes to this component. Value should be the machine readable name of
+  # the team. See:
+  # - Field reference: https://backstage.io/docs/features/software-catalog/descriptor-format/#specowner-required
+  # - List of valid teams: https://devportal.dep.cloud.coveo.com/catalog?filters%5Bkind%5D=group&filters%5Btype%5D=team&filters%5Buser%5D=all
+  owner: dev-tooling
+
+  # System that this component is part of. The system will need to be defined
+  # somewhere in the catalog. In practice this means that it'll need to be
+  # defined in a catalog-info.yaml file. It could be this file.
+  # See: https://backstage.io/docs/features/software-catalog/descriptor-format/#specsystem-optional
+  # system: ...
+
+  # See: https://backstage.io/docs/features/software-catalog/descriptor-format/#specsubcomponentof-optional
+  # subcomponentOf: ...
+
+  # List of APIs this component provides. The values are references to API
+  # entities. If this component provides an API, you'll need to define an API
+  # entity in this file.
+  # See: https://backstage.io/docs/features/software-catalog/descriptor-format/#specprovidesapis-optional
+  # providesApis:
+  #   - ...
+
+  # List of APIs this component consumes. The values are references to API
+  # entities. These need to exist in the catalog.
+  # See: https://backstage.io/docs/features/software-catalog/descriptor-format/#specconsumesapis-optional
+  # consumesApis:
+  #   - ...
+
+# You can define multiple entities in this file. You just need to separate them
+# with `---` on an empty like. Here's an example:
+#
+# ---
+# apiVersion: ...
+# kind: ...
+# metadata:
+#   ...
+# spec:
+#   ...
