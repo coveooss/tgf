@@ -60,8 +60,10 @@ install_latest_tgf () {
         curl -sL "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_linux_64-bits.zip" | gzip -d > ${TGF} && chmod +x ${TGF} && script_end
     elif [[ $(uname -s) == Darwin ]]
     then
-        echo 'Installing latest tgf for OSX in' $TGF_PATH '...'
-        curl -sL "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_macOS_64-bits.zip" | bsdtar -xf- -C ${TGF_PATH} && chmod +x ${TGF} && script_end
+        OSX_ARCH=$(uname -m)
+        echo 'Installing latest tgf for OSX with arch '$OSX_ARCH' in' $TGF_PATH '...'
+        DOWNLOAD_URL=$([ "$OSX_ARCH" == "arm64" ] && echo "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_macOS_arm64.zip" || echo "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_macOS_64-bits.zip")
+        curl -sL $DOWNLOAD_URL | bsdtar -xf- -C ${TGF_PATH} && chmod +x ${TGF} && script_end
     else 
         echo 'OS not supported.'
         exit 1
