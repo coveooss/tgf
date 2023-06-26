@@ -58,7 +58,7 @@ install_latest_tgf () {
     then
         LINUX_ARCH=$(uname -m)
         echo 'Installing latest tgf for Linux with arch '$LINUX_ARCH' in' $TGF_PATH '...'
-        DOWNLOAD_URL=$([ "$LINUX_ARCH" == "x86_64" ] && echo "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_linux_64-bits.zip" || echo "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_linux_arm64-bits.zip")
+        DOWNLOAD_URL=$([ "$LINUX_ARCH" == "x86_64" ] && echo "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_linux_64-bits.zip" || echo "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_linux_arm64.zip")
         curl -sL $DOWNLOAD_URL | gzip -d > ${TGF} && chmod +x ${TGF} && script_end
     elif [[ $(uname -s) == Darwin ]]
     then
