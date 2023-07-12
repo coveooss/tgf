@@ -1,8 +1,18 @@
 $ErrorActionPreference = "Stop" #Make all errors terminating
 
 try {
-    $latestRelease = (Invoke-WebRequest -Uri "https://api.github.com/repos/coveooss/tgf/releases/latest" | ConvertFrom-Json)
-    $LATEST_VERSION = $latestRelease.tag_name.TrimStart("v")
+    $latestReleaseRequest = @{
+        Method = "HEAD"
+        Uri = "https://github.com/coveooss/tgf/releases/latest"
+        # Prevent redirect. We want the Location header.
+        MaximumRedirection = 0
+        # It considers the redirect http codes errors. Ignore that.
+        SkipHttpErrorCheck = $true
+        # The missed redirect generates an actual error which stops the program. We ignore it.
+        ErrorAction = "Continue"
+    }
+    $latestReleaseUrl = (Invoke-WebRequest @latestReleaseRequest).Headers["Location"]
+    $LATEST_VERSION = $latestReleaseUrl.Split("/")[-1].TrimStart("v")
     Write-Host "- tgf version (latest):" $LATEST_VERSION
 } catch {
     Write-Host Error fetching latest version
