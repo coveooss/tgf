@@ -50,7 +50,7 @@ get_latest_tgf_version () {
             | sed 's/^v//'
     )"
 
-    if [ -e "$TGF_LATEST_VERSION" ]
+    if [ -z "$TGF_LATEST_VERSION" ]
     then
         echo "Could not obtain tgf latest version."
         exit 1
