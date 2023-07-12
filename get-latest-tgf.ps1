@@ -9,8 +9,9 @@ try {
         # It considers the redirect http codes errors. Ignore that.
         SkipHttpErrorCheck = $true
         # The missed redirect generates an actual error which stops the program. We ignore it.
-        ErrorAction = "Continue"
+        ErrorAction = "SilentlyContinue"
     }
+
     $latestReleaseUrl = (Invoke-WebRequest @latestReleaseRequest).Headers["Location"]
     $LATEST_VERSION = $latestReleaseUrl.Split("/")[-1].TrimStart("v")
     Write-Host "- tgf version (latest):" $LATEST_VERSION
