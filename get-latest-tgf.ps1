@@ -1,8 +1,8 @@
 $ErrorActionPreference = "Stop" #Make all errors terminating
 
 try {
-    $bVersion = (Invoke-WebRequest -Uri "https://coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf_version.txt").Content
-    $LATEST_VERSION = [System.Text.Encoding]::ASCII.GetString($bVersion)
+    $latestRelease = (Invoke-WebRequest -Uri "https://api.github.com/repos/coveooss/tgf/releases/latest" | ConvertFrom-Json)
+    $LATEST_VERSION = $latestRelease.tag_name.TrimStart("v")
     Write-Host "- tgf version (latest):" $LATEST_VERSION
 } catch {
     Write-Host Error fetching latest version
