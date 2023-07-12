@@ -38,21 +38,20 @@ get_local_tgf_version () {
 }
 
 get_latest_tgf_version () {
-    local latest_release_json
-    latest_release_json="$(
-        curl --fail --location --silent --show-error \
-            https://api.github.com/repos/coveooss/tgf/releases/latest
+    # The github releases/latest page redirects you to the latest release. We extract the version from the url of the
+    # `location` header. We could have used the API here but this avoids rate limits. It's also easier to parse http
+    # headers in bash than it is to parse JSON.
+    TGF_LATEST_VERSION="$(
+        curl --fail --silent --show-error --head https://github.com/coveooss/tgf/releases/latest \
+            | grep -i '^location: ' \
+            | cut -d ' ' -f 2 \
+            | cut -d '/' -f 8 \
+            | tr -d '[:space:]' \
+            | sed 's/^v//'
     )"
 
-    # We can't guarantee that the machine we're running on has a utility we can
-    # use to parse json. So we commit the sin of using regexes to parse json.
-    local tag_name_regex
-    tag_name_regex='"tag_name": *"v([^"]*)"'
-    if [[ "$latest_release_json" =~ $tag_name_regex ]]
+    if [ -e "$TGF_LATEST_VERSION" ]
     then
-        # The preivous use of `=~` sets the `BASH_REMATCH` variable
-        TGF_LATEST_VERSION="${BASH_REMATCH[1]}"
-    else
         echo "Could not obtain tgf latest version."
         exit 1
     fi
