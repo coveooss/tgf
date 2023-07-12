@@ -5,7 +5,7 @@ TGF=${TGF_PATH:=${DEFAULT_INSTALL_DIR}}/tgf
 
 if [ ! -d "${TGF_PATH}" ]; then
   echo "creating ${TGF_PATH} directory..."
-  mkdir -p ${TGF_PATH}
+  mkdir -p "${TGF_PATH}"
 fi
 
 if [ ! -w "${TGF_PATH}" ]; then
@@ -34,14 +34,24 @@ fi
 
 get_local_tgf_version () {
     # The sed regex extracts for example 1.23.2 from "tgf v1.23.2", so as to be comparable to get_latest_tgf_version()
-    [ -r ${TGF} ] && TGF_LOCAL_VERSION=$(${TGF} --current-version | sed -E -e 's/^.* v(.*)/\1/')
+    [ -r "${TGF}" ] && TGF_LOCAL_VERSION=$(${TGF} --current-version | sed -E -e 's/^.* v(.*)/\1/')
 }
 
 get_latest_tgf_version () {
-    TGF_LATEST_VERSION=$(curl --silent https://coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf_version.txt)
-    
-    if [ -z "${TGF_LATEST_VERSION}" ]
-    then 
+    # The github releases/latest page redirects you to the latest release. We extract the version from the url of the
+    # `location` header. We could have used the API here but this avoids rate limits. It's also easier to parse http
+    # headers in bash than it is to parse JSON.
+    TGF_LATEST_VERSION="$(
+        curl --fail --silent --show-error --head https://github.com/coveooss/tgf/releases/latest \
+            | grep -i '^location: ' \
+            | cut -d ' ' -f 2 \
+            | cut -d '/' -f 8 \
+            | tr -d '[:space:]' \
+            | sed 's/^v//'
+    )"
+
+    if [ -z "$TGF_LATEST_VERSION" ]
+    then
         echo "Could not obtain tgf latest version."
         exit 1
     fi
@@ -66,7 +76,7 @@ install_latest_tgf () {
         echo 'Installing latest tgf for OSX with arch '$OSX_ARCH' in' $TGF_PATH '...'
         DOWNLOAD_URL=$([ "$OSX_ARCH" == "arm64" ] && echo "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_macOS_arm64.zip" || echo "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_macOS_64-bits.zip")
         curl -sL $DOWNLOAD_URL | bsdtar -xf- -C ${TGF_PATH} && chmod +x ${TGF} && script_end
-    else 
+    else
         echo 'OS not supported.'
         exit 1
     fi
@@ -79,7 +89,7 @@ echo '- tgf version (local) :' "${TGF_LOCAL_VERSION}"
 echo '- tgf version (latest):' "${TGF_LATEST_VERSION}"
 
 if [[ "${TGF_LOCAL_VERSION}" == "${TGF_LATEST_VERSION}" ]]
-then 
+then
     echo 'Local version is up to date.'
 else
     install_latest_tgf

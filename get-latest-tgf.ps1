@@ -1,8 +1,19 @@
 $ErrorActionPreference = "Stop" #Make all errors terminating
 
 try {
-    $bVersion = (Invoke-WebRequest -Uri "https://coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf_version.txt").Content
-    $LATEST_VERSION = [System.Text.Encoding]::ASCII.GetString($bVersion)
+    $latestReleaseRequest = @{
+        Method = "HEAD"
+        Uri = "https://github.com/coveooss/tgf/releases/latest"
+        # Prevent redirect. We want the Location header.
+        MaximumRedirection = 0
+        # It considers the redirect http codes errors. Ignore that.
+        SkipHttpErrorCheck = $true
+        # The missed redirect generates an actual error which stops the program. We ignore it.
+        ErrorAction = "SilentlyContinue"
+    }
+
+    $latestReleaseUrl = (Invoke-WebRequest @latestReleaseRequest).Headers["Location"]
+    $LATEST_VERSION = $latestReleaseUrl.Split("/")[-1].TrimStart("v")
     Write-Host "- tgf version (latest):" $LATEST_VERSION
 } catch {
     Write-Host Error fetching latest version

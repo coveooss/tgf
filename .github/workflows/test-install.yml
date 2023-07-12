@@ -1,23 +1,24 @@
-name: Test TGF installation
+name: Test Install
 
 on:
   pull_request:
     branches:
       - master
-jobs:
-  build:
-    name: Install
 
+jobs:
+  posix:
     strategy:
       matrix:
         os: [ macos-latest, ubuntu-latest ]
-
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - run: ./get-latest-tgf.sh
 
-      - name: Install TGF
-        run: |
-          ./get-latest-tgf.sh
+  windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: ./get-latest-tgf.ps1
