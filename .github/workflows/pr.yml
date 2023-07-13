@@ -16,13 +16,10 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v3
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: 1.17
-
-      - name: Checkout
-        uses: actions/checkout@v3
 
       - uses: coveooss/configure-aws-credentials-action@v1.7.0
         with:
@@ -38,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: 1.17
 
@@ -54,7 +51,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # goreleaser needs the whole history to build the release notes
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: 1.17
 
@@ -69,7 +66,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: test-release
-          path:
+          path: |
             dist/*.zip
             dist/*.txt
           if-no-files-found: error
