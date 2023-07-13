@@ -37,7 +37,7 @@ outdated version.
 
 ## Installation
 
-On `mac` and `linux`:  
+On `mac` and `linux`:
 
 You can run the `get-latest-tgf.sh` script to check if you have the latest version of tgf installed and install it as needed:
 
@@ -362,10 +362,3 @@ Start a shell `fish` in the current folder
 
 Invokes `my_command` in your own docker image. As you can see, you can do whatever you need to with `tgf`. It is not restricted to only the pre-packaged
 Docker images, you can use it to run any program in any Docker images. Your imagination is your limit.
-
-## Development
-
-Builds are automatically launched on tagging.
-
-Tags with the format image-0.0.0 automatically launch a Docker images build that are available through Docker Hub.
-Tags with the format v0.0.0 automatically launch a new release on Github for the TGF executable.
