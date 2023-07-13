@@ -3,10 +3,10 @@ on:
   pull_request:
     branches:
       - master
-jobs:
-  build:
-    name: Test
+      - main
 
+jobs:
+  test:
     permissions:
       id-token: write # required for AWS assume role
 
@@ -16,16 +16,12 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Setup Go
-        uses: actions/setup-go@v3
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
         with:
           go-version: 1.17
-        id: go
 
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - uses: coveooss/configure-aws-credentials-action@v1.7.0
+      - uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-region: us-east-1
           role-to-assume: arn:aws:iam::043612128888:role/nrd-oss-tgf-github-actions-ci
@@ -34,3 +30,44 @@ jobs:
         env:
           AWS_REGION: us-east-1
         run: go test -v ./...
+
+  goreleaser-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: 1.17
+
+      - uses: goreleaser/goreleaser-action@b508e2e3ef3b19d4e4146d4f8fb3ba9db644a757
+        with:
+          distribution: goreleaser
+          version: latest
+          args: check
+
+  goreleaser-test-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # goreleaser needs the whole history to build the release notes
+      - uses: actions/setup-go@v4
+        with:
+          go-version: 1.17
+
+      - uses: goreleaser/goreleaser-action@b508e2e3ef3b19d4e4146d4f8fb3ba9db644a757
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --snapshot --clean
+        env:
+          CGO_ENABLED: 0
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: test-release
+          path: |
+            dist/*.zip
+            dist/*.txt
+          if-no-files-found: error
+          retention-days: 5

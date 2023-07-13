@@ -16,15 +16,17 @@ builds:
 # Archive customization
 archives:
   - format: zip
-
-    replacements:
-      amd64: 64-bits
-      darwin: macOS
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- if eq .Os "darwin" }}macOS_
+      {{- else }}{{ .Os }}_{{ end }}
+      {{- if eq .Arch "amd64" }}64-bits
+      {{- else }}{{ .Arch }}{{ end }}
 
     files:
       - nothing.*
 
 # GitHub release customization
 release:
-  draft: true
-  prerelease: true
+  prerelease: auto
