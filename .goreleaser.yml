@@ -29,5 +29,4 @@ archives:
 
 # GitHub release customization
 release:
-  draft: true
   prerelease: auto
