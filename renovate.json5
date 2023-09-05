@@ -1,23 +1,25 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "branchPrefix": "renovate/",
-  "dependencyDashboard": true,
-  "extends": [
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [
     "config:base",
-    "helpers:pinGitHubActionDigests",
     "schedule:earlyMondays",
-    "group:allNonMajor"
+    "group:allNonMajor",
   ],
-  "labels": [
-    "dependency update",
-    "bot"
+
+  dependencyDashboard: true,
+
+  branchPrefix: "renovate/",
+  labels: ["dependency update", "bot"],
+  prConcurrentLimit: 3,
+  prHeader: "Jira: DT-4929",
+  reviewersFromCodeOwners: true,
+  suppressNotifications: ["prIgnoreNotification"],
+
+  timezone: "America/Toronto",
+
+  // go specifics
+  postUpdateOptions: [
+    "gomodTidy",
+    "gomodUpdateImportPaths",
   ],
-  "prConcurrentLimit": 3,
-  "prHeader": "DT-5590 <- Put your own jira issue here by setting the `prHeader` value in your renovate config",
-  "rebaseWhen": "auto",
-  "reviewersFromCodeOwners": true,
-  "suppressNotifications": [
-    "prIgnoreNotification"
-  ],
-  "timezone": "America/Toronto"
 }
