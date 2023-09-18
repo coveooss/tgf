@@ -21,7 +21,7 @@ jobs:
         with:
           go-version: 1.17
 
-      - uses: aws-actions/configure-aws-credentials@v2
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: us-east-1
           role-to-assume: arn:aws:iam::043612128888:role/nrd-oss-tgf-github-actions-ci
