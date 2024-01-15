@@ -16,6 +16,7 @@ try {
     $LATEST_VERSION = $latestReleaseUrl.Split("/")[-1].TrimStart("v")
     Write-Host "- tgf version (latest):" $LATEST_VERSION
 } catch {
+    Write-Warning $Error[0]
     Write-Host Error fetching latest version
     Exit 1
 }
