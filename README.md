@@ -45,7 +45,7 @@ You can run the `get-latest-tgf.sh` script to check if you have the latest versi
 curl https://raw.githubusercontent.com/coveooss/tgf/master/get-latest-tgf.sh | bash
 ```
 
-On `Windows`, run `get-latest-tgf.ps1` with Powershell:
+On `Windows`, run `get-latest-tgf.ps1` with Powershell (version 7.x or more):
 
 ```PowerShell
 (Invoke-WebRequest https://raw.githubusercontent.com/coveooss/tgf/master/get-latest-tgf.ps1).Content | Invoke-Expression
