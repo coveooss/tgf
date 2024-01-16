@@ -1,5 +1,11 @@
 $ErrorActionPreference = "Stop" #Make all errors terminating
 
+# This script uses Powershell 7 features. Make sure we are running in Powershell 7.
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    Write-Host "The tgf install script requires PowerShell 7 or higher. Please install PowerShell 7 and try again."
+    Exit 1
+}
+
 try {
     $latestReleaseRequest = @{
         Method = "HEAD"
