@@ -3,24 +3,24 @@ module github.com/coveooss/tgf
 go 1.17
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.17.1
-	github.com/aws/aws-sdk-go-v2/config v1.17.10
-	github.com/aws/aws-sdk-go-v2/credentials v1.12.23
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.17.20
-	github.com/aws/aws-sdk-go-v2/service/iam v1.18.23
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.32.0
-	github.com/aws/aws-sdk-go-v2/service/sts v1.17.1
-	github.com/aws/smithy-go v1.13.4
+	github.com/aws/aws-sdk-go-v2 v1.25.2
+	github.com/aws/aws-sdk-go-v2/config v1.27.5
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.5
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.27.1
+	github.com/aws/aws-sdk-go-v2/service/iam v1.31.1
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.49.1
+	github.com/aws/aws-sdk-go-v2/service/sts v1.28.2
+	github.com/aws/smithy-go v1.20.1
 	github.com/blang/semver/v4 v4.0.0
-	github.com/coveooss/gotemplate/v3 v3.7.3
+	github.com/coveooss/gotemplate/v3 v3.7.5
 	github.com/coveooss/multilogger v0.5.2
 	github.com/coveord/kingpin/v2 v2.4.2
 	github.com/docker/docker v20.10.24+incompatible
-	github.com/fatih/color v1.13.0
-	github.com/hashicorp/go-getter v1.7.0
-	github.com/minio/selfupdate v0.5.0
-	github.com/sirupsen/logrus v1.9.0
-	github.com/stretchr/testify v1.8.1
+	github.com/fatih/color v1.16.0
+	github.com/hashicorp/go-getter v1.7.3
+	github.com/minio/selfupdate v0.6.0
+	github.com/sirupsen/logrus v1.9.3
+	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
