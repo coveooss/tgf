@@ -12,5 +12,5 @@ coveralls:
 test:
 	go test ./...
 
-tgf: $(SOURCES)
+tgf: $(SOURCES) go.mod go.sum
 	go build ./...
