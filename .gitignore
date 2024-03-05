@@ -5,8 +5,11 @@ dist
 vendor
 tasks.json
 
+# IDE
 \.vscode/
+*.code-workspace
 
 # built executables
 tgf
 tgf.exe
+

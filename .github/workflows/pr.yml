@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
         with:
-          go-version: 1.17
+          go-version: 1.21
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
         with:
-          go-version: 1.17
+          go-version: 1.21
 
       - uses: goreleaser/goreleaser-action@b508e2e3ef3b19d4e4146d4f8fb3ba9db644a757
         with:
@@ -53,7 +53,7 @@ jobs:
           fetch-depth: 0 # goreleaser needs the whole history to build the release notes
       - uses: actions/setup-go@v4
         with:
-          go-version: 1.17
+          go-version: 1.21
 
       - uses: goreleaser/goreleaser-action@b508e2e3ef3b19d4e4146d4f8fb3ba9db644a757
         with:
