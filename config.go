@@ -30,7 +30,7 @@ import (
 	"github.com/blang/semver/v4"
 	"github.com/coveooss/gotemplate/v3/collections"
 	"github.com/fatih/color"
-	"github.com/hashicorp/go-getter"
+	"github.com/hashicorp/go-getter/v2"
 	"github.com/minio/selfupdate"
 	yaml "gopkg.in/yaml.v2"
 )
