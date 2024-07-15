@@ -1,0 +1,34 @@
+name: Install TGF
+description: GitHub Action to install https://github.com/coveooss/tgf
+
+inputs:
+  tgf-path:
+    description: |
+      Installs the TGF binary to this folder. 
+      The folder will not be added to the PATH, but the defaults are typically already in the path.
+    required: false
+    default: ${{ runner.os == 'Windows' && '${env:LocalAppData}\Microsoft\WindowsApps' || '/usr/local/bin' }}
+  ref:
+    description: The ref to use to run the install script.
+    default: ${{ github.action_ref }}
+    required: false
+
+
+runs:
+  using: "composite"
+  steps:
+  - name: Install TGF (posix)
+    if: runner.os != 'Windows'
+    shell: bash
+    env:
+      TGF_PATH: ${{ inputs.tgf-path }}
+      VERSION: ${{ inputs.ref }}
+    run: curl "https://raw.githubusercontent.com/coveooss/tgf/${VERSION}/get-latest-tgf.sh" | bash
+
+  - name: Install TGF (windows)
+    if: runner.os == 'Windows'
+    shell: pwsh
+    env:
+      TGF_PATH: ${{ inputs.tgf-path }}
+      VERSION: ${{ inputs.ref }}
+    run: (Invoke-WebRequest https://raw.githubusercontent.com/coveooss/tgf/${env:VERSION}/get-latest-tgf.ps1).Content | Invoke-Expression

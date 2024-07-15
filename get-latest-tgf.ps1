@@ -30,11 +30,15 @@ $ZipFile = "tgf.zip"
 $TempTgfFolder = "tgf_unzipped"
 $TempTgfPath = Join-Path -Path $TempTgfFolder -ChildPath "tgf.exe"
 
-Write-Host "Installing tgf v$($LATEST_VERSION) in the current directory ($(Get-Location)) ..."
+Write-Host "Installing: tgf v$($LATEST_VERSION)"
 Invoke-WebRequest "https://github.com/coveo/tgf/releases/download/v$($LATEST_VERSION)/tgf_$($LATEST_VERSION)_windows_64-bits.zip" -OutFile $ZipFile
 Expand-Archive -Path $ZipFile -DestinationPath $TempTgfFolder
-Copy-Item $TempTgfPath -Destination $TGF_PATH -Force
 
+$Destination = if ([string]::IsNullOrWhiteSpace(${env:TGF_PATH})) { "." } else { $ExecutionContext.InvokeCommand.ExpandString(${env:TGF_PATH}) }
+Write-Host "Copying executable to $($Destination)"
+Copy-Item $TempTgfPath -Destination $Destination -Force
+
+Write-Host "Cleaning up..."
 Remove-Item $ZipFile
 Remove-Item $TempTgfFolder -Recurse
 Write-Host "Installation is completed!"

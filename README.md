@@ -37,6 +37,17 @@ outdated version.
 
 ## Installation
 
+### GitHub Action
+
+You can install `TGF` using the provided GitHub Action:
+
+```
+    steps:
+      - uses: coveooss/tgf@master
+```
+
+### Manual installation
+
 On `mac` and `linux`:
 
 You can run the `get-latest-tgf.sh` script to check if you have the latest version of tgf installed and install it as needed:
