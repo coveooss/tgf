@@ -32,7 +32,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/hashicorp/go-getter"
 	"github.com/minio/selfupdate"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
 const (
