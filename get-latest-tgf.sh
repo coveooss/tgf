@@ -69,13 +69,13 @@ install_latest_tgf () {
         LINUX_ARCH=$(uname -m)
         echo 'Installing latest tgf for Linux with arch '$LINUX_ARCH' in' $TGF_PATH '...'
         DOWNLOAD_URL=$([ "$LINUX_ARCH" == "x86_64" ] && echo "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_linux_64-bits.zip" || echo "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_linux_arm64.zip")
-        curl -sL $DOWNLOAD_URL | gzip -d > ${TGF} && chmod +x ${TGF} && script_end
+        curl -sL $DOWNLOAD_URL | gzip -d > ${TGF} && chmod 0755 ${TGF} && script_end
     elif [[ $(uname -s) == Darwin ]]
     then
         OSX_ARCH=$(uname -m)
         echo 'Installing latest tgf for OSX with arch '$OSX_ARCH' in' $TGF_PATH '...'
         DOWNLOAD_URL=$([ "$OSX_ARCH" == "arm64" ] && echo "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_macOS_arm64.zip" || echo "https://github.com/coveooss/tgf/releases/download/v${TGF_LATEST_VERSION}/tgf_${TGF_LATEST_VERSION}_macOS_64-bits.zip")
-        curl -sL $DOWNLOAD_URL | bsdtar -xf- -C ${TGF_PATH} && chmod +x ${TGF} && script_end
+        curl -sL $DOWNLOAD_URL | bsdtar -xf- -C ${TGF_PATH} && chmod 0755 ${TGF} && script_end
     else
         echo 'OS not supported.'
         exit 1
