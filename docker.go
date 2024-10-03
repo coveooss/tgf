@@ -27,6 +27,7 @@ import (
 	"github.com/coveooss/multilogger/reutils"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	types_image "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
@@ -366,7 +367,7 @@ func (docker *dockerConfig) prune(images ...string) {
 		for _, image := range images {
 			filters := filters.NewArgs()
 			filters.Add("reference", image)
-			if images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters}); err == nil {
+			if images, err := cli.ImageList(ctx, types_image.ListOptions{Filters: filters}); err == nil {
 				for _, image := range images {
 					actual := getActualImageVersionFromImageID(image.ID)
 					if actual == "" {
@@ -396,7 +397,7 @@ func (docker *dockerConfig) prune(images ...string) {
 
 func deleteImage(id string) {
 	cli, ctx := getDockerClient()
-	items, err := cli.ImageRemove(ctx, id, types.ImageRemoveOptions{})
+	items, err := cli.ImageRemove(ctx, id, types_image.RemoveOptions{})
 	if err != nil {
 		log.Error(err)
 	}
@@ -418,7 +419,7 @@ func (docker *dockerConfig) GetActualImageVersion() string {
 func validateDockerVersion(version string) (bool, error) {
 	v, err := semver.ParseTolerant(version)
 	if err != nil {
-		return false, fmt.Errorf("Cannot parse %s: %w", version, err)
+		return false, fmt.Errorf("cannot parse %s: %w", version, err)
 	}
 
 	expectedRange, err := semver.ParseRange(allowedDockerVersions)
@@ -451,12 +452,12 @@ func getDockerClient() (*client.Client, context.Context) {
 var dockerClient *client.Client
 var dockerContext context.Context
 
-func getImageSummary(imageName string) *types.ImageSummary {
+func getImageSummary(imageName string) *types_image.Summary {
 	cli, ctx := getDockerClient()
 	// Find image
 	filters := filters.NewArgs()
 	filters.Add("reference", imageName)
-	images, err := cli.ImageList(ctx, types.ImageListOptions{Filters: filters})
+	images, err := cli.ImageList(ctx, types_image.ListOptions{Filters: filters})
 	if err != nil {
 		log.Errorf("unable to retrieve image summary of %s: %s", imageName, err.Error())
 	}

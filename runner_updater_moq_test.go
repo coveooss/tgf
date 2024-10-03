@@ -14,37 +14,37 @@ var _ RunnerUpdater = &RunnerUpdaterMock{}
 
 // RunnerUpdaterMock is a mock implementation of RunnerUpdater.
 //
-//     func TestSomethingThatUsesRunnerUpdater(t *testing.T) {
+//	    func TestSomethingThatUsesRunnerUpdater(t *testing.T) {
 //
-//         // make and configure a mocked RunnerUpdater
-//         mockedRunnerUpdater := &RunnerUpdaterMock{
-//             DoUpdateFunc: func(url string) error {
-// 	               panic("mock out the DoUpdate method")
-//             },
-//             GetLastRefreshFunc: func(file string) time.Duration {
-// 	               panic("mock out the GetLastRefresh method")
-//             },
-//             GetUpdateVersionFunc: func() (string, error) {
-// 	               panic("mock out the GetUpdateVersion method")
-//             },
-//             RestartFunc: func() int {
-// 	               panic("mock out the Restart method")
-//             },
-//             RunFunc: func() int {
-// 	               panic("mock out the Run method")
-//             },
-//             SetLastRefreshFunc: func(file string)  {
-// 	               panic("mock out the SetLastRefresh method")
-//             },
-//             ShouldUpdateFunc: func() bool {
-// 	               panic("mock out the ShouldUpdate method")
-//             },
-//         }
+//	        // make and configure a mocked RunnerUpdater
+//	        mockedRunnerUpdater := &RunnerUpdaterMock{
+//	            DoUpdateFunc: func(url string) error {
+//		               panic("mock out the DoUpdate method")
+//	            },
+//	            GetLastRefreshFunc: func(file string) time.Duration {
+//		               panic("mock out the GetLastRefresh method")
+//	            },
+//	            GetUpdateVersionFunc: func() (string, error) {
+//		               panic("mock out the GetUpdateVersion method")
+//	            },
+//	            RestartFunc: func() int {
+//		               panic("mock out the Restart method")
+//	            },
+//	            RunFunc: func() int {
+//		               panic("mock out the Run method")
+//	            },
+//	            SetLastRefreshFunc: func(file string)  {
+//		               panic("mock out the SetLastRefresh method")
+//	            },
+//	            ShouldUpdateFunc: func() bool {
+//		               panic("mock out the ShouldUpdate method")
+//	            },
+//	        }
 //
-//         // use mockedRunnerUpdater in code that requires RunnerUpdater
-//         // and then make assertions.
+//	        // use mockedRunnerUpdater in code that requires RunnerUpdater
+//	        // and then make assertions.
 //
-//     }
+//	    }
 type RunnerUpdaterMock struct {
 	// DoUpdateFunc mocks the DoUpdate method.
 	DoUpdateFunc func(url string) error
@@ -124,7 +124,8 @@ func (mock *RunnerUpdaterMock) DoUpdate(url string) error {
 
 // DoUpdateCalls gets all the calls that were made to DoUpdate.
 // Check the length with:
-//     len(mockedRunnerUpdater.DoUpdateCalls())
+//
+//	len(mockedRunnerUpdater.DoUpdateCalls())
 func (mock *RunnerUpdaterMock) DoUpdateCalls() []struct {
 	URL string
 } {
@@ -155,7 +156,8 @@ func (mock *RunnerUpdaterMock) GetLastRefresh(file string) time.Duration {
 
 // GetLastRefreshCalls gets all the calls that were made to GetLastRefresh.
 // Check the length with:
-//     len(mockedRunnerUpdater.GetLastRefreshCalls())
+//
+//	len(mockedRunnerUpdater.GetLastRefreshCalls())
 func (mock *RunnerUpdaterMock) GetLastRefreshCalls() []struct {
 	File string
 } {
@@ -183,7 +185,8 @@ func (mock *RunnerUpdaterMock) GetUpdateVersion() (string, error) {
 
 // GetUpdateVersionCalls gets all the calls that were made to GetUpdateVersion.
 // Check the length with:
-//     len(mockedRunnerUpdater.GetUpdateVersionCalls())
+//
+//	len(mockedRunnerUpdater.GetUpdateVersionCalls())
 func (mock *RunnerUpdaterMock) GetUpdateVersionCalls() []struct {
 } {
 	var calls []struct {
@@ -209,7 +212,8 @@ func (mock *RunnerUpdaterMock) Restart() int {
 
 // RestartCalls gets all the calls that were made to Restart.
 // Check the length with:
-//     len(mockedRunnerUpdater.RestartCalls())
+//
+//	len(mockedRunnerUpdater.RestartCalls())
 func (mock *RunnerUpdaterMock) RestartCalls() []struct {
 } {
 	var calls []struct {
@@ -235,7 +239,8 @@ func (mock *RunnerUpdaterMock) Run() int {
 
 // RunCalls gets all the calls that were made to Run.
 // Check the length with:
-//     len(mockedRunnerUpdater.RunCalls())
+//
+//	len(mockedRunnerUpdater.RunCalls())
 func (mock *RunnerUpdaterMock) RunCalls() []struct {
 } {
 	var calls []struct {
@@ -264,7 +269,8 @@ func (mock *RunnerUpdaterMock) SetLastRefresh(file string) {
 
 // SetLastRefreshCalls gets all the calls that were made to SetLastRefresh.
 // Check the length with:
-//     len(mockedRunnerUpdater.SetLastRefreshCalls())
+//
+//	len(mockedRunnerUpdater.SetLastRefreshCalls())
 func (mock *RunnerUpdaterMock) SetLastRefreshCalls() []struct {
 	File string
 } {
@@ -292,7 +298,8 @@ func (mock *RunnerUpdaterMock) ShouldUpdate() bool {
 
 // ShouldUpdateCalls gets all the calls that were made to ShouldUpdate.
 // Check the length with:
-//     len(mockedRunnerUpdater.ShouldUpdateCalls())
+//
+//	len(mockedRunnerUpdater.ShouldUpdateCalls())
 func (mock *RunnerUpdaterMock) ShouldUpdateCalls() []struct {
 } {
 	var calls []struct {

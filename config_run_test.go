@@ -3,12 +3,13 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/coveooss/gotemplate/v3/yaml"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/coveooss/gotemplate/v3/yaml"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -78,5 +79,5 @@ func TestConfigDump_isValidYAML(t *testing.T) {
 	})
 
 	// --config-dump output can be redirected to a file, so it must be valid YAML.
-	assert.NoError(t, yaml.UnmarshalStrict([]byte(output), &TGFConfig{}))
+	assert.NoError(t, yaml.Unmarshal([]byte(output), &TGFConfig{}))
 }

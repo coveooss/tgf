@@ -445,7 +445,7 @@ func (config *TGFConfig) validate() (errors []error) {
 			errors = append(errors, fmt.Errorf("unable to check recommended image version %s vs %s: %v", *config.ImageVersion, config.RequiredVersionRange, err))
 			return
 		} else if !valid {
-			errors = append(errors, VersionMistmatchError(fmt.Sprintf("Image %s does not meet the required version range %s", config.GetImageName(), config.RequiredVersionRange)))
+			errors = append(errors, VersionMismatchError(fmt.Sprintf("Image %s does not meet the required version range %s", config.GetImageName(), config.RequiredVersionRange)))
 			return
 		}
 	}
@@ -468,7 +468,7 @@ func (config *TGFConfig) ValidateVersion() bool {
 		switch err := err.(type) {
 		case ConfigWarning:
 			log.Warning(err)
-		case VersionMistmatchError:
+		case VersionMismatchError:
 			log.Error(err)
 			if version == "-" {
 				// We consider this as a fatal error only if the version has not been explicitly specified on the command line
@@ -725,10 +725,10 @@ func (e ConfigWarning) Error() string {
 	return string(e)
 }
 
-// VersionMistmatchError is used to describe an out of range version
-type VersionMistmatchError string
+// VersionMismatchError is used to describe an out of range version
+type VersionMismatchError string
 
-func (e VersionMistmatchError) Error() string {
+func (e VersionMismatchError) Error() string {
 	return string(e)
 }
 
@@ -848,12 +848,12 @@ func (config *TGFConfig) DoUpdate(url string) (err error) {
 	return
 }
 
-// GetLastRefresh get the lastime the tgf update file was updated
+// GetLastRefresh get the last time the tgf update file was updated
 func (config *TGFConfig) GetLastRefresh(autoUpdateFile string) time.Duration {
 	return lastRefresh(autoUpdateFile)
 }
 
-// SetLastRefresh set the lastime the tgf update file was updated
+// SetLastRefresh set the last time the tgf update file was updated
 func (config *TGFConfig) SetLastRefresh(autoUpdateFile string) {
 	touchImageRefresh(autoUpdateFile)
 }
