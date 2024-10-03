@@ -13,7 +13,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	// We don't want detailled logs in trace (time will always be different)
+	// We don't want detailed logs in trace (time will always be different)
 	log.SetFormat("%level:upper%: %message%")
 	log.SetDefaultConsoleHookLevel(logrus.DebugLevel)
 	os.Exit(m.Run())
@@ -39,7 +39,7 @@ func TestRunWithUpdateCheck(t *testing.T) {
 		latest             string
 		runCount           int
 		restartCount       int
-		expectedlogPattern []string
+		expectedLogPattern []string
 	}{
 		{"lower", "1.20.0", "1.21.0", 0, 1, []string{
 			`WARNING: Updating .*tgf.test(?:\.exe)? from 1.20.0 ==> 1.21.0`,
@@ -66,7 +66,7 @@ func TestRunWithUpdateCheck(t *testing.T) {
 			mockUpdater := setupUpdaterMock(tt.local, tt.latest)
 			RunWithUpdateCheck(mockUpdater)
 			fmt.Println(buffer.String())
-			for _, logPattern := range tt.expectedlogPattern {
+			for _, logPattern := range tt.expectedLogPattern {
 				match, err := regexp.MatchString(logPattern, buffer.String())
 				assert.NoError(t, err)
 				assert.Truef(t, match, "Output doesn't contains %s", logPattern)
