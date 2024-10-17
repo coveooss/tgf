@@ -1,18 +1,14 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
   extends: [
-    "config:base",
+    "github>coveooss/renovate-presets",
     "schedule:earlyMondays",
     "group:allNonMajor",
   ],
 
   dependencyDashboard: true,
-
-  branchPrefix: "renovate/",
   labels: ["dependency update", "bot"],
-  prConcurrentLimit: 3,
   prHeader: "Jira: DT-4929",
-  reviewersFromCodeOwners: true,
   suppressNotifications: ["prIgnoreNotification"],
 
   timezone: "America/Toronto",
