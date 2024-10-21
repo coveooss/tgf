@@ -15,7 +15,7 @@ jobs:
         with:
           fetch-depth: 0 # goreleaser needs the whole history to build the release notes
 
-      - uses: goreleaser/goreleaser-action@7ec5c2b0c6cdda6e8bbb49444bc797dd33d74dd8
+      - uses: goreleaser/goreleaser-action@f7623f3e7168fa800ac616fe8d03643abbc6edda
         with:
           distribution: goreleaser
           version: latest
