@@ -17,24 +17,24 @@ if [ ! -w "${TGF_PATH}" ]; then
         echo "Since MacOS Ventura (13.X), $TGF_PATH is owned by 'root'."
         echo "You can fix this by either"
         echo "  1. Running 'sudo chown -R $(id -un):$(id -gn) $TGF_PATH'."
-        echo "  2. Setting the TGF_PATH variable to an alternate, writable directory."
+        echo "  2. Setting the TGF_PATH (GitHub action's parameter 'tgf-path') variable to an alternate, writable directory."
         exit 1
     fi
-    echo "Please set the TGF_PATH environment variable to install to an alternate, writeable directory."
+    echo "Please set the TGF_PATH (GitHub action's parameter 'tgf-path') environment variable to install to an alternate, writeable directory."
     exit 1
   fi
 
 
   if ! chmod ugo+w "${TGF_PATH}"; then
     echo "Cannot make installation directory ${TGF_PATH} writeable."
-    echo "Please set the TGF_PATH environment variable to install to an alternate, writeable directory."
+    echo "Please set the TGF_PATH (GitHub action's parameter 'tgf-path') environment variable to install to an alternate, writeable directory."
     exit 1
   fi
 fi
 
 get_local_tgf_version () {
     # The sed regex extracts for example 1.23.2 from "tgf v1.23.2", so as to be comparable to get_latest_tgf_version()
-    [ -r "${TGF}" ] && TGF_LOCAL_VERSION=$(${TGF} --current-version | sed -E -e 's/^.* v(.*)/\1/')
+    [ -r "${TGF}" ] && TGF_LOCAL_VERSION=$(${TGF} --help-tgf | grep 'VERSION: ' | sed 's/VERSION: //')
 }
 
 get_latest_tgf_version () {
