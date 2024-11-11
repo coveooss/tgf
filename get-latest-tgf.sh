@@ -34,7 +34,7 @@ fi
 
 get_local_tgf_version () {
     # The sed regex extracts for example 1.23.2 from "tgf v1.23.2", so as to be comparable to get_latest_tgf_version()
-    [ -r "${TGF}" ] && TGF_LOCAL_VERSION=$(${TGF} -H | grep 'VERSION: ' | sed 's/VERSION: //')
+    [ -r "${TGF}" ] && TGF_LOCAL_VERSION=$(${TGF} --help-tgf | grep 'VERSION: ' | sed 's/VERSION: //')
 }
 
 get_latest_tgf_version () {
