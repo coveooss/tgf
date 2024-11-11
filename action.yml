@@ -23,7 +23,9 @@ runs:
     env:
       TGF_PATH: ${{ inputs.tgf-path }}
       VERSION: ${{ inputs.ref }}
-    run: curl "https://raw.githubusercontent.com/coveooss/tgf/${VERSION}/get-latest-tgf.sh" | bash
+    run: |
+      curl "https://raw.githubusercontent.com/coveooss/tgf/${VERSION}/get-latest-tgf.sh" | bash
+      echo "$TGF_PATH" >> $GITHUB_PATH
 
   - name: Install TGF (windows)
     if: runner.os == 'Windows'
