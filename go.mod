@@ -3,20 +3,20 @@ module github.com/coveooss/tgf
 go 1.23
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.32.0
-	github.com/aws/aws-sdk-go-v2/config v1.27.41
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.39
-	github.com/aws/aws-sdk-go-v2/service/ecr v1.36.0
-	github.com/aws/aws-sdk-go-v2/service/iam v1.37.0
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.55.0
-	github.com/aws/aws-sdk-go-v2/service/sts v1.32.0
+	github.com/aws/aws-sdk-go-v2 v1.32.3
+	github.com/aws/aws-sdk-go-v2/config v1.28.1
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.42
+	github.com/aws/aws-sdk-go-v2/service/ecr v1.36.3
+	github.com/aws/aws-sdk-go-v2/service/iam v1.37.3
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.55.3
+	github.com/aws/aws-sdk-go-v2/service/sts v1.32.3
 	github.com/aws/smithy-go v1.22.0
 	github.com/blang/semver/v4 v4.0.0
-	github.com/coveooss/gotemplate/v3 v3.9.1
+	github.com/coveooss/gotemplate/v3 v3.9.2
 	github.com/coveooss/multilogger v0.6.0
 	github.com/coveord/kingpin/v2 v2.4.4
 	github.com/docker/docker v27.3.1+incompatible
-	github.com/fatih/color v1.17.0
+	github.com/fatih/color v1.18.0
 	github.com/hashicorp/go-getter v1.7.6
 	github.com/minio/selfupdate v0.6.0
 	github.com/sirupsen/logrus v1.9.3
@@ -42,14 +42,14 @@ require (
 	github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/aws/aws-sdk-go v1.55.5 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.15 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.19 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.19 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.18 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.22 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.22 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.24.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.24.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.3 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -108,9 +108,9 @@ require (
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/term v0.24.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/term v0.25.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
 	google.golang.org/api v0.199.0 // indirect
 	google.golang.org/genproto v0.0.0-20240930140551-af27646dc61f // indirect
