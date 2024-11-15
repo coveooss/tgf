@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -68,7 +67,7 @@ func TestSetConfigDefaultValues(t *testing.T) {
 
 	// We must reset the cached AWS config check since it could have been modified by another test
 	resetCache()
-	tempDir, _ := filepath.EvalSymlinks(must(ioutil.TempDir("", "TestGetConfig")).(string))
+	tempDir, _ := filepath.EvalSymlinks(must(os.MkdirTemp("", "TestGetConfig")).(string))
 	currentDir, _ := os.Getwd()
 	assert.NoError(t, os.Chdir(tempDir))
 	defer func() {
@@ -94,7 +93,7 @@ func TestSetConfigDefaultValues(t *testing.T) {
 		docker-image = "coveo/overwritten"
 		docker-image-tag = "test"
 	`).UnIndent().TrimSpace())
-	ioutil.WriteFile(testTgfUserConfigFile, userTgfConfig, 0644)
+	os.WriteFile(testTgfUserConfigFile, userTgfConfig, 0644)
 
 	tgfConfig := []byte(String(`
 		docker-image: coveo/stuff
@@ -102,7 +101,7 @@ func TestSetConfigDefaultValues(t *testing.T) {
 		docker-image-build-tag: hello
 		docker-image-build-folder: my-folder
 	`).UnIndent().TrimSpace())
-	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
+	os.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
 	app := NewTestApplication(nil, true)
 	app.PsPath = testSSMParameterFolder
@@ -138,7 +137,7 @@ func TestConfigDumpFiltersOutAWSEnvironment(t *testing.T) {
 
 	// We must reset the cached AWS config check since it could have been modified by another test
 	resetCache()
-	tempDir, _ := filepath.EvalSymlinks(must(ioutil.TempDir("", "TestGetConfig")).(string))
+	tempDir, _ := filepath.EvalSymlinks(must(os.MkdirTemp("", "TestGetConfig")).(string))
 	currentDir, _ := os.Getwd()
 	assert.NoError(t, os.Chdir(tempDir))
 	defer func() {
@@ -154,7 +153,7 @@ func TestConfigDumpFiltersOutAWSEnvironment(t *testing.T) {
 		docker-image-build-tag: hello
 		docker-image-build-folder: my-folder
 	`).UnIndent().TrimSpace())
-	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
+	os.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
 	app := NewTestApplication([]string{"--config-dump"}, true)
 	config := InitConfig(app)
@@ -165,7 +164,7 @@ func TestConfigDumpFiltersOutAWSEnvironment(t *testing.T) {
 }
 
 func TestTwoLevelsOfTgfConfig(t *testing.T) {
-	tempDir, _ := filepath.EvalSymlinks(must(ioutil.TempDir("", "TestGetConfig")).(string))
+	tempDir, _ := filepath.EvalSymlinks(must(os.MkdirTemp("", "TestGetConfig")).(string))
 	currentDir, _ := os.Getwd()
 	subFolder := path.Join(tempDir, "sub-folder")
 	defer func() {
@@ -183,11 +182,11 @@ func TestTwoLevelsOfTgfConfig(t *testing.T) {
 	docker-image: coveo/stuff
 	docker-image-version: 2.0.1
 	`).UnIndent().TrimSpace())
-	ioutil.WriteFile(testParentTgfConfigFile, parentTgfConfig, 0644)
+	os.WriteFile(testParentTgfConfigFile, parentTgfConfig, 0644)
 
 	// Current directory config overwrites parent directory config
 	tgfConfig := []byte(String(`docker-image-version: 2.0.2`))
-	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
+	os.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
 	app := NewTestApplication(nil, true)
 	app.PsPath = testSSMParameterFolder
@@ -198,7 +197,7 @@ func TestTwoLevelsOfTgfConfig(t *testing.T) {
 }
 
 func TestWeirdDirName(t *testing.T) {
-	tempDir, _ := ioutil.TempDir("", "bad@(){}-good-_.1234567890ABC")
+	tempDir, _ := os.MkdirTemp("", "bad@(){}-good-_.1234567890ABC")
 	currentDir, _ := os.Getwd()
 	assert.NoError(t, os.Chdir(tempDir))
 	defer func() {
@@ -212,7 +211,7 @@ func TestWeirdDirName(t *testing.T) {
 		docker-image-build: RUN ls test2
 		docker-image-build-folder: my-folder
 	`).UnIndent().TrimSpace())
-	ioutil.WriteFile(testTgfConfigFile, tgfConfig, 0644)
+	os.WriteFile(testTgfConfigFile, tgfConfig, 0644)
 
 	app := NewTestApplication(nil, true)
 	app.PsPath = testSSMParameterFolder
