@@ -9,13 +9,15 @@ import (
 
 	"github.com/coveooss/gotemplate/v3/hcl"
 	"github.com/coveooss/gotemplate/v3/template"
+	"github.com/coveooss/kingpin/v2"
 	"github.com/coveooss/multilogger/errors"
-	"github.com/coveord/kingpin/v2"
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 )
 
-const description = `@color("underline", "DESCRIPTION:")
+const description = `
+@color("underline", "DESCRIPTION:")
+
 TGF (@terragrunt) is a Docker frontend for terragrunt/terraform. It automatically maps your current folder,
 your HOME folder, your TEMP folder as well of most environment variables to the docker process. You can add -D to
 your command to get the exact docker command that is generated.
@@ -28,6 +30,7 @@ Configurable values are:
   - @autoIndent(options)
 
 Full documentation can be found at @(readme)
+
 Check for new version at @(latest).
 
 Any docker image could be used, but TGF specialized images could be found at: @(tgfImages).
@@ -36,14 +39,8 @@ Terragrunt documentation could be found at @terragruntCoveo (Coveo fork)
 
 Terraform documentation could be found at @(terraform).
 
-@color("underline", "ENVIRONMENT VARIABLES:")
-Most of the arguments can be set through environment variables using the format TGF_ARG_NAME.
-
-Ex:
-   TGF_LOCAL_IMAGE=1      ==> --local-image
-   TGF_IMAGE_VERSION=2.0  ==> --image-version=2.0
-
 @color("underline", "SHORTCUTS:")
+
 You can also use shortcuts instead of using the long argument names (first letter of each word).
 
 Ex:
@@ -51,6 +48,7 @@ Ex:
    --iv=2.0 ==> --image-version=2.0
 
 @color("underline", "IMPORTANT:")
+
 Most of the tgf command line arguments are in uppercase to avoid potential conflict with the underlying command.
 If any of the tgf arguments conflicts with an argument of the desired entry point, you must place that argument
 after -- to ensure that they are not interpreted by tgf and are passed to the entry point. Any non conflicting
@@ -128,7 +126,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	var tempLocationIsSetByUser bool
 	app := TGFApplication{Application: base}
 	swFlagON := func(name, description string) *kingpin.FlagClause {
-		return app.Flag(name, fmt.Sprintf("ON by default: %s, use --no-%s to disable", description, name)).Default(true)
+		return app.Flag(name, fmt.Sprintf("ON by default: %s", description)).Default(true)
 	}
 	app.Flag("help-tgf", "Show context-sensitive help (also try --help-man)").Short('H').Action(app.ShowHelp).Bool()
 	app.Flag("image", "Use the specified image instead of the default one").PlaceHolder("coveo/tgf").NoAutoShortcut().StringVar(&app.Image)
@@ -173,6 +171,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	kingpin.HelpFlag = app.GetFlag("help-tgf")
 
 	_, _ = app.Parse(args)
+
 	if *debug {
 		_ = log.SetDefaultConsoleHookLevel(logrus.DebugLevel)
 	}
@@ -217,9 +216,9 @@ func formatDescription() string {
 		"parameterStoreKey": defaultSSMParameterFolder,
 		"config":            configFile,
 		"options":           getTgfConfigFields(),
-		"readme":            link(gitSource + "/blob/master/README.md"),
+		"readme":            link(gitSource + "/blob/main/README.md"),
 		"latest":            link(gitSource + "/releases/latest"),
-		"terragruntCoveo":   link("https://github.com/coveo/terragrunt/blob/master/README.md"),
+		"terragruntCoveo":   link("https://github.com/coveooss/terragrunt/blob/main/README.md"),
 		"terraform":         link("https://www.terraform.io/docs/index.html"),
 		"tgfImages":         link("https://hub.docker.com/r/coveo/tgf/tags"),
 		"terragrunt":        bold("t") + "erra" + bold("g") + "runt " + bold("f") + "rontend",
@@ -230,7 +229,7 @@ func formatDescription() string {
 	options := template.DefaultOptions()
 	options[template.Extension] = false
 	t, _ := template.NewTemplate("", context, "", options)
-	return must(t.ProcessContent(description, "")).(string)
+	return strings.TrimSpace(must(t.ProcessContent(description, "")).(string))
 }
 
 // Parse overrides the base Parse method
@@ -274,5 +273,14 @@ func (app *TGFApplication) ShowHelp(c *kingpin.ParseContext) error {
 
 // Run execute the application
 func (app *TGFApplication) Run() int {
+	if app.GetCurrentVersion && !app.AutoUpdateSet {
+		if version == locallyBuilt {
+			fmt.Println("tgf (built from source)")
+		} else {
+			fmt.Printf("tgf v%s\n", version)
+		}
+		return 0
+	}
+
 	return RunWithUpdateCheck(InitConfig(app))
 }

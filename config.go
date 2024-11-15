@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -200,7 +199,29 @@ func (tgfConfig *TGFConfig) getAwsConfig(assumeRoleDuration time.Duration) (aws.
 	log.Debug("Fetching credentials for current AWS config")
 	creds, err := config.Credentials.Retrieve(context.TODO())
 	if err != nil {
-		return config, err
+		if strings.Contains(err.Error(), "SSO") {
+			// This code is not working as expected, so we use the AWS CLI to perform the SSO login.
+			// The problem is that the library does not handle the default profile correctly.
+			// out, err_sso := ssologin.Login(context.TODO(), &ssologin.LoginInput{
+			// 	ProfileName: tgfConfig.tgf.AwsProfile,
+			// 	Headed:      true,
+			// })
+			// log.Warning("You need to login to AWS SSO")
+			// x := sso.NewFromConfig(config)
+			// x.Logout(context.TODO(), &sso.LogoutInput{})
+			// log.Debug(out)
+			// if err_sso != nil {
+			// 	return config, err_sso
+			// }
+
+			cmd := exec.Command("aws", "sso", "login")
+			cmd.Stdin = os.Stdin
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			cmd.Run()
+		} else {
+			return config, err
+		}
 	}
 
 	expiresIn := time.Until(creds.Expires)
@@ -364,7 +385,7 @@ func (config *TGFConfig) setDefaultValues() {
 	// Fetch file configs
 	for _, configFile := range config.findConfigFiles(must(os.Getwd()).(string)) {
 		log.Debugln("Reading configuration from", configFile)
-		bytes, err := ioutil.ReadFile(configFile)
+		bytes, err := os.ReadFile(configFile)
 
 		if err != nil {
 			log.Errorf("Error while loading configuration file %s\n%v", configFile, err)
@@ -573,7 +594,7 @@ func (config *TGFConfig) findRemoteConfigFiles(location, files string) []string 
 	}
 	configPaths := strings.Split(files, ":")
 
-	tempDir := must(ioutil.TempDir("", "tgf-config-files")).(string)
+	tempDir := must(os.MkdirTemp("", "tgf-config-files")).(string)
 	defer os.RemoveAll(tempDir)
 
 	configs := []string{}
@@ -596,7 +617,7 @@ func (config *TGFConfig) findRemoteConfigFiles(location, files string) []string 
 			continue
 		}
 
-		if content, err := ioutil.ReadFile(destConfigPath); err != nil {
+		if content, err := os.ReadFile(destConfigPath); err != nil {
 			log.Warningf("Error reading fetched config file %s: %v", configPath, err)
 		} else {
 			contentString := string(content)
@@ -810,7 +831,7 @@ func (config *TGFConfig) getTgfFile(url string) (tgfFile io.ReadCloser, err erro
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}
@@ -830,7 +851,7 @@ func (config *TGFConfig) getTgfFile(url string) (tgfFile io.ReadCloser, err erro
 
 // DoUpdate fetch the executable from the link, unzip it and replace it with the current
 func (config *TGFConfig) DoUpdate(url string) (err error) {
-	savePath, err := ioutil.TempFile("", "tgf.previous-version")
+	savePath, err := os.MkdirTemp("", "tgf.previous-version")
 	if err != nil {
 		return
 	}
@@ -840,7 +861,7 @@ func (config *TGFConfig) DoUpdate(url string) (err error) {
 		return
 	}
 
-	if err = selfupdate.Apply(tgfFile, selfupdate.Options{OldSavePath: savePath.Name()}); err != nil {
+	if err = selfupdate.Apply(tgfFile, selfupdate.Options{OldSavePath: savePath}); err != nil {
 		if err := selfupdate.RollbackError(err); err != nil {
 			log.Errorln("Failed to rollback from bad update:", err)
 		}

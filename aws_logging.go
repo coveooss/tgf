@@ -19,6 +19,6 @@ func (log *AwsLogger) Logf(classification logging.Classification, format string,
 	case logging.Debug:
 		log.Debugf(format, v...)
 	case logging.Warn:
-		log.Warnf(format, v...)
+		log.Warningf(format, v...)
 	}
 }
