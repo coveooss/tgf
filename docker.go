@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -277,13 +276,13 @@ func (docker *dockerConfig) getImage() (name string) {
 		if ib.Folder == "" {
 			// There is no explicit folder, so we create a temporary folder to store the docker file
 			log.Debug("Creating build folder")
-			temp = must(ioutil.TempDir("", "tgf-dockerbuild")).(string)
+			temp = must(os.MkdirTemp("", "tgf-dockerbuild")).(string)
 			out = must(os.Create(filepath.Join(temp, dockerfilePattern))).(*os.File)
 			folder = temp
 		} else {
 			if ib.Instructions != "" {
 				log.Debug("Creating dockerfile in provider build folder")
-				out = must(ioutil.TempFile(ib.Dir(), dockerfilePattern)).(*os.File)
+				out = must(os.CreateTemp(ib.Dir(), dockerfilePattern)).(*os.File)
 				temp = out.Name()
 				dockerFile = temp
 			}
@@ -364,6 +363,7 @@ func (docker *dockerConfig) prune(images ...string) {
 	cli, ctx := getDockerClient()
 	if len(images) > 0 {
 		current := fmt.Sprintf(">=%s", docker.GetActualImageVersion())
+		log.Info("Pruning images with version lower than", current)
 		for _, image := range images {
 			filters := filters.NewArgs()
 			filters.Add("reference", image)
@@ -493,7 +493,7 @@ func inspectImage(imageID string) types.ImageInspect {
 
 func getActualImageVersionFromImageID(imageID string) string {
 	inspect := inspectImage(imageID)
-	for _, v := range inspect.ContainerConfig.Env {
+	for _, v := range inspect.Config.Env {
 		values := strings.SplitN(v, "=", 2)
 		if values[0] == tgfImageVersion {
 			return values[1]
@@ -587,6 +587,10 @@ func getEnviron(noHome bool) (result []string) {
 		split := strings.Split(env, "=")
 		varName := strings.TrimSpace(split[0])
 		varUpper := strings.ToUpper(varName)
+
+		if noHome && varUpper == "HOME" {
+			continue
+		}
 
 		if varName == "" || strings.Contains(varUpper, "PATH") && strings.HasPrefix(split[1], string(os.PathSeparator)) {
 			// We exclude path variables that actually point to local host folders

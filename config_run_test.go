@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,14 +27,14 @@ func setup(t *testing.T, testFunction func()) (string, string) {
 	}()
 
 	// Create temp dir and config file
-	tempDir, _ := filepath.EvalSymlinks(must(ioutil.TempDir("", "TestGoMain")).(string))
+	tempDir, _ := filepath.EvalSymlinks(must(os.MkdirTemp("", "TestGoMain")).(string))
 	testTgfUserConfigFile := fmt.Sprintf("%s/tgf.user.config", tempDir)
 	defer func() { assert.NoError(t, os.RemoveAll(tempDir)) }()
 	tgfConfig := []byte(String(`
 		docker-image: coveo/stuff
 		docker-image-version: x
 	`).UnIndent().TrimSpace())
-	ioutil.WriteFile(testTgfUserConfigFile, tgfConfig, 0644)
+	os.WriteFile(testTgfUserConfigFile, tgfConfig, 0644)
 
 	// Capture the outputs
 	var logBuffer bytes.Buffer
@@ -47,7 +47,7 @@ func setup(t *testing.T, testFunction func()) (string, string) {
 	// Run the actual test
 	testFunction()
 	w.Close()
-	out, _ := ioutil.ReadAll(r)
+	out, _ := io.ReadAll(r)
 	return string(out), logBuffer.String()
 }
 
