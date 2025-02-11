@@ -4,6 +4,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   test:
     permissions:
@@ -15,6 +18,11 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
@@ -33,6 +41,11 @@ jobs:
   goreleaser-check:
     runs-on: ubuntu-latest
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
@@ -47,6 +60,11 @@ jobs:
   goreleaser-test-release:
     runs-on: ubuntu-latest
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # goreleaser needs the whole history to build the release notes
