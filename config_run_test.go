@@ -16,16 +16,6 @@ import (
 )
 
 func setup(t *testing.T, testFunction func()) (string, string) {
-	// To ensure that the test is not altered by the environment
-	env := os.Environ()
-	os.Clearenv()
-	defer func() {
-		for i := range env {
-			values := strings.SplitN(env[i], "=", 2)
-			os.Setenv(values[0], values[1])
-		}
-	}()
-
 	// Create temp dir and config file
 	tempDir, _ := filepath.EvalSymlinks(must(os.MkdirTemp("", "TestGoMain")).(string))
 	testTgfUserConfigFile := fmt.Sprintf("%s/tgf.user.config", tempDir)
@@ -35,6 +25,16 @@ func setup(t *testing.T, testFunction func()) (string, string) {
 		docker-image-version: x
 	`).UnIndent().TrimSpace())
 	os.WriteFile(testTgfUserConfigFile, tgfConfig, 0644)
+
+	// To ensure that the test is not altered by the environment
+	env := os.Environ()
+	os.Clearenv()
+	defer func() {
+		for i := range env {
+			values := strings.SplitN(env[i], "=", 2)
+			os.Setenv(values[0], values[1])
+		}
+	}()
 
 	// Capture the outputs
 	var logBuffer bytes.Buffer
