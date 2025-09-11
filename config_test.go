@@ -528,3 +528,325 @@ func setupServer(t *testing.T) *httptest.Server {
 
 	return ts
 }
+
+func TestSetConfigLocationFromLocalFiles(t *testing.T) {
+	tests := []struct {
+		name                   string
+		configFiles            map[string]string // file name -> content.
+		expectedConfigLocation string
+		expectedConfigFiles    string
+		expectedSSMPath        string
+		disableUserConfig      bool
+	}{
+		{
+			name: "Basic config-location from .tgf.config",
+			configFiles: map[string]string{
+				".tgf.config": `config-location: coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf-config`,
+			},
+			expectedConfigLocation: "coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf-config",
+		},
+		{
+			name: "All bootstrap fields from .tgf.config",
+			configFiles: map[string]string{
+				".tgf.config": `
+config-location: coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf-config
+config-files: TGFConfig:CustomConfig
+ssm-path: /custom/tgf`,
+			},
+			expectedConfigLocation: "coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf-config",
+			expectedConfigFiles:    "TGFConfig:CustomConfig",
+			expectedSSMPath:        "/custom/tgf",
+		},
+		{
+			name: "User config overrides .tgf.config",
+			configFiles: map[string]string{
+				".tgf.config":     `config-location: old-location`,
+				"tgf.user.config": `config-location: new-location`,
+			},
+			expectedConfigLocation: "new-location",
+		},
+		{
+			name: "User config disabled - only .tgf.config used",
+			configFiles: map[string]string{
+				".tgf.config":     `config-location: main-location`,
+				"tgf.user.config": `config-location: user-location`,
+			},
+			disableUserConfig:      true,
+			expectedConfigLocation: "main-location",
+		},
+		{
+			name: "JSON format configuration",
+			configFiles: map[string]string{
+				".tgf.config": `{"config-location": "json-location", "config-files": "JsonConfig"}`,
+			},
+			expectedConfigLocation: "json-location",
+			expectedConfigFiles:    "JsonConfig",
+		},
+		{
+			name: "HCL format configuration",
+			configFiles: map[string]string{
+				".tgf.config": `config-location = "hcl-location"
+config-files = "HclConfig"`,
+			},
+			expectedConfigLocation: "hcl-location",
+			expectedConfigFiles:    "HclConfig",
+		},
+		{
+			name: "Partial bootstrap config - only some fields",
+			configFiles: map[string]string{
+				".tgf.config": `config-files: OnlyFiles`,
+			},
+			expectedConfigFiles: "OnlyFiles",
+		},
+		{
+			name: "Invalid config file - should be skipped",
+			configFiles: map[string]string{
+				".tgf.config": `invalid: yaml: content: [`,
+			},
+		},
+		{
+			name: "Empty config file",
+			configFiles: map[string]string{
+				".tgf.config": ``,
+			},
+		},
+		{
+			name: "No bootstrap fields in config",
+			configFiles: map[string]string{
+				".tgf.config": `docker-image: coveo/tgf`,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tempDir, err := os.MkdirTemp("", "TestSetConfigLocationFromLocalFiles")
+			assert.NoError(t, err)
+			tempDir, _ = filepath.EvalSymlinks(tempDir)
+
+			currentDir, _ := os.Getwd()
+			defer func() {
+				assert.NoError(t, os.Chdir(currentDir))
+				assert.NoError(t, os.RemoveAll(tempDir))
+			}()
+
+			testDir := tempDir
+			for fileName, content := range tt.configFiles {
+				fullPath := filepath.Join(tempDir, fileName)
+				assert.NoError(t, os.WriteFile(fullPath, []byte(content), 0644))
+			}
+
+			assert.NoError(t, os.Chdir(testDir))
+
+			app := NewTestApplication(nil, true)
+			app.DisableUserConfig = tt.disableUserConfig
+
+			cfg := &TGFConfig{tgf: app}
+			cfg.setConfigLocationFromLocalFiles()
+
+			assert.Equal(t, tt.expectedConfigLocation, app.ConfigLocation, "ConfigLocation mismatch")
+			assert.Equal(t, tt.expectedConfigFiles, app.ConfigFiles, "ConfigFiles mismatch")
+
+			expectedPsPath := tt.expectedSSMPath
+			if expectedPsPath == "" {
+				expectedPsPath = defaultSSMParameterFolder // Default should remain if not set
+			}
+			assert.Equal(t, expectedPsPath, app.PsPath, "PsPath mismatch")
+		})
+	}
+}
+
+func TestSetConfigLocationFromLocalFiles_PreexistingValues(t *testing.T) {
+	// This ultimately ensures that CLI parameters take priority
+	tempDir, err := os.MkdirTemp("", "TestPreexistingValues")
+	assert.NoError(t, err)
+	tempDir, _ = filepath.EvalSymlinks(tempDir)
+
+	currentDir, _ := os.Getwd()
+	defer func() {
+		assert.NoError(t, os.Chdir(currentDir))
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
+
+	assert.NoError(t, os.Chdir(tempDir))
+
+	configContent := `
+config-location: new-location
+config-files: new-files
+ssm-path: /new/path`
+	assert.NoError(t, os.WriteFile(filepath.Join(tempDir, ".tgf.config"), []byte(configContent), 0644))
+
+	app := NewTestApplication(nil, true)
+	app.ConfigLocation = "existing-location"
+	app.ConfigFiles = "existing-files"
+	app.PsPath = "/existing/path"
+
+	config := &TGFConfig{tgf: app}
+	config.setConfigLocationFromLocalFiles()
+
+	assert.Equal(t, "existing-location", app.ConfigLocation, "ConfigLocation should not be overwritten")
+	assert.Equal(t, "existing-files", app.ConfigFiles, "ConfigFiles should not be overwritten")
+	assert.Equal(t, "/existing/path", app.PsPath, "PsPath should not be overwritten")
+}
+
+func TestSetConfigLocationFromLocalFiles_SSMPathDefaultHandling(t *testing.T) {
+	// Test special handling of SSM path when it's the default value
+	tempDir, err := os.MkdirTemp("", "TestSSMPathDefault")
+	assert.NoError(t, err)
+	tempDir, _ = filepath.EvalSymlinks(tempDir)
+
+	currentDir, _ := os.Getwd()
+	defer func() {
+		assert.NoError(t, os.Chdir(currentDir))
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
+
+	assert.NoError(t, os.Chdir(tempDir))
+
+	configContent := `ssm-path: /custom/ssm/path`
+	assert.NoError(t, os.WriteFile(filepath.Join(tempDir, ".tgf.config"), []byte(configContent), 0644))
+
+	tests := []struct {
+		name           string
+		initialPsPath  string
+		expectedPsPath string
+	}{
+		{
+			name:           "Default SSM path should be overwritten",
+			initialPsPath:  defaultSSMParameterFolder,
+			expectedPsPath: "/custom/ssm/path",
+		},
+		{
+			name:           "Empty SSM path should be overwritten",
+			initialPsPath:  "",
+			expectedPsPath: "/custom/ssm/path",
+		},
+		{
+			name:           "Custom SSM path should not be overwritten",
+			initialPsPath:  "/my/custom/path",
+			expectedPsPath: "/my/custom/path",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := NewTestApplication(nil, true)
+			app.PsPath = tt.initialPsPath
+
+			config := &TGFConfig{tgf: app}
+			config.setConfigLocationFromLocalFiles()
+
+			assert.Equal(t, tt.expectedPsPath, app.PsPath)
+		})
+	}
+}
+
+func TestCLIParametersOverrideConfigFile(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "TestCLIOverride")
+	assert.NoError(t, err)
+	tempDir, _ = filepath.EvalSymlinks(tempDir)
+
+	currentDir, _ := os.Getwd()
+	defer func() {
+		assert.NoError(t, os.Chdir(currentDir))
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
+
+	assert.NoError(t, os.Chdir(tempDir))
+
+	configContent := `
+config-location: file-config-location
+config-files: file-config-files
+ssm-path: /file/ssm/path`
+	assert.NoError(t, os.WriteFile(filepath.Join(tempDir, ".tgf.config"), []byte(configContent), 0644))
+
+	tests := []struct {
+		name                   string
+		cliArgs                []string
+		expectedConfigLocation string
+		expectedConfigFiles    string
+		expectedSSMPath        string
+	}{
+		{
+			name:                   "override config-location",
+			cliArgs:                []string{"--config-location", "cli-config-location"},
+			expectedConfigLocation: "cli-config-location",
+			expectedConfigFiles:    "file-config-files",
+			expectedSSMPath:        "/file/ssm/path",
+		},
+		{
+			name:                   "override config-files",
+			cliArgs:                []string{"--config-files", "cli-config-files"},
+			expectedConfigLocation: "file-config-location",
+			expectedConfigFiles:    "cli-config-files",
+			expectedSSMPath:        "/file/ssm/path",
+		},
+		{
+			name:                   "override ssm-path",
+			cliArgs:                []string{"--ssm-path", "/cli/ssm/path"},
+			expectedConfigLocation: "file-config-location",
+			expectedConfigFiles:    "file-config-files",
+			expectedSSMPath:        "/cli/ssm/path",
+		},
+		{
+			name: "All CLI parameters override file values",
+			cliArgs: []string{
+				"--config-location", "cli-location",
+				"--config-files", "cli-files",
+				"--ssm-path", "/cli/path",
+			},
+			expectedConfigLocation: "cli-location",
+			expectedConfigFiles:    "cli-files",
+			expectedSSMPath:        "/cli/path",
+		},
+		{
+			name: "Mixed CLI and file values",
+			cliArgs: []string{
+				"--config-location", "cli-mixed-location",
+				"--ssm-path", "/cli/mixed/path",
+			},
+			expectedConfigLocation: "cli-mixed-location",
+			expectedConfigFiles:    "file-config-files",
+			expectedSSMPath:        "/cli/mixed/path",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := NewTestApplication(tt.cliArgs, true)
+			InitConfig(app)
+
+			assert.Equal(t, tt.expectedConfigLocation, app.ConfigLocation, "ConfigLocation mismatch")
+			assert.Equal(t, tt.expectedConfigFiles, app.ConfigFiles, "ConfigFiles mismatch")
+			assert.Equal(t, tt.expectedSSMPath, app.PsPath, "SSM Path mismatch")
+		})
+	}
+}
+
+func TestCLIParametersWithoutConfigFile(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "TestCLINoFile")
+	assert.NoError(t, err)
+	tempDir, _ = filepath.EvalSymlinks(tempDir)
+
+	currentDir, _ := os.Getwd()
+	defer func() {
+		assert.NoError(t, os.Chdir(currentDir))
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
+
+	assert.NoError(t, os.Chdir(tempDir))
+
+	cliArgs := []string{
+		"--config-location", "cli-only-location",
+		"--config-files", "cli-only-files",
+		"--ssm-path", "/cli/only/path",
+	}
+
+	app := NewTestApplication(cliArgs, true)
+	config := InitConfig(app)
+
+	assert.Equal(t, "cli-only-location", app.ConfigLocation)
+	assert.Equal(t, "cli-only-files", app.ConfigFiles)
+	assert.Equal(t, "/cli/only/path", app.PsPath)
+	assert.NotNil(t, config)
+}
