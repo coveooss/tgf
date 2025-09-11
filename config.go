@@ -81,7 +81,7 @@ type TGFConfig struct {
 // TGFConfigBootstrap contains an entry specifying how to bootstrap the configuration
 type TGFConfigBootstrap struct {
 	ConfigLocation string `yaml:"config-location,omitempty" json:"config-location,omitempty" hcl:"config-location,omitempty"`
-	ConfigFiles    string `yaml:"config-files,omitempty" json:"config-files,omitempty" hcl:"config-files,omitempty"`
+	ConfigPaths    string `yaml:"config-paths,omitempty" json:"config-paths,omitempty" hcl:"config-paths,omitempty"`
 	SSMPath        string `yaml:"ssm-path,omitempty" json:"ssm-path,omitempty" hcl:"ssm-path,omitempty"`
 }
 
@@ -337,7 +337,7 @@ func (config *TGFConfig) InitAWS() error {
 	return nil
 }
 
-// Temporary structure to hold app.PsPath, app.ConfigLocation, app.ConfigFiles
+// Temporary structure to hold app.PsPath, app.ConfigLocation, app.ConfigPaths
 type configData struct {
 	Name   string
 	Raw    string
@@ -365,8 +365,8 @@ func (config *TGFConfig) setConfigLocationFromLocalFiles() {
 		if app.ConfigLocation == "" && localConfig.ConfigLocation != "" {
 			app.ConfigLocation = localConfig.ConfigLocation
 		}
-		if app.ConfigFiles == "" && localConfig.ConfigFiles != "" {
-			app.ConfigFiles = localConfig.ConfigFiles
+		if app.ConfigFiles == "" && localConfig.ConfigPaths != "" {
+			app.ConfigFiles = localConfig.ConfigPaths
 		}
 		if (app.PsPath == defaultSSMParameterFolder || app.PsPath == "") && localConfig.SSMPath != "" {
 			app.PsPath = localConfig.SSMPath

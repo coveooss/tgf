@@ -645,7 +645,7 @@ config-files = "HclConfig"`,
 			cfg.setConfigLocationFromLocalFiles()
 
 			assert.Equal(t, tt.expectedConfigLocation, app.ConfigLocation, "ConfigLocation mismatch")
-			assert.Equal(t, tt.expectedConfigFiles, app.ConfigFiles, "ConfigFiles mismatch")
+			assert.Equal(t, tt.expectedConfigFiles, app.ConfigFiles, "ConfigPaths mismatch")
 
 			expectedPsPath := tt.expectedSSMPath
 			if expectedPsPath == "" {
@@ -685,7 +685,7 @@ ssm-path: /new/path`
 	config.setConfigLocationFromLocalFiles()
 
 	assert.Equal(t, "existing-location", app.ConfigLocation, "ConfigLocation should not be overwritten")
-	assert.Equal(t, "existing-files", app.ConfigFiles, "ConfigFiles should not be overwritten")
+	assert.Equal(t, "existing-files", app.ConfigFiles, "ConfigPaths should not be overwritten")
 	assert.Equal(t, "/existing/path", app.PsPath, "PsPath should not be overwritten")
 }
 
@@ -817,7 +817,7 @@ ssm-path: /file/ssm/path`
 			InitConfig(app)
 
 			assert.Equal(t, tt.expectedConfigLocation, app.ConfigLocation, "ConfigLocation mismatch")
-			assert.Equal(t, tt.expectedConfigFiles, app.ConfigFiles, "ConfigFiles mismatch")
+			assert.Equal(t, tt.expectedConfigFiles, app.ConfigFiles, "ConfigPaths mismatch")
 			assert.Equal(t, tt.expectedSSMPath, app.PsPath, "SSM Path mismatch")
 		})
 	}
