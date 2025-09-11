@@ -349,7 +349,7 @@ type configData struct {
 func (config *TGFConfig) setConfigLocationFromLocalFiles() {
 	app := config.tgf
 	for _, configFile := range config.findConfigFiles(must(os.Getwd()).(string)) {
-		log.Debugln("Reading configuration from", configFile)
+		log.Debugln("Reading bootstrap configuration from", configFile)
 		readBytes, err := os.ReadFile(configFile)
 		content := string(readBytes)
 
@@ -362,13 +362,13 @@ func (config *TGFConfig) setConfigLocationFromLocalFiles() {
 			log.Errorf("Error while loading configuration from %s\nConfiguration file must be valid YAML, JSON or HCL\n%v\nContent:\n%s", configFile, err, content)
 			continue
 		}
-		if localConfig.ConfigLocation != "" {
+		if app.ConfigLocation == "" && localConfig.ConfigLocation != "" {
 			app.ConfigLocation = localConfig.ConfigLocation
 		}
-		if localConfig.ConfigFiles != "" {
+		if app.ConfigFiles == "" && localConfig.ConfigFiles != "" {
 			app.ConfigFiles = localConfig.ConfigFiles
 		}
-		if localConfig.SSMPath != "" {
+		if (app.PsPath == defaultSSMParameterFolder || app.PsPath == "") && localConfig.SSMPath != "" {
 			app.PsPath = localConfig.SSMPath
 		}
 	}
