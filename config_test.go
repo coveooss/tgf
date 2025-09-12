@@ -852,3 +852,65 @@ func TestCLIParametersWithoutConfigFile(t *testing.T) {
 	assert.Equal(t, "/cli/only/path", app.PsPath)
 	assert.NotNil(t, config)
 }
+
+func TestConfigLocationOverrideSources(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "TestConfigLocationOverrideSources")
+	assert.NoError(t, err)
+	tempDir, _ = filepath.EvalSymlinks(tempDir)
+
+	currentDir, _ := os.Getwd()
+	defer func() {
+		assert.NoError(t, os.Chdir(currentDir))
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
+
+	assert.NoError(t, os.Chdir(tempDir))
+
+	configContent := `config-location: file-location`
+	assert.NoError(t, os.WriteFile(filepath.Join(tempDir, ".tgf.config"), []byte(configContent), 0644))
+
+	tests := []struct {
+		name                   string
+		cliArgs                []string
+		envVar                 string
+		expectedConfigLocation string
+	}{
+		{
+			name:                   "File only",
+			cliArgs:                nil,
+			envVar:                 "",
+			expectedConfigLocation: "file-location",
+		},
+		{
+			name:                   "ENV override",
+			cliArgs:                nil,
+			envVar:                 "env-location",
+			expectedConfigLocation: "env-location",
+		},
+		{
+			name:                   "CLI override",
+			cliArgs:                []string{"--config-location", "cli-location"},
+			envVar:                 "",
+			expectedConfigLocation: "cli-location",
+		},
+		{
+			name:                   "CLI overrides ENV and file",
+			cliArgs:                []string{"--config-location", "cli-location"},
+			envVar:                 "env-location",
+			expectedConfigLocation: "cli-location",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.envVar != "" {
+				t.Setenv("TGF_CONFIG_LOCATION", tt.envVar)
+			}
+
+			app := NewTestApplication(tt.cliArgs, false)
+			InitConfig(app)
+
+			assert.Equal(t, tt.expectedConfigLocation, app.ConfigLocation, "ConfigLocation mismatch")
+		})
+	}
+}
