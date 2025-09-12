@@ -345,7 +345,7 @@ type configData struct {
 }
 
 // setConfigLocationFromLocalFiles will read the local config files
-// and attempt to set the config-location, config-files and ssm-path values.
+// and attempt to set the config-location, config-paths and ssm-path values.
 func (config *TGFConfig) setConfigLocationFromLocalFiles() {
 	app := config.tgf
 	for _, configFile := range config.findConfigFiles(must(os.Getwd()).(string)) {

@@ -83,7 +83,7 @@ const (
 type TGFApplication struct {
 	*kingpin.Application
 	AwsProfile           string
-	ConfigFiles          string
+	ConfigFiles          string // pretty much called `config-paths` everywhere but here...
 	ConfigLocation       string
 	ConfigDump           bool
 	DisableUserConfig    bool
@@ -163,6 +163,7 @@ func NewTGFApplication(args []string) *TGFApplication {
 	app.Flag("profile", "Set the AWS profile configuration to use").Short('P').NoAutoShortcut().PlaceHolder("<AWS profile>").StringVar(&app.AwsProfile)
 	app.Flag("ssm-path", "Parameter Store path used to find AWS common configuration shared by a team").PlaceHolder("<path>").Default(defaultSSMParameterFolder).StringVar(&app.PsPath)
 	app.Flag("config-files", "Set the files to look for (default: "+remoteDefaultConfigPath+")").PlaceHolder("<files>").StringVar(&app.ConfigFiles)
+	app.Flag("config-paths", "(alias for --config-files)").PlaceHolder("<files>").StringVar(&app.ConfigFiles)
 	app.Flag("config-location", "Set the configuration location").PlaceHolder("<path>").StringVar(&app.ConfigLocation)
 	app.Flag("config-dump", "Print the TGF configuration and exit").BoolVar(&app.ConfigDump)
 	app.Flag("update", "Run auto update script").IsSetByUser(&app.AutoUpdateSet).BoolVar(&app.AutoUpdate)

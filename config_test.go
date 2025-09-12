@@ -534,27 +534,27 @@ func TestSetConfigLocationFromLocalFiles(t *testing.T) {
 		name                   string
 		configFiles            map[string]string // file name -> content.
 		expectedConfigLocation string
-		expectedConfigFiles    string
+		expectedConfigPaths    string
 		expectedSSMPath        string
 		disableUserConfig      bool
 	}{
 		{
 			name: "Basic config-location from .tgf.config",
 			configFiles: map[string]string{
-				".tgf.config": `config-location: coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf-config`,
+				".tgf.config": `config-location: kovio-bootstrapz-us-east-1.s3.amazonaws.com/tgf-configz`,
 			},
-			expectedConfigLocation: "coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf-config",
+			expectedConfigLocation: "kovio-bootstrapz-us-east-1.s3.amazonaws.com/tgf-configz",
 		},
 		{
 			name: "All bootstrap fields from .tgf.config",
 			configFiles: map[string]string{
 				".tgf.config": `
-config-location: coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf-config
-config-files: TGFConfig:CustomConfig
+config-location: koveo-bootstrapz-us-east-1.s3.amazonaws.com/tgf-configz
+config-paths: TGFConfig:CustomConfig
 ssm-path: /custom/tgf`,
 			},
-			expectedConfigLocation: "coveo-bootstrap-us-east-1.s3.amazonaws.com/tgf-config",
-			expectedConfigFiles:    "TGFConfig:CustomConfig",
+			expectedConfigLocation: "koveo-bootstrapz-us-east-1.s3.amazonaws.com/tgf-configz",
+			expectedConfigPaths:    "TGFConfig:CustomConfig",
 			expectedSSMPath:        "/custom/tgf",
 		},
 		{
@@ -577,26 +577,26 @@ ssm-path: /custom/tgf`,
 		{
 			name: "JSON format configuration",
 			configFiles: map[string]string{
-				".tgf.config": `{"config-location": "json-location", "config-files": "JsonConfig"}`,
+				".tgf.config": `{"config-location": "json-location", "config-paths": "JsonConfig"}`,
 			},
 			expectedConfigLocation: "json-location",
-			expectedConfigFiles:    "JsonConfig",
+			expectedConfigPaths:    "JsonConfig",
 		},
 		{
 			name: "HCL format configuration",
 			configFiles: map[string]string{
 				".tgf.config": `config-location = "hcl-location"
-config-files = "HclConfig"`,
+config-paths = "HclConfig"`,
 			},
 			expectedConfigLocation: "hcl-location",
-			expectedConfigFiles:    "HclConfig",
+			expectedConfigPaths:    "HclConfig",
 		},
 		{
 			name: "Partial bootstrap config - only some fields",
 			configFiles: map[string]string{
-				".tgf.config": `config-files: OnlyFiles`,
+				".tgf.config": `config-paths: OnlyFiles`,
 			},
-			expectedConfigFiles: "OnlyFiles",
+			expectedConfigPaths: "OnlyFiles",
 		},
 		{
 			name: "Invalid config file - should be skipped",
@@ -645,7 +645,7 @@ config-files = "HclConfig"`,
 			cfg.setConfigLocationFromLocalFiles()
 
 			assert.Equal(t, tt.expectedConfigLocation, app.ConfigLocation, "ConfigLocation mismatch")
-			assert.Equal(t, tt.expectedConfigFiles, app.ConfigFiles, "ConfigPaths mismatch")
+			assert.Equal(t, tt.expectedConfigPaths, app.ConfigFiles, "ConfigPaths mismatch")
 
 			expectedPsPath := tt.expectedSSMPath
 			if expectedPsPath == "" {
@@ -672,7 +672,7 @@ func TestSetConfigLocationFromLocalFiles_PreexistingValues(t *testing.T) {
 
 	configContent := `
 config-location: new-location
-config-files: new-files
+config-paths: new-files
 ssm-path: /new/path`
 	assert.NoError(t, os.WriteFile(filepath.Join(tempDir, ".tgf.config"), []byte(configContent), 0644))
 
@@ -756,7 +756,7 @@ func TestCLIParametersOverrideConfigFile(t *testing.T) {
 
 	configContent := `
 config-location: file-config-location
-config-files: file-config-files
+config-paths: file-config-paths
 ssm-path: /file/ssm/path`
 	assert.NoError(t, os.WriteFile(filepath.Join(tempDir, ".tgf.config"), []byte(configContent), 0644))
 
@@ -771,21 +771,28 @@ ssm-path: /file/ssm/path`
 			name:                   "override config-location",
 			cliArgs:                []string{"--config-location", "cli-config-location"},
 			expectedConfigLocation: "cli-config-location",
-			expectedConfigFiles:    "file-config-files",
+			expectedConfigFiles:    "file-config-paths",
 			expectedSSMPath:        "/file/ssm/path",
 		},
 		{
 			name:                   "override config-files",
-			cliArgs:                []string{"--config-files", "cli-config-files"},
+			cliArgs:                []string{"--config-files", "cli-config-paths"},
 			expectedConfigLocation: "file-config-location",
-			expectedConfigFiles:    "cli-config-files",
+			expectedConfigFiles:    "cli-config-paths",
+			expectedSSMPath:        "/file/ssm/path",
+		},
+		{
+			name:                   "override config-paths", // tests the --config-paths alias
+			cliArgs:                []string{"--config-paths", "cli-config-paths"},
+			expectedConfigLocation: "file-config-location",
+			expectedConfigFiles:    "cli-config-paths",
 			expectedSSMPath:        "/file/ssm/path",
 		},
 		{
 			name:                   "override ssm-path",
 			cliArgs:                []string{"--ssm-path", "/cli/ssm/path"},
 			expectedConfigLocation: "file-config-location",
-			expectedConfigFiles:    "file-config-files",
+			expectedConfigFiles:    "file-config-paths",
 			expectedSSMPath:        "/cli/ssm/path",
 		},
 		{
@@ -806,7 +813,7 @@ ssm-path: /file/ssm/path`
 				"--ssm-path", "/cli/mixed/path",
 			},
 			expectedConfigLocation: "cli-mixed-location",
-			expectedConfigFiles:    "file-config-files",
+			expectedConfigFiles:    "file-config-paths",
 			expectedSSMPath:        "/cli/mixed/path",
 		},
 	}
