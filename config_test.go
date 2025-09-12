@@ -642,7 +642,7 @@ config-paths = "HclConfig"`,
 			app.DisableUserConfig = tt.disableUserConfig
 
 			cfg := &TGFConfig{tgf: app}
-			cfg.setConfigLocationFromLocalFiles()
+			cfg.setBootstrapVariablesFromLocalFiles()
 
 			assert.Equal(t, tt.expectedConfigLocation, app.ConfigLocation, "ConfigLocation mismatch")
 			assert.Equal(t, tt.expectedConfigPaths, app.ConfigFiles, "ConfigPaths mismatch")
@@ -682,7 +682,7 @@ ssm-path: /new/path`
 	app.PsPath = "/existing/path"
 
 	config := &TGFConfig{tgf: app}
-	config.setConfigLocationFromLocalFiles()
+	config.setBootstrapVariablesFromLocalFiles()
 
 	assert.Equal(t, "existing-location", app.ConfigLocation, "ConfigLocation should not be overwritten")
 	assert.Equal(t, "existing-files", app.ConfigFiles, "ConfigPaths should not be overwritten")
@@ -717,11 +717,6 @@ func TestSetConfigLocationFromLocalFiles_SSMPathDefaultHandling(t *testing.T) {
 			expectedPsPath: "/custom/ssm/path",
 		},
 		{
-			name:           "Empty SSM path should be overwritten",
-			initialPsPath:  "",
-			expectedPsPath: "/custom/ssm/path",
-		},
-		{
 			name:           "Custom SSM path should not be overwritten",
 			initialPsPath:  "/my/custom/path",
 			expectedPsPath: "/my/custom/path",
@@ -734,7 +729,7 @@ func TestSetConfigLocationFromLocalFiles_SSMPathDefaultHandling(t *testing.T) {
 			app.PsPath = tt.initialPsPath
 
 			config := &TGFConfig{tgf: app}
-			config.setConfigLocationFromLocalFiles()
+			config.setBootstrapVariablesFromLocalFiles()
 
 			assert.Equal(t, tt.expectedPsPath, app.PsPath)
 		})

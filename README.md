@@ -90,15 +90,18 @@ You can specify multiple files in `config-paths` by separating them with `:` (e.
 TGF will attempt to use the [AWS parameter store](https://aws.amazon.com/ec2/systems-manager/parameter-store/).
 The `ssm-path` (default: `/default/tgf`) is the location of the configuration keys `config-location` and `config-paths`.
 
-If no `config-location` is found, it will look directly in SSM for configuration keys (ex: `/default/tgf/logging-level`).
-
 **Note**: The SSM configuration will only be read if AWS environment variables are set, the AWS CLI is installed or the ~/.aws folder exists. If you wish to force TGF to read the SSM config and these conditions are not met, you can set the `TGF_USE_AWS_CONFIG=true` environment variable
 
-### 2. The local config pass
+### 2. The config pass
 
-TGF will look for `.tgf.config` and `tgf.user.config` again. This time, all remaining parameters are considered.
+TGF will attempt to find the `config-paths` in `config-location`.
+
+If no config files can be found at `config-location`, it will look directly in SSM for configuration keys (ex: `/default/tgf/logging-level`).
+Otherwise said, if you want to load defaults from SSM directly, do not set `config-location`.
+
+TGF will when look for `.tgf.config` and `tgf.user.config` again in the working directory and parents.
+This time, all remaining parameters are considered.
 These configuration files overwrite the remote configurations.
-
 
 Example of a YAML configuration file:
 

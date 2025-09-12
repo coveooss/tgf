@@ -337,16 +337,16 @@ func (config *TGFConfig) InitAWS() error {
 	return nil
 }
 
-// Temporary structure to hold app.PsPath, app.ConfigLocation, app.ConfigPaths
+// We use this structure to keep track of the config sources and their content separately
 type configData struct {
 	Name   string
 	Raw    string
 	Config *TGFConfig
 }
 
-// setConfigLocationFromLocalFiles will read the local config files
+// setBootstrapVariablesFromLocalFiles will read the local config files
 // and attempt to set the config-location, config-paths and ssm-path values.
-func (config *TGFConfig) setConfigLocationFromLocalFiles() {
+func (config *TGFConfig) setBootstrapVariablesFromLocalFiles() {
 	app := config.tgf
 	for _, configFile := range config.findConfigFiles(must(os.Getwd()).(string)) {
 		log.Debugln("Reading bootstrap configuration from", configFile)
@@ -368,7 +368,7 @@ func (config *TGFConfig) setConfigLocationFromLocalFiles() {
 		if app.ConfigFiles == "" && localConfig.ConfigPaths != "" {
 			app.ConfigFiles = localConfig.ConfigPaths
 		}
-		if (app.PsPath == defaultSSMParameterFolder || app.PsPath == "") && localConfig.SSMPath != "" {
+		if app.PsPath == defaultSSMParameterFolder && localConfig.SSMPath != "" {
 			app.PsPath = localConfig.SSMPath
 		}
 	}
@@ -391,8 +391,8 @@ func (config *TGFConfig) setDefaultValues() {
 		log.SetStdout(os.Stdout)
 	}
 
-	// First read local config files; this allows bootstrapping values earlier.
-	config.setConfigLocationFromLocalFiles()
+	// First, read local config files for bootstrap variables.
+	config.setBootstrapVariablesFromLocalFiles()
 
 	// Fetch SSM configs
 	if config.awsConfigExist() {
