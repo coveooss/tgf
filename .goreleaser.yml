@@ -15,7 +15,7 @@ builds:
 
 # Archive customization
 archives:
-  - format: zip
+  - formats: zip
     name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_

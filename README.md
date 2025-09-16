@@ -63,19 +63,52 @@ On `Windows`, run `get-latest-tgf.ps1` with Powershell (version 7.x or more):
 
 ## Configuration
 
-TGF has multiple levels of configuration. It first looks through the [AWS parameter store](https://aws.amazon.com/ec2/systems-manager/parameter-store/)
-under `/default/tgf` using your current [AWS CLI configuration](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html) if any. There, it tries to find parameters called `config-location` (example: bucket.s3.amazonaws.com/foo) and `config-paths` (example: my-file.json:my-second-file.json, default: TGFConfig). If it finds `config-location`, it fetches its config from that path using the [go-getter library](https://github.com/hashicorp/go-getter). Otherwise, it looks directly in SSM for configuration keys (ex: `/default/tgf/logging-level`).
+TGF has multiple levels of configuration. 
+
+TGF looks for a file named `.tgf.config` or `tgf.user.config` in the current working folder (and recursively in any parent folders).
+Your configuration file should be expressed in [YAML](http://www.yaml.org/start.html), [JSON](http://www.json.org/) or [HCL](https://developer.hashicorp.com/packer/docs/templates/hcl_templates/syntax).
+
+### 1. The bootstrap pass
+
+During the bootstrap pass, only the following parameters are considered:
+
+- config-location
+- config-paths
+- ssm-path
+
+
+#### If `config-location` is set
+
+If `config-location` is set (either using `--config-location` or through a config file), tgf will attempt to load the configuration from there.
+Many locations are supported (e.g.: `bucket.s3.amazonaws.com/foo`): see [go-getter library](https://github.com/hashicorp/go-getter).
+
+The filename to load will be determined by the `config-paths` argument (default: `TGFConfig`).
+You can specify multiple files in `config-paths` by separating them with `:` (e.g.: `my-file.json:my-second-file.json`).
+
+#### If `config-location` is *not* set
+
+TGF will attempt to use the [AWS parameter store](https://aws.amazon.com/ec2/systems-manager/parameter-store/).
+The `ssm-path` (default: `/default/tgf`) is the location of the configuration keys `config-location` and `config-paths`.
 
 **Note**: The SSM configuration will only be read if AWS environment variables are set, the AWS CLI is installed or the ~/.aws folder exists. If you wish to force TGF to read the SSM config and these conditions are not met, you can set the `TGF_USE_AWS_CONFIG=true` environment variable
 
-TGF then looks for a file named .tgf.config or tgf.user.config in the current working folder (and recursively in any parent folders) to get its parameters. These configuration files overwrite the remote configurations.
-Your configuration file could be expressed in  [YAML](http://www.yaml.org/start.html) or [JSON](http://www.json.org/).
+### 2. The config pass
+
+TGF will attempt to find the `config-paths` in `config-location`.
+
+If no config files can be found at `config-location`, it will look directly in SSM for configuration keys (ex: `/default/tgf/logging-level`).
+Otherwise said, if you want to load defaults from SSM directly, do not set `config-location`.
+
+TGF will when look for `.tgf.config` and `tgf.user.config` again in the working directory and parents.
+This time, all remaining parameters are considered.
+These configuration files overwrite the remote configurations.
 
 Example of a YAML configuration file:
 
 ```yaml
 docker-refresh: 1h
 logging-level: notice
+config-location: bucket.s3.amazonaws.com/foo
 ```
 
 Example of a JSON configuration file:
@@ -83,7 +116,8 @@ Example of a JSON configuration file:
 ```json
 {
   "docker-refresh": "1h",
-  "logging-level": "notice"
+  "logging-level": "notice",
+  "config-location": "bucket.s3.amazonaws.com/foo"
 }
 ```
 
@@ -91,6 +125,9 @@ Example of a JSON configuration file:
 
 Key | Description | Default value
 --- | --- | ---
+config-location | (bootstrap variable) Location where the configuration files are located | *no default*
+config-paths | (bootstrap variable) List of configuration files to look for (separated by `:`) | TGFConfig
+ssm-path | (bootstrap variable) Parameter Store path used to find AWS common configuration shared by a team | /default/tgf
 docker-image | Identify the docker image  to use | coveo/tgf
 docker-image-version | Identify the image version | *no default*
 docker-image-tag | Identify the image tag (could specify specialized version such as k8s, full) | latest
@@ -107,7 +144,7 @@ run-before | Script that is executed before the actual command | *no default*
 run-after | Script that is executed after the actual command | *no default*
 alias | Allows to set short aliases for long commands<br>`my_command: "--ri --with-docker-mount --image=my-image --image-version=my-tag -E my-script.py"` | *no default*
 auto-update | Toggles the auto update check. Will only perform the update after the delay | true
-auto-update-delay | Delay before running auto-update again  | 2h (2 hours)
+auto-update-delay | Delay before running auto-update again | 2h (2 hours)
 update-version | The version to update to when running auto update | Latest fetched from Github's API
 
 Note: *The key names are not case-sensitive*
