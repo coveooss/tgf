@@ -1,8 +1,6 @@
 module github.com/coveooss/tgf
 
-go 1.23
-
-toolchain go1.23.4
+go 1.24.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.32.7
@@ -127,13 +125,13 @@ require (
 	go.opentelemetry.io/otel/sdk v1.32.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.32.0 // indirect
 	go.opentelemetry.io/otel/trace v1.32.0 // indirect
-	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
+	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/term v0.27.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
+	golang.org/x/term v0.37.0 // indirect
+	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
 	google.golang.org/api v0.206.0 // indirect
 	google.golang.org/genproto v0.0.0-20241113202542-65e8d215514f // indirect
