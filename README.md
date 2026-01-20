@@ -53,6 +53,8 @@ You can run the `get-latest-tgf.sh` script to check if you have the latest versi
 curl https://raw.githubusercontent.com/coveooss/tgf/main/get-latest-tgf.sh | bash
 ```
 
+If using Rancher Desktop on mac, rancher uses a different default location for its docker socket, so you have to set `export DOCKER_HOST="unix://$HOME/.rd/docker.sock"` in your `~.zshrc`.
+
 On `Windows`, run `get-latest-tgf.ps1` with Powershell (version 7.x or more):
 
 ```PowerShell
