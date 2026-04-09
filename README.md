@@ -135,6 +135,7 @@ docker-image-version | Identify the image version | *no default*
 docker-image-tag | Identify the image tag (could specify specialized version such as k8s, full) | latest
 docker-image-build | List of Dockerfile instructions to customize the specified docker image | *no default*
 docker-image-build-folder | Folder where the docker build command should be executed | *no default*
+mounts | Additional bind mounts to inject in the container. Relative `source` paths are resolved from the local config file that declared them | *no default*
 docker-refresh | Delay before checking if a newer version of the docker image is available | 1h (1 hour)
 docker-options | Additional options to supply to the Docker command | *no default*
 logging-level | Terragrunt logging level (only applies to Terragrunt entry point).<br>*Critical (0), Error (1), Warning (2), Notice (3), Info (4), Debug (5), Full (6)* | Notice
@@ -150,6 +151,19 @@ auto-update-delay | Delay before running auto-update again | 2h (2 hours)
 update-version | The version to update to when running auto update | Latest fetched from Github's API
 
 Note: *The key names are not case-sensitive*
+
+Example `mounts` configuration:
+
+```yaml
+mounts:
+  - source: ../modules
+    target: /var/tgf/modules
+  - source: ./plugins
+    target: /opt/terraform/plugins
+    read-only: true
+```
+
+Relative `source` paths are resolved from the local `.tgf.config` or `tgf.user.config` file that declared them. Remote config sources must use absolute `source` paths.
 
 ### Configuration section
 
@@ -196,6 +210,7 @@ Configurable values are:
   - docker-image-build
   - docker-image-build-folder
   - docker-image-build-tag
+  - mounts
   - logging-level
   - entry-point
   - docker-refresh

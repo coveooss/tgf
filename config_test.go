@@ -736,6 +736,54 @@ func TestSetConfigLocationFromLocalFiles_SSMPathDefaultHandling(t *testing.T) {
 	}
 }
 
+func TestInitConfigResolvesMountsRelativeToDeclaringConfig(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "TestMountsRelativeToConfig")
+	assert.NoError(t, err)
+	tempDir, _ = filepath.EvalSymlinks(tempDir)
+
+	currentDir, _ := os.Getwd()
+	defer func() {
+		assert.NoError(t, os.Chdir(currentDir))
+		assert.NoError(t, os.RemoveAll(tempDir))
+	}()
+
+	projectDir := filepath.Join(tempDir, "project")
+	subDir := filepath.Join(projectDir, "sub")
+	assert.NoError(t, os.MkdirAll(filepath.Join(projectDir, "root-modules"), 0755))
+	assert.NoError(t, os.MkdirAll(filepath.Join(subDir, "child-modules"), 0755))
+
+	assert.NoError(t, os.WriteFile(filepath.Join(projectDir, ".tgf.config"), []byte(`
+mounts:
+  - source: ./root-modules
+    target: /var/tgf/root-modules
+`), 0644))
+	assert.NoError(t, os.WriteFile(filepath.Join(subDir, ".tgf.config"), []byte(`
+mounts:
+  - source: ./child-modules
+    target: /var/tgf/child-modules
+    read-only: true
+`), 0644))
+
+	assert.NoError(t, os.Chdir(subDir))
+
+	config := InitConfig(NewTestApplication([]string{"--no-aws", "--ignore-user-config"}, false))
+
+	assert.ElementsMatch(t, []TGFMount{
+		{Source: filepath.Clean(filepath.Join(projectDir, "root-modules")), Target: "/var/tgf/root-modules"},
+		{Source: filepath.Clean(filepath.Join(subDir, "child-modules")), Target: "/var/tgf/child-modules", ReadOnly: true},
+	}, config.Mounts)
+}
+
+func TestResolveMountRejectsRelativeRemoteSource(t *testing.T) {
+	_, err := (TGFMount{Source: "./modules", Target: "/var/tgf/modules"}).resolve("AWS/ParametersStore")
+	assert.EqualError(t, err, "mount source must be absolute when declared from a remote config: ./modules")
+}
+
+func TestResolveMountRejectsRelativeContainerTarget(t *testing.T) {
+	_, err := (TGFMount{Source: "/tmp/modules", Target: "var/tgf/modules"}).resolve("/tmp/.tgf.config")
+	assert.EqualError(t, err, "mount target must be an absolute container path: var/tgf/modules")
+}
+
 func TestCLIParametersOverrideConfigFile(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "TestCLIOverride")
 	assert.NoError(t, err)

@@ -142,6 +142,10 @@ func (docker *dockerConfig) call() int {
 		)
 	}
 
+	for _, mount := range config.Mounts {
+		dockerArgs = append(dockerArgs, "-v", getBindMountArg(mount))
+	}
+
 	dockerArgs = append(dockerArgs, config.DockerOptions...)
 
 	switch app.TempDirMountLocation {
@@ -614,6 +618,18 @@ func getEnviron(noHome bool) (result []string) {
 		}
 	}
 	return
+}
+
+func getBindMountArg(mount TGFMount) string {
+	source := filepath.ToSlash(mount.Source)
+	if volume := filepath.VolumeName(source); volume != "" {
+		drive := fmt.Sprintf("%s/", volume)
+		source = fmt.Sprintf("%s%s", convertDrive(drive), strings.TrimPrefix(source, drive))
+	}
+	if mount.ReadOnly {
+		return fmt.Sprintf("%s:%s:ro", source, mount.Target)
+	}
+	return fmt.Sprintf("%s:%s", source, mount.Target)
 }
 
 // This function set the path converter function

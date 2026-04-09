@@ -103,3 +103,15 @@ func TestGetImage(t *testing.T) {
 		})
 	}
 }
+
+func TestGetBindMountArg(t *testing.T) {
+	assert.Equal(t, "/tmp/modules:/var/tgf/modules", getBindMountArg(TGFMount{
+		Source: "/tmp/modules",
+		Target: "/var/tgf/modules",
+	}))
+	assert.Equal(t, "/tmp/modules:/var/tgf/modules:ro", getBindMountArg(TGFMount{
+		Source:   "/tmp/modules",
+		Target:   "/var/tgf/modules",
+		ReadOnly: true,
+	}))
+}

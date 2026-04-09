@@ -58,6 +58,7 @@ type TGFConfig struct {
 	ImageBuild              string            `yaml:"docker-image-build,omitempty" json:"docker-image-build,omitempty" hcl:"docker-image-build,omitempty"`
 	ImageBuildFolder        string            `yaml:"docker-image-build-folder,omitempty" json:"docker-image-build-folder,omitempty" hcl:"docker-image-build-folder,omitempty"`
 	ImageBuildTag           string            `yaml:"docker-image-build-tag,omitempty" json:"docker-image-build-tag,omitempty" hcl:"docker-image-build-tag,omitempty"`
+	Mounts                  []TGFMount        `yaml:"mounts,omitempty" json:"mounts,omitempty" hcl:"mounts,omitempty"`
 	LogLevel                string            `yaml:"logging-level,omitempty" json:"logging-level,omitempty" hcl:"logging-level,omitempty"`
 	EntryPoint              string            `yaml:"entry-point,omitempty" json:"entry-point,omitempty" hcl:"entry-point,omitempty"`
 	Refresh                 time.Duration     `yaml:"docker-refresh,omitempty" json:"docker-refresh,omitempty" hcl:"docker-refresh,omitempty"`
@@ -91,6 +92,13 @@ type TGFConfigBuild struct {
 	Folder       string
 	Tag          string
 	source       string
+}
+
+// TGFMount contains an extra bind mount to inject in the docker container.
+type TGFMount struct {
+	Source   string `yaml:"source,omitempty" json:"source,omitempty" hcl:"source,omitempty"`
+	Target   string `yaml:"target,omitempty" json:"target,omitempty" hcl:"target,omitempty"`
+	ReadOnly bool   `yaml:"read-only,omitempty" json:"read-only,omitempty" hcl:"read-only,omitempty"`
 }
 
 var (
@@ -139,6 +147,27 @@ func (cb TGFConfigBuild) GetTag() string {
 	}
 	tagRegex := regexp.MustCompile(`[^a-zA-Z0-9\._-]`)
 	return tagRegex.ReplaceAllString(tag, "")
+}
+
+func (mount TGFMount) resolve(configSource string) (TGFMount, error) {
+	if mount.Source == "" {
+		return mount, errors.New("mount source cannot be empty")
+	}
+	if mount.Target == "" {
+		return mount, errors.New("mount target cannot be empty")
+	}
+	if !path.IsAbs(mount.Target) {
+		return mount, fmt.Errorf("mount target must be an absolute container path: %s", mount.Target)
+	}
+	if filepath.IsAbs(mount.Source) {
+		mount.Source = filepath.Clean(mount.Source)
+		return mount, nil
+	}
+	if !filepath.IsAbs(configSource) {
+		return mount, fmt.Errorf("mount source must be absolute when declared from a remote config: %s", mount.Source)
+	}
+	mount.Source = filepath.Clean(filepath.Join(filepath.Dir(configSource), mount.Source))
+	return mount, nil
 }
 
 // InitConfig returns a properly initialized TGF configuration struct
@@ -445,6 +474,7 @@ func (config *TGFConfig) setDefaultValues() {
 	}
 
 	// Special case for image build configs and run before/after, we must build a list of instructions from all configs
+	config.Mounts = nil
 	for i := range configsData {
 		configData := &configsData[i]
 		if configData.Config == nil {
@@ -464,6 +494,14 @@ func (config *TGFConfig) setDefaultValues() {
 		}
 		if configData.Config.RunAfter != "" {
 			config.runAfterCommands = append(config.runAfterCommands, configData.Config.RunAfter)
+		}
+		for _, mount := range configData.Config.Mounts {
+			resolvedMount, err := mount.resolve(configData.Name)
+			if err != nil {
+				log.Errorf("Invalid mount declared in %s: %v", configData.Name, err)
+				continue
+			}
+			config.Mounts = append(config.Mounts, resolvedMount)
 		}
 	}
 	// We reverse the execution of before scripts to ensure that more specific commands are executed last
