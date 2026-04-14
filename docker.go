@@ -21,7 +21,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/blang/semver/v4"
 	"github.com/coveooss/gotemplate/v3/collections"
-	"github.com/coveooss/gotemplate/v3/utils"
 	"github.com/coveooss/multilogger/errors"
 	"github.com/coveooss/multilogger/reutils"
 	"github.com/docker/docker/api/types"
@@ -221,9 +220,6 @@ func (docker *dockerConfig) call() int {
 
 	log.Debug(color.HiBlackString(strings.Join(dockerCmd.Args, " ")))
 
-	if err := runCommands(config.runBeforeCommands); err != nil {
-		return -1
-	}
 	if err := dockerCmd.Run(); err != nil {
 		if stderr.Len() > 0 {
 			log.Errorf("%s\n%s %s", stderr.String(), dockerCmd.Args[0], strings.Join(dockerArgs, " "))
@@ -232,28 +228,7 @@ func (docker *dockerConfig) call() int {
 			}
 		}
 	}
-	if err := runCommands(config.runAfterCommands); err != nil {
-		log.Error(err)
-	}
-
 	return dockerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-}
-
-func runCommands(commands []string) error {
-	for _, script := range commands {
-		cmd, tempFile, err := utils.GetCommandFromString(script)
-		if err != nil {
-			return err
-		}
-		if tempFile != "" {
-			defer func() { os.Remove(tempFile) }()
-		}
-		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, log, log
-		if err := cmd.Run(); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // Returns the image name to use
