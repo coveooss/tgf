@@ -292,7 +292,7 @@ func (docker *dockerConfig) getImage() (name string) {
 		if out != nil {
 			log.Debug("Writing instructions to dockerfile")
 			ib.Instructions = fmt.Sprintf("FROM %s\n%s\n", name, ib.Instructions)
-			must(fmt.Fprintf(out, ib.Instructions))
+			must(fmt.Fprint(out, ib.Instructions))
 			must(out.Close())
 		}
 
