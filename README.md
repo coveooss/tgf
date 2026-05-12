@@ -142,8 +142,6 @@ entry-point | The program that will be automatically launched when the docker co
 tgf-recommended-version | The minimal tgf version recommended in your context  (should not be placed in `.tgf.config file`) | *no default*
 recommended-image | The tgf image recommended in your context (should not be placed in `.tgf.config file`) | *no default*
 environment | Allows temporary addition of environment variables | *no default*
-run-before | Script that is executed before the actual command | *no default*
-run-after | Script that is executed after the actual command | *no default*
 alias | Allows to set short aliases for long commands<br>`my_command: "--ri --with-docker-mount --image=my-image --image-version=my-tag -E my-script.py"` | *no default*
 auto-update | Toggles the auto update check. Will only perform the update after the delay | true
 auto-update-delay | Delay before running auto-update again | 2h (2 hours)
@@ -204,8 +202,6 @@ Configurable values are:
   - required-image-version
   - tgf-recommended-version
   - environment
-  - run-before
-  - run-after
   - alias
   - update-version
   - auto-update-delay

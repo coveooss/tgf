@@ -66,15 +66,12 @@ type TGFConfig struct {
 	RequiredVersionRange    string            `yaml:"required-image-version,omitempty" json:"required-image-version,omitempty" hcl:"required-image-version,omitempty"`
 	RecommendedTGFVersion   string            `yaml:"tgf-recommended-version,omitempty" json:"tgf-recommended-version,omitempty" hcl:"tgf-recommended-version,omitempty"`
 	Environment             map[string]string `yaml:"environment,omitempty" json:"environment,omitempty" hcl:"environment,omitempty"`
-	RunBefore               string            `yaml:"run-before,omitempty" json:"run-before,omitempty" hcl:"run-before,omitempty"`
-	RunAfter                string            `yaml:"run-after,omitempty" json:"run-after,omitempty" hcl:"run-after,omitempty"`
 	Aliases                 map[string]string `yaml:"alias,omitempty" json:"alias,omitempty" hcl:"alias,omitempty"`
 	UpdateVersion           string            `yaml:"update-version,omitempty" json:"update-version,omitempty" hcl:"update-version,omitempty"`
 	AutoUpdateDelay         time.Duration     `yaml:"auto-update-delay,omitempty" json:"auto-update-delay,omitempty" hcl:"auto-update-delay,omitempty"`
 	AutoUpdate              bool              `yaml:"auto-update,omitempty" json:"auto-update,omitempty" hcl:"auto-update,omitempty"`
 
-	runBeforeCommands, runAfterCommands []string
-	imageBuildConfigs                   []TGFConfigBuild // List of config built from previous build configs
+	imageBuildConfigs []TGFConfigBuild // List of config built from previous build configs
 	tgf                                 *TGFApplication
 }
 
@@ -459,15 +456,7 @@ func (config *TGFConfig) setDefaultValues() {
 				source:       configData.Name,
 			}}, config.imageBuildConfigs...)
 		}
-		if configData.Config.RunBefore != "" {
-			config.runBeforeCommands = append(config.runBeforeCommands, configData.Config.RunBefore)
-		}
-		if configData.Config.RunAfter != "" {
-			config.runAfterCommands = append(config.runAfterCommands, configData.Config.RunAfter)
-		}
 	}
-	// We reverse the execution of before scripts to ensure that more specific commands are executed last
-	config.runBeforeCommands = collections.AsList(config.runBeforeCommands).Reverse().Strings()
 }
 
 var reVersion = regexp.MustCompile(`(?P<version>\d+\.\d+(?:\.\d+){0,1})`)
