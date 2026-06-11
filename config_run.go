@@ -9,6 +9,9 @@ import (
 
 // Run execute the current configuration
 func (config *TGFConfig) Run() int {
+	// Capture config for telemetry enrichment
+	lastRunConfig = config
+
 	app := config.tgf
 
 	if app.Image != "" {

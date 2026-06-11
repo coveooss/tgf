@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -214,7 +215,14 @@ func (docker *dockerConfig) call() int {
 	dockerArgs = append(dockerArgs, imageName)
 	dockerArgs = append(dockerArgs, command...)
 	dockerCmd := exec.Command("docker", dockerArgs...)
-	dockerCmd.Stdin, dockerCmd.Stdout = os.Stdin, os.Stdout
+	dockerCmd.Stdin = os.Stdin
+
+	// Capture the tail of stdout for telemetry error reporting.
+	// Terraform/terragrunt write errors to stdout, not stderr.
+	var stdoutTail tailBuffer
+	stdoutTail.Init(4096) // keep last 4KB of output
+	dockerCmd.Stdout = io.MultiWriter(os.Stdout, &stdoutTail)
+
 	var stderr bytes.Buffer
 	dockerCmd.Stderr = &stderr
 
@@ -228,7 +236,19 @@ func (docker *dockerConfig) call() int {
 			}
 		}
 	}
-	return dockerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+
+	exitCode := dockerCmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+
+	// Capture error output for telemetry
+	if exitCode != 0 {
+		if tail := stdoutTail.String(); tail != "" {
+			lastRunError = tail
+		} else if stderr.Len() > 0 {
+			lastRunError = stderr.String()
+		}
+	}
+
+	return exitCode
 }
 
 // Returns the image name to use
