@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"runtime/debug"
 	"time"
 
 	"github.com/coveooss/gotemplate/v3/collections"
@@ -19,30 +18,6 @@ var version = locallyBuilt
 
 func main() {
 	start := time.Now()
-
-	// Handle eventual panic message
-	defer func() {
-		if err := recover(); err != nil {
-			duration := time.Since(start)
-			errMsg := fmt.Sprintf("%v", err)
-
-			// Load telemetry config now (after config.Environment may have been applied)
-			telemetryCfg := LoadTelemetryConfig()
-			event := NewTGFEvent(1, errMsg, duration)
-			event.WithConfig(lastRunConfig)
-			ResolveExtraVars(telemetryCfg, &event)
-			PushToSentry(telemetryCfg, event)
-
-			if _, isManaged := err.(errors.Managed); String(os.Getenv(envDebug)).ParseBool() || !isManaged {
-				log.Errorf("%[1]v (%[1]T)", err)
-				debug.PrintStack()
-			} else {
-				log.Error(err)
-			}
-			os.Exit(1)
-		}
-	}()
-
 	exitCode := NewTGFApplication(os.Args[1:]).Run()
 
 	// Load telemetry config after the run — config.Environment vars are now set

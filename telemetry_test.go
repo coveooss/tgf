@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -154,26 +155,50 @@ func TestSanitizeErrorOutput(t *testing.T) {
 	t.Parallel()
 
 	input := "\x1b[3;32m[terragrunt] \x1b[23;0m2026/06/04 08:50:50.037  9.04s (6.52s) \x1b[31mERROR   \x1b[0m \x1b[31m\x1b[0m\x1b[1mInitializing the backend...\x1b[0m\n" +
-		"\x1b[31m│\x1b[0m \x1b[0m\x1b[1m\x1b[31mError: \x1b[0m\x1b[0m\x1b[1m\x1b[0mMissing newline after block definition\n" +
+		"\x1b[31m╷\x1b[0m\n\x1b[31m│\x1b[0m \x1b[1m\x1b[31mError: \x1b[0mMissing newline after block definition\n" +
+		"\x1b[31m│\x1b[0m\n\x1b[31m│\x1b[0m   on iam_provisioning_role.tf line 119\n" +
+		"\x1b[31m╵\x1b[0m\n" +
 		"\x1b[3;32m[terragrunt] \x1b[23;0m2026/06/04 08:50:50.047  9.05s ( <1ms) \x1b[31mERROR   \x1b[0m \x1b[31mexit status 1\x1b[0m"
 
 	result := sanitizeErrorOutput(input)
 
-	// Should not contain ANSI codes
+	// Should extract the terraform error block
+	assert.Contains(t, result, "Error: Missing newline after block definition")
+	assert.Contains(t, result, "on iam_provisioning_role.tf line 119")
+	// Should NOT contain timestamps or ANSI codes
 	assert.NotContains(t, result, "\x1b[")
-	// Should not contain timestamps
 	assert.NotContains(t, result, "2026/06/04")
-	assert.NotContains(t, result, "9.04s")
-	// Should contain the actual error
-	assert.Contains(t, result, "Error:")
-	assert.Contains(t, result, "Missing newline after block definition")
-	assert.Contains(t, result, "exit status 1")
+	// Should NOT contain unrelated log noise
+	assert.NotContains(t, result, "exit status 1")
 }
 
-func TestSanitizeErrorOutput_NoTimestamps(t *testing.T) {
+func TestSanitizeErrorOutput_MultipleBlocks(t *testing.T) {
 	t.Parallel()
 
-	input := "simple error message without timestamps"
+	input := "╷\n│ Error: First error\n│\n│ details about first\n╵\nsome noise\n╷\n│ Error: Second error\n│\n│ details about second\n╵\n"
+
 	result := sanitizeErrorOutput(input)
-	assert.Equal(t, "simple error message without timestamps", result)
+
+	assert.Contains(t, result, "Error: First error")
+	assert.Contains(t, result, "Error: Second error")
+	assert.NotContains(t, result, "some noise")
+}
+
+func TestSanitizeErrorOutput_NoBlocks(t *testing.T) {
+	t.Parallel()
+
+	input := "[terragrunt] INFO     some noise\n[terragrunt] ERROR    exit status 130\n[terragrunt] INFO     post hook ran\n[terragrunt] ERROR    final error"
+	result := sanitizeErrorOutput(input)
+	assert.True(t, strings.HasPrefix(result, "ERROR"), "should start at first ERROR")
+	assert.Contains(t, result, "exit status 130")
+	assert.Contains(t, result, "final error")
+	assert.NotContains(t, result, "some noise")
+}
+
+func TestSanitizeErrorOutput_NoErrorKeyword(t *testing.T) {
+	t.Parallel()
+
+	input := "simple message without error keyword"
+	result := sanitizeErrorOutput(input)
+	assert.Equal(t, "simple message without error keyword", result)
 }

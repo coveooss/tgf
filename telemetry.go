@@ -124,10 +124,57 @@ func ResolveExtraVars(cfg TelemetryConfig, event *TGFEvent) {
 // "2026/06/04 08:55:57.540  3.54s (1.38s)" or "2026/06/04 08:55:57.540  3.54s ( <1ms)"
 var reLogTimestamp = regexp.MustCompile(`\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d+\s+[\d.]+\w*s\s+\([\s<\d.]+\w+\)\s*`)
 
-// sanitizeErrorOutput strips ANSI codes and log timestamps from raw docker output
-// to produce clean error text suitable for telemetry/aggregation.
+// reTerraformErrorBlock matches terraform error blocks delimited by ╷ and ╵
+var reTerraformErrorBlock = regexp.MustCompile(`(?s)╷.*?Error:.*?╵`)
+
+// sanitizeErrorOutput strips ANSI codes and log timestamps from raw docker output,
+// then extracts terraform error blocks if present, or truncates from the first ERROR keyword.
 func sanitizeErrorOutput(raw string) string {
 	clean := stripansi.Strip(raw)
 	clean = reLogTimestamp.ReplaceAllString(clean, "")
+
+	// Try to extract terraform error blocks (╷ ... Error: ... ╵)
+	if blocks := extractTerraformErrors(clean); blocks != "" {
+		return blocks
+	}
+
+	// Fallback: truncate from the first occurrence of ERROR
+	if idx := strings.Index(clean, "ERROR"); idx >= 0 {
+		return strings.TrimSpace(clean[idx:])
+	}
+
 	return strings.TrimSpace(clean)
+}
+
+// extractTerraformErrors finds all terraform error blocks in the output and
+// returns them concatenated. Returns empty string if none found.
+func extractTerraformErrors(output string) string {
+	matches := reTerraformErrorBlock.FindAllString(output, -1)
+	if len(matches) == 0 {
+		return ""
+	}
+
+	var blocks []string
+	for _, m := range matches {
+		// Clean up the box-drawing characters and leading pipes
+		block := strings.TrimSpace(m)
+		block = strings.ReplaceAll(block, "╷", "")
+		block = strings.ReplaceAll(block, "╵", "")
+		// Remove leading │ and whitespace from each line
+		lines := strings.Split(block, "\n")
+		var cleaned []string
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			line = strings.TrimPrefix(line, "│")
+			line = strings.TrimSpace(line)
+			if line != "" {
+				cleaned = append(cleaned, line)
+			}
+		}
+		if len(cleaned) > 0 {
+			blocks = append(blocks, strings.Join(cleaned, "\n"))
+		}
+	}
+
+	return strings.Join(blocks, "\n\n")
 }
