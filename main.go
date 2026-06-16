@@ -24,7 +24,11 @@ func main() {
 	defer func() {
 		if err := recover(); err != nil {
 			duration := time.Since(start)
-			errMsg := fmt.Sprintf("%v", err)
+
+			if lastRunError == "" {
+				lastRunError = fmt.Sprintf("%v", err)
+			}
+			errMsg := sanitizeErrorOutput(lastRunError)
 
 			// Load telemetry config now (after config.Environment may have been applied)
 			telemetryCfg := LoadTelemetryConfig()

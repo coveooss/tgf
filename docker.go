@@ -217,20 +217,18 @@ func (docker *dockerConfig) call() int {
 	dockerCmd := exec.Command("docker", dockerArgs...)
 	dockerCmd.Stdin = os.Stdin
 
-	// Capture the tail of stdout for telemetry error reporting.
-	// Terraform/terragrunt write errors to stdout, not stderr.
-	var stdoutTail tailBuffer
-	stdoutTail.Init(4096) // keep last 4KB of output
-	dockerCmd.Stdout = io.MultiWriter(os.Stdout, &stdoutTail)
+	// Capture stderr and stdout in a buffer while still displaying it to the user
+	var stderrBuf bytes.Buffer
+	dockerCmd.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
 
-	var stderr bytes.Buffer
-	dockerCmd.Stderr = &stderr
+	var stdoutBuf bytes.Buffer
+	dockerCmd.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
 
 	log.Debug(color.HiBlackString(strings.Join(dockerCmd.Args, " ")))
 
 	if err := dockerCmd.Run(); err != nil {
-		if stderr.Len() > 0 {
-			log.Errorf("%s\n%s %s", stderr.String(), dockerCmd.Args[0], strings.Join(dockerArgs, " "))
+		if stderrBuf.Len() > 0 {
+			log.Errorf("%s\n%s %s", stderrBuf.String(), dockerCmd.Args[0], strings.Join(dockerArgs, " "))
 			if runtime.GOOS == "windows" {
 				log.Error(windowsMessage)
 			}
@@ -241,11 +239,7 @@ func (docker *dockerConfig) call() int {
 
 	// Capture error output for telemetry
 	if exitCode != 0 {
-		if tail := stdoutTail.String(); tail != "" {
-			lastRunError = tail
-		} else if stderr.Len() > 0 {
-			lastRunError = stderr.String()
-		}
+		lastRunError = stdoutBuf.String() + stderrBuf.String()
 	}
 
 	return exitCode
