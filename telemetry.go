@@ -50,16 +50,18 @@ const (
 )
 
 // LoadTelemetryConfig reads telemetry configuration from environment variables.
+// It also checks lastRunConfig.Environment as a fallback, since config.Environment
+// may not have been applied via os.Setenv if a panic occurred before docker.call().
 func LoadTelemetryConfig() TelemetryConfig {
 	cfg := TelemetryConfig{
 		Enabled: true,
 	}
 
-	if val := os.Getenv(envTelemetryEnabled); val != "" {
+	if val := getConfigEnv(envTelemetryEnabled); val != "" {
 		cfg.Enabled = String(val).ParseBool()
 	}
 
-	if val := os.Getenv(envTelemetryExtraVars); val != "" {
+	if val := getConfigEnv(envTelemetryExtraVars); val != "" {
 		for _, name := range strings.Split(val, ",") {
 			name = strings.TrimSpace(name)
 			if name != "" {
@@ -68,9 +70,22 @@ func LoadTelemetryConfig() TelemetryConfig {
 		}
 	}
 
-	cfg.SentryDSN = os.Getenv(envSentryDSN)
+	cfg.SentryDSN = getConfigEnv(envSentryDSN)
 
 	return cfg
+}
+
+// getConfigEnv returns the value of an environment variable, falling back to
+// lastRunConfig.Environment if the variable isn't set in os environment.
+// This handles the case where a panic occurs before config.Environment is applied via os.Setenv.
+func getConfigEnv(key string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	if lastRunConfig != nil && lastRunConfig.Environment != nil {
+		return lastRunConfig.Environment[key]
+	}
+	return ""
 }
 
 // NewTGFEvent creates a TGFEvent populated with runtime metadata.
