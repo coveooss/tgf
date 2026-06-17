@@ -140,7 +140,7 @@ func ResolveExtraVars(cfg TelemetryConfig, event *TGFEvent) {
 var reLogTimestamp = regexp.MustCompile(`\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}\.\d+\s+[\d.]+\w*s\s+\([\s<\d.]+\w+\)\s*`)
 
 // reTerraformErrorBlock matches terraform error blocks delimited by ╷ and ╵
-var reTerraformErrorBlock = regexp.MustCompile(`(?s)╷.*?Error:.*?╵`)
+var reTerraformErrorBlock = regexp.MustCompile(`╷(\s+)?\n│ Error:[^╵]+╵`)
 
 // sanitizeErrorOutput strips ANSI codes and log timestamps from raw docker output,
 // then extracts terraform error blocks if present, or truncates from the first ERROR keyword.
