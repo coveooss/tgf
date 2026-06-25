@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ macos-latest, ubuntu-latest ]
+        os: [macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -20,18 +20,22 @@ jobs:
           egress-policy: audit
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - run: ./get-latest-tgf.sh
 
 
   windows:
-    runs-on: windows-latest
-
+    runs-on:
+      - runs-on=${{ github.run_id }}
+      - pool=${{ vars.RUNS_ON_ENV_DEV }}__default_windows_2025_x64
+      - env=${{ vars.RUNS_ON_ENV_DEV }}
+      - region=us-east-1
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
         with:
           egress-policy: audit
-
+      - uses: coveo-platform/setup-runner@v1.1.1
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - run: ./get-latest-tgf.ps1
 
@@ -50,6 +54,7 @@ jobs:
           egress-policy: audit
 
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - uses: ./
         with:
           ref: ${{ github.head_ref }}
