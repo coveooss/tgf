@@ -20,8 +20,8 @@ jobs:
 
     runs-on:
       - runs-on=${{ github.run_id }}
-      - pool=${{ vars.RUNS_ON_ENV_DEV }}__${{ matrix.pool }}
-      - env=${{ vars.RUNS_ON_ENV_DEV }}
+      - pool=cip-dev-v3__${{ matrix.pool }}
+      - env=cip-dev-v3
       - region=us-east-1
     steps:
       - name: Harden Runner
@@ -50,8 +50,8 @@ jobs:
   goreleaser-check:
     runs-on:
       - runs-on=${{ github.run_id }}
-      - pool=${{ vars.RUNS_ON_ENV_DEV }}__small_ubuntu_24_arm64
-      - env=${{ vars.RUNS_ON_ENV_DEV }}
+      - pool=cip-dev-v3__small_ubuntu_24_arm64
+      - env=cip-dev-v3
       - region=us-east-1
     steps:
       - name: Harden Runner
@@ -76,8 +76,8 @@ jobs:
   goreleaser-test-release:
     runs-on:
       - runs-on=${{ github.run_id }}
-      - pool=${{ vars.RUNS_ON_ENV_DEV }}__default_ubuntu_24_arm64
-      - env=${{ vars.RUNS_ON_ENV_DEV }}
+      - pool=cip-dev-v3__default_ubuntu_24_arm64
+      - env=cip-dev-v3
       - region=us-east-1
     steps:
       - name: Harden Runner
