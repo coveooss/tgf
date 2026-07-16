@@ -72,7 +72,7 @@ type TGFConfig struct {
 	AutoUpdate              bool              `yaml:"auto-update,omitempty" json:"auto-update,omitempty" hcl:"auto-update,omitempty"`
 
 	imageBuildConfigs []TGFConfigBuild // List of config built from previous build configs
-	tgf                                 *TGFApplication
+	tgf               *TGFApplication
 }
 
 // TGFConfigBootstrap contains an entry specifying how to bootstrap the configuration
