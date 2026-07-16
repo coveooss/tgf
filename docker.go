@@ -582,7 +582,7 @@ func getEnviron(noHome bool) (result []string) {
 		case
 			"_", "PWD", "PS1", "OLDPWD", "TMPDIR",
 			"PROMPT", "SHELL", "SH", "ZSH", "HOME",
-			"LANG", "LC_CTYPE", "DISPLAY", "TERM":
+			"LANG", "LC_CTYPE", "DISPLAY", "TERM", "XDG_DATA_DIRS":
 		default:
 			result = append(result, "-e")
 			result = append(result, split[0])
