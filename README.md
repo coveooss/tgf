@@ -68,7 +68,7 @@ On `Windows`, run `get-latest-tgf.ps1` with Powershell (version 7.x or more):
 TGF has multiple levels of configuration. 
 
 TGF looks for a file named `.tgf.config` or `tgf.user.config` in the current working folder (and recursively in any parent folders).
-Your configuration file should be expressed in [YAML](http://www.yaml.org/start.html), [JSON](http://www.json.org/) or [HCL](https://developer.hashicorp.com/packer/docs/templates/hcl_templates/syntax).
+Your configuration file should be expressed in [YAML](http://web.archive.org/web/20210712000644/https://yaml.org/start.html), [JSON](http://www.json.org/) or [HCL](https://developer.hashicorp.com/packer/docs/templates/hcl_templates/syntax).
 
 ### 1. The bootstrap pass
 
