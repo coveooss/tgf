@@ -1,5 +1,8 @@
 # TGF
 
+> [!WARNING]
+> This repository is archived and is no longer maintained.
+
 <!-- markdownlint-disable MD033 -->
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/coveooss/tgf)](https://goreportcard.com/report/github.com/coveooss/tgf)
